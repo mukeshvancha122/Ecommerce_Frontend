@@ -1,12 +1,18 @@
 import React, { useEffect } from "react";
 import "./App.css";
+import Header from "./components/Header/Header";
+import Home from "./components/Home/Home";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import Checkout from "./components/Checkout/Checkout";
+import Login from "./components/Login/Login";
 import { useStateValue } from "./StateProvider";
+import Payment from "./components/Payment/Payment";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
+import Orders from "./components/Orders/Orders";
 
 const promise = loadStripe(
-  "pk_test_TYooMQauvdEDq54NiTphI7jx" // sandbox publishable key
+  "pk_test_TYooMQauvdEDq54NiTphI7jx" // sandbox 
 );
 
 function App() {
