@@ -9,7 +9,8 @@ import { useStateValue } from "./StateProvider";
 import Payment from "./components/Payment/Payment";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import Orders from "./components/Orders/Orders";
+import Orders from "./components/Orders/Order";
+import { auth } from "./firebase";
 
 const promise = loadStripe(
   "pk_test_TYooMQauvdEDq54NiTphI7jx" // sandbox 
