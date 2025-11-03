@@ -1,3 +1,4 @@
+// src/pages/auth/Login.js
 import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
@@ -5,125 +6,138 @@ import "./Login.css";
 
 function Login() {
   const history = useHistory();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
 
-  const signIn = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      setErrMsg("Please enter email and password.");
+      return;
+    }
 
     try {
-      setLoading(true);
+      setSubmitting(true);
+      setErrMsg("");
 
-      const response = await axios.post("/api/auth/login", {
+      const res = await axios.post("/api/auth/login", {
         email,
         password,
       });
 
-      if (response?.data?.token) {
-        localStorage.setItem("authToken", response.data.token);
+      // store auth
+      if (res?.data?.token) {
+        localStorage.setItem("authToken", res.data.token);
       }
-      if (response?.data?.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+      if (res?.data?.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
       }
 
       history.push("/");
     } catch (err) {
       console.error(err);
-      alert(
+      setErrMsg(
         err?.response?.data?.message ||
-          "Login failed. Please check your email/password."
+          "We couldn't sign you in. Double-check your email/password."
       );
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (e) => {
-    e.preventDefault();
-
-    try {
-      setLoading(true);
-
-      const response = await axios.post("/api/auth/register", {
-        email,
-        password,
-      });
-
-      if (response?.data?.token) {
-        localStorage.setItem("authToken", response.data.token);
-      }
-      if (response?.data?.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-      }
-
-      history.push("/"); 
-    } catch (err) {
-      console.error(err);
-      alert(
-        err?.response?.data?.message ||
-          "Registration failed. Please try again with a different email."
-      );
-    } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="login">
-      <Link to="/">
+    <div className="authPage">
+      {/* header logo */}
+      <Link to="/" className="authPage-logoWrapper">
+        {/* swap this for your brand mark */}
         <img
-          className="login-logo"
-          src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1024px-Amazon_logo.svg.png"
-          alt="Logo"
+          className="authPage-logo"
+          src="/yourshop-dark.svg"
+          alt="yourshop"
         />
       </Link>
 
-      <div className="login-container">
-        <h1>Sign in</h1>
+      {/* card */}
+      <div className="authCard">
+        <h1 className="authCard-title">Sign in</h1>
 
-        <form>
-          <h5>Email</h5>
-          <input
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            disabled={loading}
-          />
+        <form className="authForm" onSubmit={handleSignIn}>
+          <label className="authField">
+            <span className="authField-label">Email</span>
+            <input
+              className="authField-input"
+              type="email"
+              name="email"
+              id="login-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
+              required
+            />
+          </label>
 
-          <h5>Password</h5>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            disabled={loading}
-          />
+          <label className="authField">
+            <span className="authField-label">Password</span>
+            <input
+              className="authField-input"
+              type="password"
+              name="password"
+              id="login-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
+              required
+            />
+          </label>
+
+          {errMsg && <div className="authError">{errMsg}</div>}
 
           <button
             type="submit"
-            onClick={signIn}
-            className="login-signInButton"
-            disabled={loading}
+            className="authPrimaryBtn"
+            disabled={submitting}
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <p>
-          By signing in, you agree to our Conditions of Use & Sale. Please see
-          our Privacy Notice, Cookies Notice, and Interest-Based Ads Notice.
+        <p className="authLegal">
+          By continuing, you agree to yourshop’s{" "}
+          <Link to="/terms" className="authLink">
+            Conditions of Use
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="authLink">
+            Privacy Notice
+          </Link>
+          .
         </p>
 
-        <button
-          onClick={register}
-          className="login-registerButton"
-          disabled={loading}
+        <div className="authDividerRow">
+          <div className="authDividerLine" />
+          <div className="authDividerText">New to yourshop?</div>
+          <div className="authDividerLine" />
+        </div>
+
+        <Link
+          to="/register"
+          className="authSecondaryBtnLink"
+          aria-label="Create your yourshop account"
         >
-          {loading ? "Creating account..." : "Create your Account"}
-        </button>
+          Create your yourshop account
+        </Link>
       </div>
+
+      {/* footer */}
+      <div className="authFooterLinks">
+        <Link to="/terms">Conditions of Use</Link>
+        <Link to="/privacy">Privacy Notice</Link>
+        <Link to="/help">Help</Link>
+      </div>
+      <div className="authFooterCopy">© 2025 yourshop</div>
     </div>
   );
 }

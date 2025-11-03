@@ -133,6 +133,25 @@
   line-height: 1;
 }
 
+/* wrapper to anchor the dropdown */
+.header-account-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  color: #fff;
+  line-height: 1.2;
+}
+
+/* where the dropdown will render absolute panel */
+.header-accountDropdownMount {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 5000; 
+}
+
+
 /* ===== RIGHT: Lang + Account + Orders + Cart ===== */
 .header-right {
   display: flex;
@@ -141,6 +160,11 @@
   gap: 1rem;
   min-width: 260px;
   color: #f9fafb;
+}
+
+.header-account-wrapper:hover {
+  outline: 1px solid #fff;
+  border-radius: 4px;
 }
 
 /* --- language pill --- */

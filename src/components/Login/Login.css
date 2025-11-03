@@ -1,229 +1,212 @@
-/* ===== Page Layout ===== */
-.login {
-    min-height: 100vh;
-    background: radial-gradient(circle at 20% 20%, #ffffff 0%, #f5f7fa 40%, #eef1f5 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Roboto", "Segoe UI", sans-serif;
-    color: #1a1a1a;
-    padding: 2rem 1rem;
+/* PAGE WRAPPER */
+.authPage {
+  min-height: 100vh;
+  background-color: #fff;
+  color: #111;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Amazon Ember", "Inter", Roboto, "Segoe UI", sans-serif;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
 }
 
-/* ===== Brand Logo ===== */
-.login-logo {
-    width: 120px;
-    height: auto;
-    object-fit: contain;
-    margin: 0 auto 1.5rem auto;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.06));
+/* brand logo */
+.authPage-logoWrapper {
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+.authPage-logo {
+  height: 32px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
-/* ===== Card Container ===== */
-.login-container {
-    width: 100%;
-    max-width: 360px;
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow:
-        0 24px 48px -12px rgba(0,0,0,0.12),
-        0 2px 4px rgba(0,0,0,0.06);
-    padding: 1.5rem 1.5rem 2rem;
-    display: flex;
-    flex-direction: column;
+/* stack container to group both cards + divider */
+.authStackWrapper {
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
-/* ===== Headings / Copy ===== */
-.login-container > h1 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 1rem;
-    letter-spacing: -0.03em;
+/* CARD */
+.authCard {
+  width: 100%;
+  border: 1px solid #d5d9d9;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 20px 24px 24px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset;
 }
 
-.login-container > p {
-    margin-top: 1rem;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    color: #6b7280;
-    text-align: center;
+.authCard-title {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 400;
+  color: #111;
+  margin: 0 0 16px 0;
 }
 
-/* ===== Form Labels ===== */
-.login-container > form > h5 {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #374151;
-    margin: 0 0 0.4rem;
-    letter-spacing: -0.02em;
+/* FORM + FIELDS */
+.authForm {
+  display: flex;
+  flex-direction: column;
 }
 
-/* ===== Form Inputs ===== */
-.login-container > form > input {
-    display: block;
-    width: 100%;
-    height: 40px;
-    padding: 0 0.75rem;
-    margin-bottom: 0.9rem;
-
-    font-size: 0.9rem;
-    font-weight: 400;
-    color: #111827;
-
-    background-color: #fff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    outline: none;
-    transition: all 0.16s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+.authField {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
 }
 
-.login-container > form > input::placeholder {
-    color: #9ca3af;
-    font-weight: 400;
+.authField-label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #111;
+  margin-bottom: 4px;
 }
 
-.login-container > form > input:focus {
-    border-color: #0ea5e9;
-    box-shadow:
-        0 0 0 4px rgba(14,165,233,0.15),
-        0 4px 12px rgba(0,0,0,0.08);
+.authField-labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
 }
 
-/* ===== Primary CTA Button (Sign In) ===== */
-.login-signInButton {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 100%;
-    height: 42px;
-    margin-top: 0.5rem;
-
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    color: #fff;
-
-    background: linear-gradient(90deg, #0ea5e9 0%, #0369a1 100%);
-    border: 0;
-    border-radius: 8px;
-
-    box-shadow:
-        0 16px 32px -8px rgba(3, 105, 161, 0.4),
-        0 2px 4px rgba(0,0,0,0.07);
-
-    cursor: pointer;
-    transition: all 0.18s ease;
+.authField-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: #565959;
 }
 
-.login-signInButton:hover {
-    box-shadow:
-        0 20px 36px -8px rgba(3, 105, 161, 0.5),
-        0 3px 6px rgba(0,0,0,0.08);
-    transform: translateY(-1px);
+.authField-input {
+  border: 1px solid #a6a6a6;
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #111;
+  background-color: #fff;
+  outline: none;
+  box-sizing: border-box;
 }
 
-.login-signInButton:active {
-    transform: translateY(0);
-    box-shadow:
-        0 8px 16px -4px rgba(3,105,161,0.4),
-        0 1px 2px rgba(0,0,0,0.08);
+.authField-input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.3);
 }
 
-/* ===== Secondary CTA Button (Create Account) ===== */
-.login-registerButton {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 100%;
-    height: 42px;
-    margin-top: 0.75rem;
-
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: #111827;
-
-    background: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    cursor: pointer;
-    transition: all 0.18s ease;
+/* ERROR MSG */
+.authError {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
 }
 
-.login-registerButton:hover {
-    background: #f9fafb;
-    box-shadow:
-        0 8px 20px rgba(0,0,0,0.06),
-        0 2px 4px rgba(0,0,0,0.04);
-    transform: translateY(-1px);
+/* PRIMARY BUTTON (Amazon yellow style ish) */
+.authPrimaryBtn {
+  width: 100%;
+  border: 1px solid #a88734;
+  border-radius: 4px;
+  background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+  font-size: 13px;
+  line-height: 29px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  color: #111;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+  transition: filter 0.12s ease;
 }
 
-.login-registerButton:active {
-    transform: translateY(0);
-    box-shadow:
-        0 4px 10px rgba(0,0,0,0.05),
-        0 1px 2px rgba(0,0,0,0.04);
+.authPrimaryBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-/* ===== Subtext / Links (like "By continuing you agree...") ===== */
-.login-terms {
-    margin-top: 1.25rem;
-    font-size: 0.7rem;
-    line-height: 1.4;
-    text-align: center;
-    color: #9ca3af;
+.authPrimaryBtn:not(:disabled):hover {
+  filter: brightness(0.97);
 }
 
-.login-terms a {
-    color: #0ea5e9;
-    font-weight: 500;
-    text-decoration: none;
+/* LEGAL TEXT */
+.authLegal {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #111;
+  margin-top: 16px;
 }
 
-.login-terms a:hover {
-    text-decoration: underline;
+.authLink {
+  color: #0066c0;
+  text-decoration: none;
+}
+.authLink:hover {
+  text-decoration: underline;
 }
 
-/* ===== Small utility row (like "Forgot password?") ===== */
-.login-footer-links {
-    margin-top: 1rem;
-    font-size: 0.8rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    color: #6b7280;
+/* DIVIDER "New to yourshop?" */
+.authDividerRow {
+  display: flex;
+  align-items: center;
+  margin: 8px 0 16px 0;
+  width: 100%;
+  color: #767676;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.authDividerRow--wide {
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.login-footer-links a {
-    color: #0ea5e9;
-    text-decoration: none;
-    font-weight: 500;
+.authDividerLine {
+  flex: 1;
+  border-top: 1px solid #d5d9d9;
+  height: 0;
+}
+.authDividerText {
+  padding: 0 8px;
+  white-space: nowrap;
 }
 
-.login-footer-links a:hover {
-    text-decoration: underline;
+/* FOOTER */
+.authFooterLinks {
+  margin-top: 24px;
+  font-size: 12px;
+  line-height: 1.4;
+  display: flex;
+  gap: 16px;
+  color: #0066c0;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
 }
 
-/* ===== Responsive tweaks ===== */
-@media (max-width: 400px) {
-    .login-container {
-        padding: 1.25rem 1rem 1.5rem;
-        border-radius: 10px;
-    }
+.authFooterLinks a {
+  color: #0066c0;
+  text-decoration: none;
+}
+.authFooterLinks a:hover {
+  text-decoration: underline;
+}
 
-    .login-container > h1 {
-        font-size: 1rem;
-    }
+.authFooterCopy {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.4;
+  text-align: center;
 }

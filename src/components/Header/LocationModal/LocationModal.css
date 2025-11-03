@@ -1,0 +1,185 @@
+/* src/components/LocationModal/LocationModal.css */
+
+.locModal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 5vh;
+  overflow-y: auto;
+  font-family: system-ui, -apple-system, "Inter", "Roboto", "Segoe UI", sans-serif;
+}
+
+.locModal-card {
+  background: #fff;
+  color: #111;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  border: 1px solid #d5d9d9;
+  padding: 1rem 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.locModal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.locModal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.3;
+}
+
+.locModal-closeBtn {
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.locModal-closeBtn:hover {
+  color: #000;
+}
+
+.locModal-desc {
+  font-size: 0.8rem;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.locModal-gpsBtn {
+  background: #374151;
+  color: #fff;
+  width: 100%;
+  border: 1px solid #111;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  transition: background-color 0.15s ease;
+}
+
+.locModal-gpsBtn:hover {
+  background: #1f2937;
+}
+
+.locModal-sepText {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #6b6b6b;
+  margin: 0.9rem 0 0.75rem;
+  position: relative;
+}
+.locModal-sepText:before,
+.locModal-sepText:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  width: 30%;
+  background: #d5d9d9;
+}
+.locModal-sepText:before {
+  left: 0;
+}
+.locModal-sepText:after {
+  right: 0;
+}
+
+.locModal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.locModal-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.locModal-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.locModal-label {
+  font-size: 0.7rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.locModal-input {
+  width: 100%;
+  border: 1px solid #888;
+  border-radius: 4px;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: #111;
+  outline: none;
+}
+
+.locModal-input:focus {
+  border-color: #febd69;
+  box-shadow: 0 0 0 2px rgba(254,189,105,0.4);
+}
+
+.locModal-error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  padding: 0.5rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.locModal-saveBtn {
+  background: linear-gradient(#f7dfa5,#f0c14b);
+  border: 1px solid #a88734;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #111;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+  transition: background 0.15s ease;
+}
+
+.locModal-saveBtn:hover {
+  background: linear-gradient(#f5d78e,#eeb933);
+}
+
+.locModal-footerNote {
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: #555;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.75rem;
+  word-break: break-word;
+}

@@ -1,77 +1,131 @@
-import React from "react";
-import "./Header.css";
+// src/components/Header/Header.js
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import "./Header.css";
+
 import { useStateValue } from "../../StateProvider";
 import SearchBar from "./SearchBar/SearchBar";
+import LocationModal from "./LocationModal/LocationModal";
 
 function Header() {
   const [{ cart, user }] = useStateValue();
 
-  const cartCount = cart?.reduce((sum, item) => sum + (item.qty || 1), 0);
+  // how many total items in cart
+  const cartCount = cart?.reduce(
+    (sum, item) => sum + (item.qty ? item.qty : 1),
+    0
+  );
+
+  // location popup state
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // saved/detected location for header pill
+  // shape: { label, city, state, postalCode, countryCode }
+  const [userLocation, setUserLocation] = useState(null);
+
+  // called by LocationModal after user saves location
+  const handleLocationSaved = (locObj) => {
+    setUserLocation(locObj);
+  };
+
+  // friendly account greeting
+  const accountGreeting = user
+    ? `Hello, ${user.name || user.email || "User"}`
+    : "Hello, sign in";
 
   return (
-    <header className="header">
-      {/* LEFT SECTION: Logo + Location */}
-      <div className="header-left">
-        {/* Logo / brand */}
-        <Link to="/" className="header-logoLink">
-          <div className="header-logo">yourshop</div>
-        </Link>
+    <>
+      <header className="header">
+        {/* LEFT SECTION: Brand + Deliver To */}
+        <div className="header-left">
+          {/* Brand / Logo */}
+          <Link to="/" className="header-logoLink">
+            <div className="header-logo">yourshop</div>
+          </Link>
 
-        {/* Delivering to ... */}
-        <div className="header-location">
-          <div className="header-location-line1">Deliver to</div>
-          <div className="header-location-line2">
-            <span className="header-location-pin" role="img" aria-label="pin">
-              📍
-            </span>
-            <span className="header-location-text">
-              {user?.addressLabel || "Update location"}
-            </span>
+          {/* Deliver to ... (click opens modal) */}
+          <div
+            className="header-location"
+            onClick={() => setShowLocationModal(true)}
+          >
+            <div className="header-location-line1">Deliver to</div>
+            <div className="header-location-line2">
+              <span
+                className="header-location-pin"
+                role="img"
+                aria-label="pin"
+              >
+                📍
+              </span>
+              <span className="header-location-text">
+                {userLocation?.label || "Update location"}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <SearchBar/>
-      {/* RIGHT SECTION: Lang + Account + Orders + Cart */}
-      <div className="header-right">
-        {/* Language selector */}
-        <button className="header-lang" aria-label="Language selector">
-          <span className="header-lang-flag" role="img" aria-label="flag">
-            🇺🇸
-          </span>
-          <span className="header-lang-code">EN</span>
-          <span className="header-lang-caret">▾</span>
-        </button>
+        {/* CENTER SECTION: Search */}
+        <SearchBar />
 
-        {/* Account */}
-        <Link to={user ? "/account" : "/login"} className="header-account">
-          <span className="header-account-line1">
-            {user ? `Hello, ${user.name || user.email}` : "Hello, sign in"}
-          </span>
-          <span className="header-account-line2">
-            Account &amp; Lists <span className="caret">▾</span>
-          </span>
-        </Link>
+        {/* RIGHT SECTION: Lang / Account / Orders / Cart */}
+        <div className="header-right">
+          {/* Language selector */}
+          <button
+            className="header-lang"
+            aria-label="Language selector"
+            type="button"
+          >
+            <span className="header-lang-flag" role="img" aria-label="flag">
+              🇺🇸
+            </span>
+            <span className="header-lang-code">EN</span>
+            <span className="header-lang-caret">▾</span>
+          </button>
 
-        {/* Orders / Returns */}
-        <Link to="/orders" className="header-orders">
-          <span className="header-orders-line1">Returns</span>
-          <span className="header-orders-line2">&amp; Orders</span>
-        </Link>
+          {/* Account & Lists */}
+          <Link
+            to={user ? "/account" : "/login"}
+            className="header-account"
+          >
+            <span className="header-account-line1">{accountGreeting}</span>
+            <span className="header-account-line2">
+              Account &amp; Lists <span className="caret">▾</span>
+            </span>
+          </Link>
 
-        {/* Cart */}
-        <Link to="/checkout" className="header-cart">
-          <div className="header-cart-icon" role="img" aria-label="cart">
-            🛒
-          </div>
-          <div className="header-cart-info">
-            <span className="header-cart-count">{cartCount || 0}</span>
-            <span className="header-cart-label">Cart</span>
-          </div>
-        </Link>
-      </div>
-    </header>
+          {/* Returns & Orders */}
+          <Link to="/orders" className="header-orders">
+            <span className="header-orders-line1">Returns</span>
+            <span className="header-orders-line2">&amp; Orders</span>
+          </Link>
+
+          {/* Cart */}
+          <Link to="/checkout" className="header-cart">
+            <div
+              className="header-cart-icon"
+              role="img"
+              aria-label="cart"
+            >
+              🛒
+            </div>
+            <div className="header-cart-info">
+              <span className="header-cart-count">
+                {cartCount || 0}
+              </span>
+              <span className="header-cart-label">Cart</span>
+            </div>
+          </Link>
+        </div>
+      </header>
+
+      {/* Location Modal (Amazon-style "Choose your location") */}
+      <LocationModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onLocationSaved={handleLocationSaved}
+        defaultAddressLabel={userLocation?.label}
+      />
+    </>
   );
 }
 

@@ -1,0 +1,50 @@
+/* src/components/Header/LocationSelector.css */
+
+.header-location {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.header-location:hover {
+  background-color: rgba(255,255,255,0.06);
+  border-color: #fff;
+}
+
+.header-location-line1 {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #cccccc;
+}
+
+.header-location-line2 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.header-location-pin {
+  line-height: 1;
+  font-size: 0.9rem;
+}
+
+.header-location-text {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}

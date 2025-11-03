@@ -1,0 +1,138 @@
+/* ===== SUBHEADER WRAPPER BAR ===== */
+.subHeader {
+  background: linear-gradient(
+    90deg,
+    #064b4a 0%,
+    #0a3a5d 100%
+  ); /* deep teal -> navy gradient */
+  color: #fff;
+  font-family: system-ui, -apple-system, "Inter", "Roboto", "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(0,0,0,0.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  width: 100%;
+}
+
+/* row container */
+.subHeader-row {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  flex-wrap: wrap;           /* wrap if screen gets narrow */
+  align-items: center;
+  gap: 0.5rem 1rem;          /* row gap / col gap */
+  list-style: none;
+}
+
+/* ===== ALL MENU BUTTON ===== */
+.subHeader-item--all {
+  /* keep first item slightly visually chunkier */
+}
+
+.subHeader-allBtn {
+  background-color: rgba(0,0,0,0.15);
+  border: 2px solid #f0b849; /* warm gold border reminiscent of Amazon highlight */
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.subHeader-allBtn:hover {
+  background-color: rgba(255,255,255,0.08);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.7);
+}
+
+.subHeader-allIcon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.subHeader-allText {
+  white-space: nowrap;
+}
+
+/* ===== STANDARD NAV LINKS ===== */
+.subHeader-item {
+  display: flex;
+  align-items: center;
+}
+
+.subHeader-link {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0;
+  position: relative;
+}
+
+/* caret after items that have dropdowns */
+.subHeader-caret {
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #cbd5e1;
+}
+
+/* hover underline-ish effect but subtle */
+.subHeader-link:hover {
+  color: #fff;
+}
+
+.subHeader-link:hover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.15rem;
+  height: 2px;
+  background: linear-gradient(90deg,#fff 0%,rgba(255,255,255,0) 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 4px rgba(255,255,255,0.8);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .subHeader-row {
+    font-size: 0.8rem;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .subHeader-allBtn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .subHeader-allIcon {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 600px) {
+  /* on very small screens we usually hide some less-critical nav links.
+     You can tweak which ones. Example: hide "Customer Service". */
+  .subHeader-item:nth-last-child(1) {
+    display: none;
+  }
+
+  .subHeader-row {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .subHeader-allBtn {
+    font-size: 0.8rem;
+  }
+}

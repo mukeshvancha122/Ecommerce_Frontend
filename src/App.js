@@ -11,36 +11,31 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import Orders from "./components/Orders/Order";
 import { auth } from "./firebase";
+import SubHeader from "./components/Header/subheader/SubHeader";
+import ChatWidget from "./components/chatwidget/ChatWidget";
 
-const promise = loadStripe(
-  "pk_test_TYooMQauvdEDq54NiTphI7jx" // sandbox 
-);
+const promise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx"); // sandbox key
 
 function App() {
-  const [{}, dispatch] = useStateValue();
+  const [{ user }, dispatch] = useStateValue();
 
   useEffect(() => {
-    //will only run once when the app component loads...
-
     auth.onAuthStateChanged((authUser) => {
       console.log("THE USER IS >>>", authUser);
 
       if (authUser) {
-        //the user just logged in / the user was logged in
-
         dispatch({
           type: "SET_USER",
           user: authUser,
         });
       } else {
-        //the user is logged out
         dispatch({
           type: "SET_USER",
           user: null,
         });
       }
     });
-  }, []);
+  }, [dispatch]);
 
   return (
     <Router>
@@ -48,26 +43,35 @@ function App() {
         <Switch>
           <Route path="/orders">
             <Header />
+            <SubHeader />
             <Orders />
           </Route>
+
           <Route path="/login">
             <Login />
           </Route>
+
           <Route path="/checkout">
             <Header />
+            <SubHeader />
             <Checkout />
           </Route>
+
           <Route path="/payment">
             <Header />
+            <SubHeader />
             <Elements stripe={promise}>
               <Payment />
             </Elements>
           </Route>
+
           <Route path="/">
             <Header />
+            <SubHeader />
             <Home />
           </Route>
         </Switch>
+        <ChatWidget user={user} />
       </div>
     </Router>
   );

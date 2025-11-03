@@ -1,5 +1,7 @@
-/* ===== CONTAINER AROUND THE SEARCH BAR ===== */
-
+/* ============================================
+   WRAPPER AROUND THE WHOLE SEARCH BAR
+   (sits in the header-center area)
+============================================ */
 .searchBarWrapper {
   width: 100%;
   max-width: 700px;
@@ -8,84 +10,113 @@
   font-family: system-ui, -apple-system, "Inter", "Roboto", "Segoe UI", sans-serif;
 }
 
-/* Outer shell (green-ish background in screenshot) */
+/* When we're loading, dim + block pointer */
+.searchBarOuter.isLoading {
+  opacity: 0.6;
+  cursor: progress;
+  pointer-events: none;
+}
+
+/* ============================================
+   OUTER SEARCH BAR CONTAINER
+   (Amazon uses a single rounded bar with subtle border/shadow)
+============================================ */
 .searchBarOuter {
   display: flex;
   align-items: stretch;
   width: 100%;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    #1f4a37 0%,
-    #1a3f31 100%
-  ); /* deep green band like screenshot behind white input */
-  border: 1px solid rgba(0,0,0,0.6);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+  background-color: #fff;
+  border: 1px solid #a6a6a6;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  min-height: 40px;
+  line-height: 1.2;
+
   position: relative;
-  overflow: visible;
+  overflow: visible;     
+  z-index: 10;              
 }
 
-/* ===== LEFT CATEGORY DROPDOWN BUTTON ===== */
 
+/* focus ring look when any child (dropdown/input) is focused */
+.searchBarOuter:focus-within {
+  box-shadow: 0 0 0 2px #febd69, 0 2px 4px rgba(0,0,0,0.3);
+  border-color: #f3a847;
+}
+
+/* ============================================
+   LEFT CATEGORY DROPDOWN "All"
+   (Amazon: light gray pill on the left with caret)
+============================================ */
 .searchBarCategory {
   position: relative;
   display: flex;
   align-items: center;
-  background-color: #e6e6e6;
-  color: #000;
+  background-color: #f3f3f3;
+  color: #111;
   font-size: 0.8rem;
   font-weight: 500;
-  line-height: 1.2;
   padding: 0 0.6rem;
   cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  /* border between category and input */
+  border-right: 1px solid #cdcdcd;
+  min-width: 3.2rem;
+
+  /* match Amazon radius on the far-left only */
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
-
-  /* subtle amazon-like orange outline border */
-  border: 2px solid #f0ad37;
-  border-right: 1px solid #cfcfcf;
-  min-width: 3.5rem;
-  user-select: none;
 }
 
-.searchBarCategory.open {
-  background-color: #dcdcdc;
+.searchBarCategory:hover {
+  background-color: #e7e7e7;
+}
+
+.searchBarCategory.isDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .searchBarCategoryText {
-  white-space: nowrap;
+  line-height: 1.2;
+  color: #111;
 }
 
 .searchBarCategoryCaret {
+  margin-left: 0.35rem;
   font-size: 0.7rem;
-  margin-left: 0.4rem;
-  color: #000;
   line-height: 1;
+  color: #555;
 }
 
-/* dropdown menu list */
+/* The dropdown menu below "All" */
 .searchBarCategoryMenu {
   position: absolute;
-  top: calc(100% + 4px);
-  left: -2px;
+  top: calc(100% + 2px);
+  left: 0;
+
   background-color: #fff;
   border: 1px solid #d5d9d9;
   border-radius: 4px;
   box-shadow: 0 12px 24px rgba(0,0,0,0.4);
-  min-width: 140px;
-  padding: 0.4rem 0;
-  list-style: none;
-  z-index: 5000;
+
+  min-width: 160px;
   max-height: 260px;
   overflow-y: auto;
+  z-index: 9999;
+  padding: 0.4rem 0;
+  list-style: none;
 }
 
 .searchBarCategoryMenuItem {
   font-size: 0.8rem;
   color: #111;
-  padding: 0.5rem 0.75rem;
   line-height: 1.2;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
+  background-color: #fff;
   display: flex;
   align-items: center;
 }
@@ -95,23 +126,33 @@
 }
 
 .searchBarCategoryMenuItem.active {
+  background-color: #fef3c7; /* soft warm highlight */
   font-weight: 600;
   color: #111;
-  background-color: #fef3c7; /* pale warm highlight */
 }
 
-/* ===== TEXT INPUT ===== */
+.searchBarCategoryMenuItem.focused {
+  background-color: #e5e7eb;
+}
+.searchBarCategoryMenuItem.active.focused {
+  background-color: #fef3c7;
+}
 
+/* ============================================
+   TEXT INPUT FIELD
+   (Amazon: plain white middle region)
+============================================ */
 .searchBarInput {
   flex: 1;
   border: none;
-  background-color: #fff;
-  font-size: 0.9rem;
-  color: #111;
-  padding: 0 0.75rem;
-  line-height: 1.2;
   outline: none;
-  min-width: 0; /* avoid overflow flex bug */
+  background-color: #fff;
+  color: #111;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  padding: 0 0.75rem;
+  min-width: 0; /* prevent overflow */
+  font-family: inherit;
 }
 
 .searchBarInput::placeholder {
@@ -120,90 +161,126 @@
   font-size: 0.9rem;
 }
 
-/* ===== IMAGE SEARCH BUTTON (CAMERA) ===== */
-
+/* ============================================
+   IMAGE SEARCH BUTTON
+   (Amazon has camera icon inside the bar near the right)
+============================================ */
 .searchBarImageBtn {
   background-color: #fff;
   border-left: 1px solid #cdcdcd;
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 0 0.6rem;
   font-size: 0.9rem;
+  color: #444;
   cursor: pointer;
   user-select: none;
-  color: #333;
+}
+
+.searchBarImageBtn:active {
+  background-color: #f0f0f0;
 }
 
 .searchBarCameraIcon {
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
-  color: #4a4a4a;
-}
-
-/* ===== SUBMIT BUTTON (MAGNIFIER) ===== */
-
-.searchBarSubmit {
-  background-color: #8b1a64; /* purple-ish block you showed */
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-  min-width: 2.75rem;
-  border: none;
-  padding: 0 0.6rem;
+  color: #444;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ============================================
+   SUBMIT BUTTON (MAGNIFIER)
+   (Amazon's yellow/orange gradient button with rounded right edge)
+============================================ */
+.searchBarSubmit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 45px;
+  padding: 0 0.6rem;
+  border: none;
   cursor: pointer;
+  line-height: 1;
 
   font-size: 0.9rem;
   font-weight: 600;
-  color: #fff;
+  color: #111;
 
+  /* Amazon-style yellow button */
+  background: linear-gradient(#f7dfa5, #f0c14b);
   border-left: 1px solid rgba(0,0,0,0.2);
+
+  /* rounded only on the far-right */
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+
   box-shadow:
-    0 2px 4px rgba(0,0,0,0.4),
-    0 0 2px rgba(255,255,255,0.2) inset;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    0 1px 0 rgba(255,255,255,.4) inset,
+    0 2px 4px rgba(0,0,0,0.4);
+  transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
 }
 
 .searchBarSubmit:hover {
-  background-color: #a11f77;
+  background: linear-gradient(#f5d78e, #eeb933);
   box-shadow:
-    0 4px 8px rgba(0,0,0,0.6),
-    0 0 2px rgba(255,255,255,0.4) inset;
+    0 1px 0 rgba(255,255,255,.4) inset,
+    0 3px 6px rgba(0,0,0,0.5);
+  transform: translateY(-1px);
+}
+
+.searchBarSubmit:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.4) inset,
+    0 1px 3px rgba(0,0,0,0.4);
 }
 
 .searchBarMagnifier {
-  line-height: 1;
   font-size: 1rem;
-  color: #fff;
+  line-height: 1;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ===== ERROR LINE (optional) ===== */
-
+/* ============================================
+   ERROR BAR UNDER SEARCH
+============================================ */
 .searchBarError {
   margin-top: 0.4rem;
+
   background-color: #fef2f2;
   color: #b91c1c;
-  font-size: 0.75rem;
-  line-height: 1.3;
-  padding: 0.4rem 0.6rem;
   border: 1px solid #fecaca;
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  font-size: 0.75rem;
   font-weight: 500;
+  line-height: 1.3;
+
+  padding: 0.4rem 0.6rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
-/* ===== RESPONSIVE ===== */
-
+/* ============================================
+   RESPONSIVE BEHAVIOR
+   Amazon on mobile hides the "All" dropdown and compresses spacing.
+============================================ */
 @media (max-width: 600px) {
-  .searchBarOuter {
-    border-radius: 4px;
-  }
-
-  /* hide category dropdown on tiny screens like Amazon does */
+  /* hide the category dropdown entirely on small screens */
   .searchBarCategory {
     display: none;
+  }
+
+  .searchBarOuter {
+    border-radius: 4px;
+    min-height: 38px;
   }
 
   .searchBarInput {
@@ -217,6 +294,11 @@
   }
 
   .searchBarSubmit {
-    min-width: 2.5rem;
+    min-width: 40px;
+    padding: 0 0.5rem;
+  }
+
+  .searchBarMagnifier {
+    font-size: 0.9rem;
   }
 }
