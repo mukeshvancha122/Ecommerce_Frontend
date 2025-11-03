@@ -1,0 +1,89 @@
+
+.bestSellers {
+  /* SectionWrapper already gave white bg + border + shadow,
+     so here we just do internal layout */
+  background-color: #fff;
+}
+
+.bestSellers-headRow {
+  margin-bottom: 16px;
+}
+
+.bestSellers-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f1111;
+}
+
+/* Body band with collage */
+.bestSellers-body {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+  border-top: 1px solid #d5d9d9;
+  border-bottom: 1px solid #d5d9d9;
+  background-color: #fff;
+  padding: 16px 0;
+}
+
+/* arrows */
+.bestSellers-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 44px;
+  width: 40px;
+
+  background-color: #fff;
+  border: 1px solid rgba(0,0,0,0.28);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
+  font-size: 28px;
+  line-height: 1;
+  color: #0f1111;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  z-index: 5;
+}
+
+.bestSellers-arrow--left {
+  left: 0;
+}
+
+.bestSellers-arrow--right {
+  right: 0;
+}
+
+/* track of hero images */
+.bestSellers-track {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  width: 100%;
+  padding: 0 48px; /* keeps content away from arrows */
+  box-sizing: border-box;
+}
+.bestSellers-track::-webkit-scrollbar {
+  display: none;
+}
+
+.bestSellers-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bestSellers-img {
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}

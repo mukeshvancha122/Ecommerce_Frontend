@@ -1,0 +1,15 @@
+.sectionWrapper {
+  background-color: #f8f8f8;          
+  border-top: 1px solid #d5d9d9;
+  border-bottom: 1px solid #d5d9d9;
+}
+
+.sectionWrapper-inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 16px 12px;
+  background-color: #fff;
+  border: 1px solid #d5d9d9;
+  box-shadow: 0 2px 4px rgb(15 17 17 / 8%);
+  box-sizing: border-box;
+}

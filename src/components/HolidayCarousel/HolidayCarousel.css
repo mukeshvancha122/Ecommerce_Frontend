@@ -1,0 +1,106 @@
+/* src/components/HolidayCarousel/HolidayCarousel.css */
+
+.holidayCarousel {
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #d5d9d9;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.holidayCarousel-headerRow {
+  margin-bottom: 12px;
+}
+
+.holidayCarousel-heading {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  color: #0f1111;
+}
+
+/* wrapper row with left/right arrows */
+.holidayCarousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.holidayCarousel-arrow {
+  height: 48px;
+  width: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
+  font-size: 32px;
+  line-height: 44px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.holidayCarousel-arrow--left {
+  margin-right: 8px;
+}
+
+.holidayCarousel-arrow--right {
+  margin-left: 8px;
+}
+
+.holidayCarousel-track {
+  display: flex;
+  overflow: hidden;
+  gap: 16px;
+  flex: 1;
+}
+
+/* each product card */
+.holidayCarousel-card {
+  min-width: 160px;
+  max-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #0f1111;
+  text-align: center;
+}
+
+.holidayCarousel-circleBg {
+  width: 180px;
+  height: 180px;
+  max-width: 180px;
+  max-height: 180px;
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgb(0 0 0 / 25%);
+  overflow: hidden;
+}
+
+/* product mock is the square-ish product sitting in front of the circle */
+.holidayCarousel-productMock {
+  width: 110px;
+  height: 110px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 30%);
+  background-image: radial-gradient(circle at 30% 30%, #ffffff 0%, #d9d9d9 70%);
+}
+
+.holidayCarousel-label {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #0f1111;
+  font-weight: 500;
+}

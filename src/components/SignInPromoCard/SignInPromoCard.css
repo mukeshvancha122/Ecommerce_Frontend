@@ -1,0 +1,44 @@
+/* src/components/SignInPromoCard/SignInPromoCard.css */
+.signInPromoCard {
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 16px;
+  border: 1px solid #d5d9d9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 110px;
+  box-sizing: border-box;
+}
+
+.signInPromoCard-heading {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f1111;
+  margin-bottom: 12px;
+}
+
+.signInPromoCard-btn {
+  width: 100%;
+  background: #ffd814;
+  background-image: linear-gradient(#ffd814, #ffcd4a);
+  border: 1px solid #fcd200;
+  border-radius: 8px;
+  box-sizing: border-box;
+  cursor: pointer;
+
+  min-height: 31px;
+  padding: 0 10px;
+  font-size: 13px;
+  line-height: 29px;
+  font-weight: 500;
+  text-align: center;
+  color: #0f1111;
+}
+
+.signInPromoCard-btn:hover {
+  background: #f7ca00;
+  background-image: linear-gradient(#f7dfa5, #f0c14b);
+  border-color: #a88734;
+}

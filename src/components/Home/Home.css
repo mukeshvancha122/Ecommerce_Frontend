@@ -1,131 +1,410 @@
-/* ===== Home Wrapper ===== */
-.home {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 1500px;
-    width: 100%;
-
-    background-color: #f9fafb;
-    min-height: 100vh;
-    font-family: system-ui, -apple-system, "Inter", "Roboto", sans-serif;
-    color: #1f2937;
-    padding-bottom: 3rem;
-    position: relative;
+/* PAGE BG */
+.homePage {
+  background-color: #e3e6e6;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Amazon Ember",
+    "Inter", Roboto, "Segoe UI", sans-serif;
+  color: #0f1111;
 }
 
-/* ===== Hero / Banner Image ===== */
-.home-image {
-    width: 100%;
-    max-height: 500px;
-    object-fit: cover;
-
-    z-index: 0;
-    margin-bottom: -140px;
-
-    /* fade bottom so products sit "on top" */
-    mask-image: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 0) 80%
-    );
-
-    /* for Safari fallback where mask-image isn't perfect */
-    -webkit-mask-image: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 0) 80%
-    );
-
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+/* HERO STRIP */
+.homePage-heroArea {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  background: radial-gradient(circle at 10% 0%, #eef3f6 0%, #cfd6dc 40%, #a9b2bc 100%);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #d5d9d9;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 15%);
 }
 
-/* ===== Product Rows / Grid Sections ===== */
-.home-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    gap: 20px;
-    z-index: 1;
-    margin-left: 1rem;
-    margin-right: 1rem;
-    margin-bottom: 2rem;
-    position: relative;
+.homePage-heroBanner {
+  flex: 1;
+  max-width: 1500px;
+  position: relative;
+  padding: 16px 12px 32px;
+  box-sizing: border-box;
 }
 
-/*
-Optional: if you have multiple .home-row sections stacked,
-this gives them a subtle "section" feel.
-*/
-.home-row:not(:first-of-type)::before {
-    content: "";
-    position: absolute;
-    top: -1rem;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 70%);
-    opacity: 0.15;
+.homePage-heroInner {
+  width: 100%;
+  min-height: 160px;
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) auto;
+  align-items: flex-start;
+  column-gap: 16px;
 }
 
-/* ===== Responsive Breakpoints ===== */
-
-/* Medium screens: soften hero and tighten width */
-@media (max-width: 900px) {
-    .home {
-        padding-bottom: 2rem;
-    }
-
-    .home-image {
-        max-height: 380px;
-        margin-bottom: -100px;
-        border-radius: 0 0 12px 12px;
-    }
-
-    .home-row {
-        gap: 16px;
-        margin-left: 1rem;
-        margin-right: 1rem;
-    }
+/* left copy */
+.homePage-heroCopy {
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #0f1111;
+  margin-top: 8px;
 }
 
-/* Small screens / mobile-first */
-@media (max-width: 550px) {
-    .home {
-        background-color: #ffffff; /* cleaner for mobile cards */
-    }
-
-    .home-image {
-        width: 100%;
-        max-height: 260px;
-        object-fit: cover;
-        margin-bottom: -70px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        border-radius: 0 0 10px 10px;
-    }
-
-    .home-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 16px;
-        width: 100%;
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-        margin-bottom: 2rem;
-    }
+.homePage-heroHeadline {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #0f1111;
 }
 
-/* Super small devices / very narrow */
-@media (max-width: 360px) {
-    .home-row {
-        gap: 12px;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
+.homePage-heroSub {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0f1111;
+}
+
+.homePage-heroCTAInfo {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+  color: #0f1111;
+}
+
+/* right-side marketing card (echo devices, etc) */
+.homePage-heroPromoCard {
+  width: 350px;
+  height: 160px;
+  border-radius: 4px;
+  background: radial-gradient(circle at 30% 30%, #505a6d 0%, #1a1e2a 70%);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 60%);
+  border: 1px solid rgb(255 255 255 / 8%);
+}
+
+/* hero arrows */
+.homePage-heroArrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+
+  height: 40px;
+  width: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+  line-height: 1;
+  color: #0f1111;
+  font-weight: 400;
+  z-index: 10;
+}
+.homePage-heroArrow--left {
+  left: 12px;
+}
+.homePage-heroArrow--right {
+  right: 12px;
+}
+
+/* MAIN GRID UNDER HERO */
+.homePage-contentRow {
+  max-width: 1500px;
+  /* pull the cards upward like Amazon */
+  margin: -40px auto 24px;
+  padding: 0 12px;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-column-gap: 16px;
+  align-items: start;
+}
+
+/* each white merchandising card in cols 1-3 */
+.merchCard {
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #d5d9d9;
+  box-shadow: 0 2px 5px rgb(15 17 17 / 15%);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Card heading */
+.merchCard-header {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f1111;
+  margin: 0 0 12px;
+}
+
+/* 2 x 2 tile grid inside each card */
+.merchCard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: minmax(110px, auto);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+/* tile block */
+.merchTile {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #0f1111;
+}
+
+/* product image wrapper (pink hatch bg) */
+.merchTile-imgWrap {
+  background-color: #b00046;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.2) 0px,
+    rgba(255, 255, 255, 0.2) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  border: 1px solid #b00046;
+  border-radius: 4px;
+  height: 110px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.merchTile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.merchTile-label {
+  margin-top: 6px;
+  color: #0f1111;
+  font-size: 13px;
+}
+
+/* link at bottom of card */
+.merchCard-footerLink {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #007185;
+  text-decoration: none;
+  width: fit-content;
+}
+.merchCard-footerLink:hover {
+  color: #c7511f;
+  text-decoration: underline;
+}
+
+/* RIGHT RAIL = column 4 */
+.sideRail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* sign-in promo upper card */
+.signInCard {
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #d5d9d9;
+  box-shadow: 0 2px 5px rgb(15 17 17 / 15%);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.signInCard-heading {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f1111;
+  margin-bottom: 12px;
+}
+
+.signInCard-btn {
+  width: 100%;
+  background: linear-gradient(#ffd814, #ffcd4a);
+  border: 1px solid #a88734;
+  border-radius: 8px;
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 30px;
+  font-weight: 500;
+  color: #0f1111;
+  text-align: center;
+  cursor: pointer;
+}
+.signInCard-btn:hover {
+  background: linear-gradient(#f7dfa5, #f0c14b);
+}
+
+/* RIGHT COLUMN WRAPPER */
+.sideRail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* SIGN-IN CARD --------------------------------------*/
+.signInCard {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #d5d9d9;
+  box-shadow: 0 2px 5px rgb(15 17 17 / 15%);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.signInCard-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f1111;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.signInCard-btnFullWidth {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #a88734;
+  background: linear-gradient(#ffd814, #ffcd4a);
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 30px;
+  font-weight: 500;
+  color: #0f1111;
+  text-align: center;
+  cursor: pointer;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+.signInCard-btnFullWidth:hover {
+  background: linear-gradient(#f7dfa5, #f0c14b);
+  border-color: #a88734;
+}
+
+/* AD CARD (FIDELITY) --------------------------------*/
+.adCardBox {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #d5d9d9;
+  box-shadow: 0 2px 5px rgb(15 17 17 / 15%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* top body area of the ad */
+.adCard-body {
+  display: flex;
+  flex-direction: row;
+  padding: 16px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* left text column */
+.adCard-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #0f1111;
+}
+
+.adCard-headline {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1a4d2e; /* that dark green fidelity-style heading */
+}
+
+.adCard-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #0f1111;
+}
+
+.adCard-desc {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #0f1111;
+}
+
+/* CTA button under pitch */
+.adCard-ctaBtn {
+  display: inline-block;
+  background-color: #008a2e;
+  background-image: linear-gradient(#00a84a, #008a2e);
+  border: 1px solid #007327;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  padding: 8px 14px;
+  cursor: pointer;
+  width: fit-content;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
+}
+.adCard-ctaBtn:hover {
+  background-image: linear-gradient(#00b14f, #009338);
+}
+
+/* disclaimer text */
+.adCard-legal {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #4b5563;
+  max-width: 260px;
+}
+
+/* right fake image */
+.adCard-right {
+  width: 130px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.adCard-imagePlaceholder {
+  width: 100%;
+  height: 120px;
+  min-height: 120px;
+  border-radius: 4px;
+  background: radial-gradient(circle at 20% 20%, #ffffff 0%, #d9d9d9 70%);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 30%);
+  border: 1px solid #c7c7c7;
+}
+
+/* bottom footer row “Sponsored • i” */
+.adCard-footerRow {
+  border-top: 1px solid #d5d9d9;
+  background-color: #fff;
+  padding: 10px 16px;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+.adCard-sponsoredText {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #565959; /* Amazon uses muted gray for 'Sponsored' */
+  font-weight: 400;
 }
