@@ -1,26 +1,142 @@
+/* ===== Individual Order Card ===== */
 .order {
-  padding: 40px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  padding: 28px 32px;
   margin: 20px 0;
-  border: 1px solid lightgray;
-  background-color: white;
   position: relative;
+
+  font-family: system-ui, -apple-system, "Inter", "Roboto", sans-serif;
+  color: #1f2937;
+  transition: all 0.2s ease;
+}
+
+.order:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ===== Order Header ===== */
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.order-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .order-id {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
   position: absolute;
-  top: 40px;
-  right: 20px;
+  top: 32px;
+  right: 28px;
 }
 
+/* ===== Order Content ===== */
+.order-details {
+  margin-top: 1.25rem;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.order-item-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.order-item-qty {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.order-item-price {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ===== Total Section ===== */
 .order-total {
-    font-weight: 500;
-    text-align: right;
+  text-align: right;
+  margin-top: 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111827;
+}
+
+/* ===== Status Badge ===== */
+.order-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.order-status.completed {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.order-status.pending {
+  background-color: #fef9c3;
+  color: #a16207;
+}
+
+.order-status.cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ===== Responsive ===== */
+@media only screen and (max-width: 750px) {
+  .order {
+    padding: 20px;
   }
 
-  @media only screen and (max-width: 550px) {
-       .order-id {
-      position: relative;
-      top:10px;
-      left: 3px;
-    }
+  .order-id {
+    position: relative;
+    top: 8px;
+    right: auto;
+    left: 0;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
   }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .order-total {
+    text-align: left;
+    font-size: 0.95rem;
+  }
+}

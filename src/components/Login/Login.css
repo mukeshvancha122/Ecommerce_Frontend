@@ -1,66 +1,229 @@
+/* ===== Page Layout ===== */
 .login {
-    background-color: white;
-    height: 100vh;
+    min-height: 100vh;
+    background: radial-gradient(circle at 20% 20%, #ffffff 0%, #f5f7fa 40%, #eef1f5 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Roboto", "Segoe UI", sans-serif;
+    color: #1a1a1a;
+    padding: 2rem 1rem;
 }
 
+/* ===== Brand Logo ===== */
 .login-logo {
-    margin-top: 20px;
-    margin-bottom: 20px;
+    width: 120px;
+    height: auto;
     object-fit: contain;
-    width: 100px;
-    margin-right: auto;
-    margin-left: auto;
+    margin: 0 auto 1.5rem auto;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.06));
 }
 
+/* ===== Card Container ===== */
 .login-container {
-    width: 300px;
-    height: fit-content;
+    width: 100%;
+    max-width: 360px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow:
+        0 24px 48px -12px rgba(0,0,0,0.12),
+        0 2px 4px rgba(0,0,0,0.06);
+    padding: 1.5rem 1.5rem 2rem;
     display: flex;
     flex-direction: column;
-    border-radius: 5px;
-    border: 1px solid lightgray;
-    padding: 20px;
 }
 
+/* ===== Headings / Copy ===== */
 .login-container > h1 {
-    font-weight: 500;
-    margin-bottom: 20px;
-}
-
-.login-container > form > h5 {
-    margin-bottom: 5px;
-}
-
-.login-container > form > input {
-    height: 30px;
-    margin-bottom: 10px;
-    background-color: white;
-    width: 98%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem;
+    letter-spacing: -0.03em;
 }
 
 .login-container > p {
-    margin-top: 15px;
-    font-size: 12px;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #6b7280;
+    text-align: center;
 }
 
-.login-signInButton {
-    background: #f0c14b;
-    border-radius: 2px;
-    width: 100%;
-    height: 30px;
-    border: 1px solid;
-    margin-top: 10px;
-    border-color: #a88734 #9c7e31 #846a29;
-  }
+/* ===== Form Labels ===== */
+.login-container > form > h5 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.02em;
+}
 
-  .login-registerButton {
-    border-radius: 2px;
+/* ===== Form Inputs ===== */
+.login-container > form > input {
+    display: block;
     width: 100%;
-    height: 30px;
-    border: 1px solid;
-    margin-top: 10px;
-    border-color: darkgray;
-  }
+    height: 40px;
+    padding: 0 0.75rem;
+    margin-bottom: 0.9rem;
+
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #111827;
+
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.16s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.login-container > form > input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.login-container > form > input:focus {
+    border-color: #0ea5e9;
+    box-shadow:
+        0 0 0 4px rgba(14,165,233,0.15),
+        0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ===== Primary CTA Button (Sign In) ===== */
+.login-signInButton {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 42px;
+    margin-top: 0.5rem;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: #fff;
+
+    background: linear-gradient(90deg, #0ea5e9 0%, #0369a1 100%);
+    border: 0;
+    border-radius: 8px;
+
+    box-shadow:
+        0 16px 32px -8px rgba(3, 105, 161, 0.4),
+        0 2px 4px rgba(0,0,0,0.07);
+
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.login-signInButton:hover {
+    box-shadow:
+        0 20px 36px -8px rgba(3, 105, 161, 0.5),
+        0 3px 6px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+
+.login-signInButton:active {
+    transform: translateY(0);
+    box-shadow:
+        0 8px 16px -4px rgba(3,105,161,0.4),
+        0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* ===== Secondary CTA Button (Create Account) ===== */
+.login-registerButton {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 42px;
+    margin-top: 0.75rem;
+
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #111827;
+
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.login-registerButton:hover {
+    background: #f9fafb;
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.06),
+        0 2px 4px rgba(0,0,0,0.04);
+    transform: translateY(-1px);
+}
+
+.login-registerButton:active {
+    transform: translateY(0);
+    box-shadow:
+        0 4px 10px rgba(0,0,0,0.05),
+        0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ===== Subtext / Links (like "By continuing you agree...") ===== */
+.login-terms {
+    margin-top: 1.25rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.login-terms a {
+    color: #0ea5e9;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.login-terms a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Small utility row (like "Forgot password?") ===== */
+.login-footer-links {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    color: #6b7280;
+}
+
+.login-footer-links a {
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-footer-links a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Responsive tweaks ===== */
+@media (max-width: 400px) {
+    .login-container {
+        padding: 1.25rem 1rem 1.5rem;
+        border-radius: 10px;
+    }
+
+    .login-container > h1 {
+        font-size: 1rem;
+    }
+}

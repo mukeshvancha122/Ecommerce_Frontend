@@ -1,31 +1,136 @@
+/* ===== Subtotal / Order Summary Card ===== */
 .subtotal {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 300px;
-    height: 100px;
-    padding: 20px;
-    background-color: #f3f3f3;
-    border: 1px solid #dddddd;
-    border-radius: 3px;
-  }
-  
-  .subtotal-gift {
+
+    width: 320px;
+    min-height: 140px;
+    padding: 20px 24px;
+
+    background-color: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    box-shadow:
+        0 20px 40px -10px rgba(0,0,0,0.15),
+        0 4px 8px rgba(0,0,0,0.05);
+
+    font-family: system-ui, -apple-system, "Inter", "Roboto", sans-serif;
+    color: #1f2937;
+}
+
+/* If you render something like "Subtotal (2 items): $123.45" */
+.subtotal-row {
     display: flex;
-    align-items: center;
-  }
-  
-  .subtotal-gift > input {
-    margin-right: 5px;
-  }
-  
-  .subtotal > button {
-    background: #f0c14b;
-    border-radius: 2px;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.subtotal-row-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    letter-spacing: -0.02em;
+}
+
+.subtotal-row-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.03em;
+}
+
+/* Divider line above extras like gift wrap, etc. */
+.subtotal-divider {
     width: 100%;
-    height: 30px;
-    border: 1px solid;
-    margin-top: 10px;
-    border-color: #a88734 #9c7e31 #846a29;
-    color: #111;
-  }
+    height: 1px;
+    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 70%);
+    opacity: 0.12;
+    margin: 12px 0 16px;
+}
+
+/* ===== Gift Checkbox Row ===== */
+.subtotal-gift {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    color: #4b5563;
+    margin-bottom: 12px;
+}
+
+.subtotal-gift > input {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    accent-color: #0ea5e9; /* modern checkbox tint in supporting browsers */
+}
+
+/* ===== Checkout Button ===== */
+.subtotal > button {
+    background: linear-gradient(90deg, #0ea5e9 0%, #0369a1 100%);
+    color: #fff;
+
+    border: 0;
+    border-radius: 10px;
+    width: 100%;
+    height: 44px;
+    margin-top: 8px;
+
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    cursor: pointer;
+
+    box-shadow:
+        0 16px 28px -8px rgba(3,105,161,0.5),
+        0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.18s ease;
+}
+
+.subtotal > button:hover {
+    box-shadow:
+        0 20px 36px -8px rgba(3,105,161,0.6),
+        0 3px 6px rgba(0,0,0,0.09);
+    transform: translateY(-1px);
+}
+
+.subtotal > button:active {
+    transform: translateY(0);
+    box-shadow:
+        0 8px 16px -4px rgba(3,105,161,0.4),
+        0 1px 2px rgba(0,0,0,0.07);
+}
+
+.subtotal > button:disabled {
+    background: #9ca3af;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* ===== Responsive tweaks so it fits nicely under cart on mobile ===== */
+@media (max-width: 600px) {
+    .subtotal {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        border-radius: 16px;
+        padding: 16px 20px;
+    }
+
+    .subtotal-row-label {
+        font-size: 0.85rem;
+    }
+
+    .subtotal-row-value {
+        font-size: 0.95rem;
+    }
+
+    .subtotal > button {
+        height: 42px;
+        font-size: 0.9rem;
+    }
+}

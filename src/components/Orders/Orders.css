@@ -1,19 +1,147 @@
+/* ===== Orders Page Layout ===== */
 .orders {
-    padding: 20px 80px;
+    padding: 40px 80px;
+    background: #f9fafb;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Inter", "Roboto", sans-serif;
+    color: #1f2937;
 }
 
+/* ===== Page Heading ===== */
 .orders > h1 {
-    margin: 30px 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 30px 0 40px;
+    letter-spacing: -0.02em;
+    color: #111827;
 }
 
+/* ===== Individual Order Card ===== */
+.orders-order {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
+}
+
+.orders-order:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+/* ===== Order Header (Date, ID, Status) ===== */
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.orders-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.orders-status {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.orders-status.completed {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.orders-status.pending {
+    background-color: #fef9c3;
+    color: #a16207;
+}
+
+.orders-status.cancelled {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* ===== Order Items ===== */
+.orders-items {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+}
+
+.orders-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.orders-item-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.orders-item-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #1f2937;
+}
+
+.orders-item-qty {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* ===== Order Total ===== */
+.orders-total {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* ===== Responsive ===== */
+@media only screen and (max-width: 900px) {
+    .orders {
+        padding: 30px 40px;
+    }
+}
 
 @media only screen and (max-width: 550px) {
-    .orders-order {
-        margin: -40px;
-        margin-top: 15px;
-    } 
+    .orders {
+        padding: 20px;
+    }
 
     .orders > h1 {
-        margin-left: -30px;
+        font-size: 1.4rem;
+        margin-left: 0;
+        margin-bottom: 20px;
+    }
+
+    .orders-order {
+        padding: 18px;
+        margin: 12px 0;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+    }
+
+    .orders-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .orders-total {
+        justify-content: space-between;
+        font-size: 0.95rem;
     }
 }

@@ -1,0 +1,372 @@
+/* ===== Page Wrapper ===== */
+.payment-page {
+    min-height: 100vh;
+    width: 100%;
+    background: radial-gradient(circle at 20% 20%, #ffffff 0%, #f5f7fa 40%, #eef1f5 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem 4rem;
+    font-family: system-ui, -apple-system, "Inter", "Roboto", "Segoe UI", sans-serif;
+    color: #1f2937;
+}
+
+/* ===== Payment Card / Container ===== */
+.payment-card {
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 900px;
+
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow:
+        0 32px 64px -16px rgba(0,0,0,0.18),
+        0 4px 12px rgba(0,0,0,0.08);
+
+    padding: 2rem 2rem 2.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 2rem;
+
+    position: relative;
+}
+
+/* Title at top left of card */
+.payment-title {
+    grid-column: 1 / -1;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.5rem 0;
+}
+
+/* ===== Order Summary Section (right column on desktop, becomes top on mobile) ===== */
+.payment-summary {
+    background: #f9fafb;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 1rem 1.25rem 1.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    height: fit-content;
+    align-self: flex-start;
+}
+
+.payment-summary h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem 0;
+    letter-spacing: -0.02em;
+}
+
+/* Product list */
+.payment-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.payment-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 0;
+}
+
+.payment-item-left {
+    max-width: 70%;
+}
+
+.payment-item-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1f2937;
+    line-height: 1.4;
+}
+
+.payment-item-qty {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.payment-item-price {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+}
+
+/* Total row */
+.payment-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #d1d5db;
+}
+
+.payment-total-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    letter-spacing: -0.02em;
+}
+
+.payment-total-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.03em;
+}
+
+/* ===== Billing / Payment Form (left column on desktop) ===== */
+.payment-form {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    padding: 1rem 1.25rem 1.5rem;
+}
+
+.payment-form h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem 0;
+    letter-spacing: -0.02em;
+}
+
+/* Label + input wrapper */
+.payment-label {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    letter-spacing: -0.02em;
+}
+
+/* Text inputs */
+.payment-input {
+    appearance: none;
+    width: 100%;
+    height: 40px;
+
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.2;
+    color: #111827;
+    font-family: inherit;
+
+    padding: 0.6rem 0.75rem;
+    margin-top: 0.4rem;
+
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: all 0.16s ease;
+}
+
+.payment-input::placeholder {
+    color: #9ca3af;
+}
+
+.payment-input:focus {
+    border-color: #0ea5e9;
+    box-shadow:
+        0 0 0 4px rgba(14,165,233,0.15),
+        0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Row with two inputs side by side (City / State, Postal / Country) */
+.payment-row {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.payment-row .payment-label {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* ===== Stripe Card Element Wrapper ===== */
+.card-element-wrapper {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: all 0.16s ease;
+    margin-bottom: 1rem;
+}
+
+.card-element-wrapper.StripeElement--focus,
+.card-element-wrapper:focus-within {
+    border-color: #0ea5e9;
+    box-shadow:
+        0 0 0 4px rgba(14,165,233,0.15),
+        0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ===== Error & Success Messages ===== */
+.payment-error {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.payment-success {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* ===== Pay Button ===== */
+.payment-button {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    width: 100%;
+    height: 48px;
+
+    background: linear-gradient(90deg, #0ea5e9 0%, #0369a1 100%);
+    color: #fff;
+
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    cursor: pointer;
+
+    box-shadow:
+        0 16px 28px -8px rgba(3,105,161,0.5),
+        0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.18s ease;
+}
+
+.payment-button:hover:not(:disabled) {
+    box-shadow:
+        0 20px 36px -8px rgba(3,105,161,0.6),
+        0 3px 6px rgba(0,0,0,0.09);
+    transform: translateY(-1px);
+}
+
+.payment-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow:
+        0 8px 16px -4px rgba(3,105,161,0.4),
+        0 1px 2px rgba(0,0,0,0.07);
+}
+
+.payment-button:disabled {
+    background: #9ca3af;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* ===== Footer Note ===== */
+.payment-disclaimer {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 800px) {
+    .payment-card {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        border-radius: 14px;
+        box-shadow:
+            0 28px 48px -12px rgba(0,0,0,0.18),
+            0 4px 10px rgba(0,0,0,0.07);
+    }
+
+    .payment-summary {
+        order: -1;
+        margin-bottom: 1rem;
+    }
+
+    .payment-title {
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .payment-page {
+        padding-top: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-card {
+        padding: 1.25rem 1rem 1.5rem;
+        border-radius: 12px;
+    }
+
+    .payment-row {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .payment-title {
+        font-size: 1.2rem;
+    }
+
+    .payment-summary h3,
+    .payment-form h3 {
+        font-size: 0.95rem;
+    }
+
+    .payment-item-name {
+        font-size: 0.85rem;
+    }
+
+    .payment-item-price {
+        font-size: 0.9rem;
+    }
+
+    .payment-total-value {
+        font-size: 0.95rem;
+    }
+
+    .payment-button {
+        height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .payment-disclaimer {
+        font-size: 0.7rem;
+    }
+}

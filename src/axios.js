@@ -1,7 +1,17 @@
 import axios from "axios";
 
-const instance = axios.create({
-  baseURL: "http://localhost:5001/amaznclone-v1/us-central1/api"
+const API = axios.create({
+  baseURL: "http://localhost:5000/api", 
+  withCredentials: true, // if you’re using cookies/session
 });
 
-export default instance;
+// Optionally add token to every request if using JWT
+API.interceptors.request.use((req) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user?.token) {
+    req.headers.Authorization = `Bearer ${user.token}`;
+  }
+  return req;
+});
+
+export default API;
