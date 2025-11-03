@@ -1,0 +1,236 @@
+/* DARK OVERLAY BEHIND MODAL */
+.locModal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: system-ui, -apple-system, "Inter", "Roboto", sans-serif;
+}
+
+/* MODAL CARD */
+.locModal-card {
+  background-color: #ffffff;
+  color: #1f2937;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 16px;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.45),
+    0 4px 16px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.06);
+
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1rem 1.25rem;
+  position: relative;
+}
+
+/* HEADER TEXT + CLOSE BUTTON */
+.locModal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.locModal-titleGroup {
+  max-width: calc(100% - 2rem);
+}
+
+.locModal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.locModal-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.locModal-closeBtn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  line-height: 1;
+}
+.locModal-closeBtn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+/* CURRENT LOCATION DISPLAY */
+.locModal-current {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.75rem 0.75rem;
+  margin-top: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.locModal-current-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.locModal-current-value {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.locModal-pin {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.locModal-current-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* INPUT + APPLY */
+.locModal-section {
+  margin-top: 1rem;
+}
+
+.locModal-inputLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.4rem;
+  display: block;
+  line-height: 1.2;
+}
+
+.locModal-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.locModal-input {
+  flex: 1;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  outline: none;
+  color: #111827;
+  line-height: 1.2;
+  font-family: inherit;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.02);
+}
+.locModal-input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.3);
+}
+
+.locModal-applyBtn {
+  background: linear-gradient(90deg, #0ea5e9 0%, #0369a1 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    0 16px 28px -8px rgba(3,105,161,0.4),
+    0 2px 4px rgba(0,0,0,0.08);
+  transition: all 0.15s ease;
+}
+.locModal-applyBtn:hover {
+  box-shadow:
+    0 20px 36px -8px rgba(3,105,161,0.5),
+    0 3px 6px rgba(0,0,0,0.09);
+  transform: translateY(-1px);
+}
+
+/* DIVIDER "or" */
+.locModal-dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  margin-top: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  justify-content: center;
+}
+
+.locModal-dividerLine {
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+
+.locModal-dividerText {
+  white-space: nowrap;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* GEO BUTTON */
+.locModal-geoBtn {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.2;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.04),
+    0 1px 1px rgba(0,0,0,0.03);
+  transition: all 0.15s ease;
+}
+.locModal-geoBtn:hover {
+  background-color: #f9fafb;
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.06),
+    0 2px 2px rgba(0,0,0,0.04);
+}
+
+/* ERROR */
+.locModal-error {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: #b91c1c;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}

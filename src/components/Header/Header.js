@@ -2,6 +2,7 @@ import React from "react";
 import "./Header.css";
 import { Link } from "react-router-dom";
 import { useStateValue } from "../../StateProvider";
+import SearchBar from "./SearchBar/SearchBar";
 
 function Header() {
   const [{ cart, user }] = useStateValue();
@@ -31,27 +32,7 @@ function Header() {
         </div>
       </div>
 
-      {/* CENTER SECTION: Search */}
-      <div className="header-search">
-        <select className="header-search-category" aria-label="Search category">
-          <option>All</option>
-          <option>Electronics</option>
-          <option>Fashion</option>
-          <option>Home</option>
-          <option>Beauty</option>
-        </select>
-
-        <input
-          type="text"
-          className="header-search-input"
-          placeholder="Search products, brands, and categories..."
-        />
-
-        <button className="header-search-button" aria-label="Search">
-          <span className="header-search-icon">🔍</span>
-        </button>
-      </div>
-
+      <SearchBar/>
       {/* RIGHT SECTION: Lang + Account + Orders + Cart */}
       <div className="header-right">
         {/* Language selector */}

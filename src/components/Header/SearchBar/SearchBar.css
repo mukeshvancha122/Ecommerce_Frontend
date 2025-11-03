@@ -1,0 +1,222 @@
+/* ===== CONTAINER AROUND THE SEARCH BAR ===== */
+
+.searchBarWrapper {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Inter", "Roboto", "Segoe UI", sans-serif;
+}
+
+/* Outer shell (green-ish background in screenshot) */
+.searchBarOuter {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #1f4a37 0%,
+    #1a3f31 100%
+  ); /* deep green band like screenshot behind white input */
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+  position: relative;
+  overflow: visible;
+}
+
+/* ===== LEFT CATEGORY DROPDOWN BUTTON ===== */
+
+.searchBarCategory {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #e6e6e6;
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0 0.6rem;
+  cursor: pointer;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+
+  /* subtle amazon-like orange outline border */
+  border: 2px solid #f0ad37;
+  border-right: 1px solid #cfcfcf;
+  min-width: 3.5rem;
+  user-select: none;
+}
+
+.searchBarCategory.open {
+  background-color: #dcdcdc;
+}
+
+.searchBarCategoryText {
+  white-space: nowrap;
+}
+
+.searchBarCategoryCaret {
+  font-size: 0.7rem;
+  margin-left: 0.4rem;
+  color: #000;
+  line-height: 1;
+}
+
+/* dropdown menu list */
+.searchBarCategoryMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -2px;
+  background-color: #fff;
+  border: 1px solid #d5d9d9;
+  border-radius: 4px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+  min-width: 140px;
+  padding: 0.4rem 0;
+  list-style: none;
+  z-index: 5000;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.searchBarCategoryMenuItem {
+  font-size: 0.8rem;
+  color: #111;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.searchBarCategoryMenuItem:hover {
+  background-color: #f3f3f3;
+}
+
+.searchBarCategoryMenuItem.active {
+  font-weight: 600;
+  color: #111;
+  background-color: #fef3c7; /* pale warm highlight */
+}
+
+/* ===== TEXT INPUT ===== */
+
+.searchBarInput {
+  flex: 1;
+  border: none;
+  background-color: #fff;
+  font-size: 0.9rem;
+  color: #111;
+  padding: 0 0.75rem;
+  line-height: 1.2;
+  outline: none;
+  min-width: 0; /* avoid overflow flex bug */
+}
+
+.searchBarInput::placeholder {
+  color: #6b6b6b;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+/* ===== IMAGE SEARCH BUTTON (CAMERA) ===== */
+
+.searchBarImageBtn {
+  background-color: #fff;
+  border-left: 1px solid #cdcdcd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+  color: #333;
+}
+
+.searchBarCameraIcon {
+  font-size: 0.9rem;
+  line-height: 1;
+  color: #4a4a4a;
+}
+
+/* ===== SUBMIT BUTTON (MAGNIFIER) ===== */
+
+.searchBarSubmit {
+  background-color: #8b1a64; /* purple-ish block you showed */
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  min-width: 2.75rem;
+  border: none;
+  padding: 0 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+
+  border-left: 1px solid rgba(0,0,0,0.2);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.4),
+    0 0 2px rgba(255,255,255,0.2) inset;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchBarSubmit:hover {
+  background-color: #a11f77;
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.6),
+    0 0 2px rgba(255,255,255,0.4) inset;
+}
+
+.searchBarMagnifier {
+  line-height: 1;
+  font-size: 1rem;
+  color: #fff;
+}
+
+/* ===== ERROR LINE (optional) ===== */
+
+.searchBarError {
+  margin-top: 0.4rem;
+  background-color: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 600px) {
+  .searchBarOuter {
+    border-radius: 4px;
+  }
+
+  /* hide category dropdown on tiny screens like Amazon does */
+  .searchBarCategory {
+    display: none;
+  }
+
+  .searchBarInput {
+    font-size: 0.85rem;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .searchBarImageBtn {
+    padding: 0 0.5rem;
+  }
+
+  .searchBarSubmit {
+    min-width: 2.5rem;
+  }
+}
