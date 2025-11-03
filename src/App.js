@@ -74,7 +74,7 @@ function App() {
         <ChatWidget user={user} />
       </div>
     </Router>
-  );
+  );  
 }
 
 export default App;
