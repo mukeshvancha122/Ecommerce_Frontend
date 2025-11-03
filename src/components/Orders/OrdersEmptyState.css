@@ -1,0 +1,21 @@
+    .ordersEmptyState {
+  text-align: center;
+  margin-bottom: 24px;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.ordersEmptyState-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #0f1111;
+}
+
+.ordersEmptyState-link {
+  color: #007185;
+  text-decoration: none;
+}
+.ordersEmptyState-link:hover {
+  color: #c7511f;
+  text-decoration: underline;
+}

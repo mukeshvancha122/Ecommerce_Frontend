@@ -1,0 +1,27 @@
+.ordersFilterRow {
+  margin-bottom: 24px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #0f1111;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.ordersFilterRow-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ordersFilterRow-select {
+  border: 1px solid #888c8c;
+  border-radius: 4px;
+  font-size: 15px;
+  line-height: 1.4;
+  padding: 6px 28px 6px 10px;
+  appearance: none;
+  background-color: #fff;
+  background-image: linear-gradient(to bottom, #fff, #f0f2f2);
+  cursor: pointer;
+}

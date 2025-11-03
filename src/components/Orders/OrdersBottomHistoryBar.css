@@ -1,0 +1,60 @@
+.ordersHistoryBar {
+  border: 1px solid #d5d9d9;
+  background-color: #f7f8fa;
+  border-radius: 0;
+  box-sizing: border-box;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+
+  padding: 24px 16px;
+  margin-bottom: 40px;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 16px;
+}
+
+.ordersHistoryBar-left {
+  font-size: 16px;
+  line-height: 1.5;
+  font-style: italic;
+  color: #0f1111;
+  max-width: 70%;
+  min-width: 260px;
+}
+
+.ordersHistoryBar-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #007185;
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+  min-width: 200px;
+  font-weight: 500;
+}
+
+.ordersHistoryBar-right:hover {
+  color: #c7511f;
+  text-decoration: underline;
+}
+
+.ordersHistoryBar-arrow {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 400;
+  color: #007185;
+}
+
+.ordersHistoryBar-textWrap {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+}
+
+.ordersHistoryBar-linkMain {
+  color: inherit;
+}

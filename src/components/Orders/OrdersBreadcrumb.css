@@ -1,0 +1,26 @@
+.ordersBreadcrumb {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  color: #0f1111;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.ordersBreadcrumb-link {
+  color: #007185;
+  text-decoration: none;
+}
+.ordersBreadcrumb-link:hover {
+  color: #c7511f;
+  text-decoration: underline;
+}
+
+.ordersBreadcrumb-sep {
+  margin: 0 4px;
+  color: #565959;
+}
+
+.ordersBreadcrumb-current {
+  color: #c7511f;
+}

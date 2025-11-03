@@ -1,0 +1,70 @@
+.ordersHeaderBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ordersHeaderBar-title {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #0f1111;
+  margin: 0;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.ordersHeaderBar-searchWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ordersHeaderBar-searchInputWrapper {
+  border: 1px solid #888c8c;
+  border-radius: 4px;
+  min-width: 280px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.ordersHeaderBar-searchIcon {
+  color: #565959;
+  font-size: 16px;
+  margin-right: 8px;
+  line-height: 1;
+}
+
+.ordersHeaderBar-searchInput {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #0f1111;
+  font-family: inherit;
+}
+
+.ordersHeaderBar-searchBtn {
+  height: 40px;
+  background-color: #232f3e;
+  border: 1px solid #232f3e;
+  border-radius: 24px;
+  padding: 0 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ordersHeaderBar-searchBtn:hover {
+  background-color: #131921;
+}

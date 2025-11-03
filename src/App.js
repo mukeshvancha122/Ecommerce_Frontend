@@ -12,7 +12,8 @@ import { Elements } from "@stripe/react-stripe-js";
 import Orders from "./components/Orders/Order";
 import { auth } from "./firebase";
 import SubHeader from "./components/Header/subheader/SubHeader";
-import ChatWidget from "./components/chatwidget/ChatWidget";
+import ChatWidget from "./components/chatWidget/ChatWidget";
+import OrdersPage from "./pages/OrdersPage/OrdersPage";
 
 const promise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx"); // sandbox key
 
@@ -44,7 +45,7 @@ function App() {
           <Route path="/orders">
             <Header />
             <SubHeader />
-            <Orders />
+            <OrdersPage />
           </Route>
 
           <Route path="/login">

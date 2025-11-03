@@ -1,0 +1,24 @@
+.ordersTabsBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid #d5d9d9;
+  margin-bottom: 16px;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.ordersTabsBar-tab {
+  font-size: 16px;
+  line-height: 1.4;
+  color: #007185;
+  padding-bottom: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ordersTabsBar-tab--active {
+  font-weight: 700;
+  color: #0f1111;
+  border-bottom: 3px solid #e47911; /* Amazon orange underline */
+}

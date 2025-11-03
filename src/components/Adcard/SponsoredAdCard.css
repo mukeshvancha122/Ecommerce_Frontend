@@ -1,0 +1,129 @@
+.sponsoredCard {
+  border: 1px solid #d5d9d9;
+  border-radius: 0;
+  box-sizing: border-box;
+  margin-bottom: 24px;
+  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
+    "Inter", Roboto, "Segoe UI", sans-serif;
+}
+
+.sponsoredCard-inner {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 16px;
+}
+
+/* left brand */
+.sponsoredCard-leftBrand {
+  flex: 0 0 220px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #0f1111;
+}
+.sponsoredCard-logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #c00000;
+  margin-bottom: 8px;
+}
+.sponsoredCard-tagline {
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* middle product img */
+.sponsoredCard-productImage {
+  flex: 0 0 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sponsoredCard-productImageBox {
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, #d9d9d9 70%);
+  border: 1px solid #c7c7c7;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 30%);
+  border-radius: 4px;
+}
+
+/* right detail */
+.sponsoredCard-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.sponsoredCard-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #0f1111;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.sponsoredCard-badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sponsoredCard-badge {
+  background-color: #cc0c39;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 6px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.sponsoredCard-badgeText {
+  font-size: 14px;
+  color: #0f1111;
+}
+
+.sponsoredCard-priceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  color: #0f1111;
+}
+.sponsoredCard-priceMain {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+.sponsoredCard-priceCents {
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: top;
+}
+.sponsoredCard-oldPrice {
+  text-decoration: line-through;
+  color: #565959;
+  font-size: 14px;
+}
+.sponsoredCard-primeTag {
+  color: #007185;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* footer row */
+.sponsoredCard-footer {
+  border-top: 1px solid #d5d9d9;
+  background-color: #fefefe;
+  font-size: 12px;
+  color: #565959;
+  text-align: right;
+  padding: 8px 12px;
+}
+.sponsoredCard-infoIcon {
+  font-size: 12px;
+  margin-left: 4px;
+  color: #565959;
+}
