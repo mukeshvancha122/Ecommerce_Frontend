@@ -1,0 +1,167 @@
+from django.urls import path
+from rest_framework.routers import DefaultRouter
+
+from imagera.product.api.v1.admin.views import (
+    CreateBestSellerProducts,
+    CreateCategory,
+    CreateComboProductDiscount,
+    CreateExcitingDealsProducts,
+    CreateFeaturedProducts,
+    CreateHandpickedProducts,
+    CreateProduct,
+    CreateProductTag,
+    CreateSubCategory,
+    CreateTopSellingProducts,
+    CreateWeeklyDropProducts,
+    DestroyComboProductDiscount,
+    ListViewSubCategory,
+    ProductCommentReplyView,
+    RemoveBestSellingProducts,
+    RemoveExcitingProducts,
+    RemoveFeaturedProducts,
+    RemoveHandpickedProducts,
+    RemoveTopSellingProducts,
+    RemoveWeeklyDropProducts,
+    UpdateCategory,
+    UpdateDeleteProduct,
+    UpdateDeleteTags,
+    UpdateSubCategory,
+    CreateBrand,
+    UpdateBrand,
+)
+
+
+app_name = "admin_product"
+
+router = DefaultRouter()
+
+urlpatterns = [
+    path("create-product/", CreateProduct.as_view(), name="create_product"),
+    path(
+        "update-product/<str:pk>",
+        UpdateDeleteProduct.as_view(),
+        name="update_delete_product",
+    ),
+    path(
+        "create-category/",
+        CreateCategory.as_view(),
+        name="create_category",
+    ),
+    path(
+        "create-subcategory/",
+        CreateSubCategory.as_view(),
+        name="create_subcategory",
+    ),
+    path(
+        "update-category/<str:pk>/",
+        UpdateCategory.as_view(),
+        name="update_delete_category",
+    ),
+    path(
+        "subcategory-list/<str:id>/",
+        ListViewSubCategory.as_view(),
+        name="sub_category_list",
+    ),
+    path(
+        "update-subcategory/<str:pk>/",
+        UpdateSubCategory.as_view(),
+        name="update_delete_subcategory",
+    ),
+    path(
+        "create-combo-discount/",
+        CreateComboProductDiscount.as_view(),
+        name="create_combo_discount",
+    ),
+    path(
+        "delete-combo-discount/<str:pk>/",
+        DestroyComboProductDiscount.as_view(),
+        name="delete_combo_product",
+    ),
+    path(
+        "add-query-reply/",
+        ProductCommentReplyView.as_view(),
+        name="product_query_reply",
+    ),
+    path(
+        "add-top-selling/",
+        CreateTopSellingProducts.as_view(),
+        name="create_top_selling",
+    ),
+    path(
+        "remove-top-selling/",
+        RemoveTopSellingProducts.as_view(),
+        name="remove_top_selling",
+    ),
+    path(
+        "create-brand/",
+        CreateBrand.as_view(),
+        name="create_brand",
+    ),
+    path(
+        "update-brand/<str:pk>/",
+        UpdateBrand.as_view(),
+        name="update_delete_brand",
+    ),
+    path(
+        "add-best-seller/",
+        CreateBestSellerProducts.as_view(),
+        name="create_best_seller",
+    ),
+    path(
+        "remove-best-seller/",
+        RemoveBestSellingProducts.as_view(),
+        name="remove_best_seller",
+    ),
+    path(
+        "add-handpicked/",
+        CreateHandpickedProducts.as_view(),
+        name="create_handpicked",
+    ),
+    path(
+        "remove-handpicked/",
+        RemoveHandpickedProducts.as_view(),
+        name="remove_handpicked",
+    ),
+    path(
+        "add-weekly-drop/",
+        CreateWeeklyDropProducts.as_view(),
+        name="create_weekly_Drop",
+    ),
+    path(
+        "remove-weekly-drop/",
+        RemoveWeeklyDropProducts.as_view(),
+        name="remove_weekly_drop",
+    ),
+    path(
+        "add-featured/",
+        CreateFeaturedProducts.as_view(),
+        name="create_featured",
+    ),
+    path(
+        "remove-featured/",
+        RemoveFeaturedProducts.as_view(),
+        name="remove_featured",
+    ),
+    path(
+        "add-exciting-deals/",
+        CreateExcitingDealsProducts.as_view(),
+        name="create_exciting_deals",
+    ),
+    path(
+        "remove-exciting-deals/",
+        RemoveExcitingProducts.as_view(),
+        name="remove_exciting_deals",
+    ),
+    path(
+        "create-tag/",
+        CreateProductTag.as_view(),
+        name="create_tag",
+    ),
+    path(
+        "update-tag/<str:pk>/",
+        UpdateDeleteTags.as_view(),
+        name="update_delete_tag",
+    ),
+]
+
+urlpatterns += router.urls

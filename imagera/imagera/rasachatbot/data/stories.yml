@@ -1,0 +1,60 @@
+version: "3.1"
+
+stories:
+  - story: greet the user
+    steps:
+      - intent: greet
+      - action: utter_greet
+  
+  - story: thank the user
+    steps:
+      - intent: turn_off
+      - action: utter_goodbye
+  
+  - story: task perform
+    steps:
+      - intent: task_perform
+      - action: utter_tasks
+
+  - story: provide product info
+    steps:
+      - intent: ask_product_info
+      - action: action_provide_product_info
+
+  - story: provide product variation
+    steps:
+      - intent: ask_product_variation
+      - action: action_provide_product_variation
+
+  - story: check stock
+    steps:
+      - intent: check_stock
+      - action: action_check_stock
+
+  - story: inform about sales
+    steps:
+      - intent: ask_sales
+      - action: action_inform_sales
+
+  - story: inform about combo discount
+    steps:
+      - intent: ask_combo_discount
+      - action: action_inform_combo_discount
+
+  - story: check delivery
+    steps:
+      - intent: check_delivery
+      - action: action_check_delivery
+
+  - story: track order
+    steps:
+      - intent: track_order
+      - action: utter_track_order
+      - intent: track_order_detail
+      - action: action_track_order_details
+
+  - story: return product
+    steps:
+      - intent: return_product
+      - action: utter_return_product
+

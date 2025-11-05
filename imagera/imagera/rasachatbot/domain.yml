@@ -1,0 +1,74 @@
+version: "3.1"
+
+intents:
+  - greet
+  - ask_product_info
+  - ask_product_variation
+  - check_stock
+  - ask_sales
+  - ask_combo_discount
+  - check_delivery
+  - track_order
+  - track_order_detail
+  - return_product
+  - turn_off
+  - task_perform
+
+entities:
+  - product
+  - district
+  - ordercode
+  - email
+
+responses:
+  utter_greet:
+    - text: "Hello! How can I assist you today?"
+    - text: "Greetings! How can I help you today?"
+    - text: "Hi there! Can I know what have you been looking for?"
+
+  utter_track_order:
+    - text: "Please provide your order code and order email to track your order status."
+    - text: "To track your order, please provide your order code and email address."
+
+  utter_return_product:
+    - text: "Please Login and navigate to the this link https://mountemart.com.np/return-product for details."
+  
+  utter_goodbye:
+    - text: "Bye"
+    - text: "Pleased to help you!"
+    - text: "Glad I could help you!"
+    - text: "Thanks for the visit!"
+    - text: "Have a great day!"
+    - text: "Goodbye!"
+    - text: "See you later!"
+
+  utter_iamabot:
+    - text: "I am a bot, powered by Rasa."
+  
+  utter_tasks:
+    - text: "
+    Being a bot, I can help you with following tasks:
+     - Searching Product
+     - Displaying a product variety
+     - Tracking your Order
+     - Check for Sales Products
+     - Check for Combo Discount Products
+     - Check for Product Delivery to your location!
+     - Check for Products Stock
+     Thank You!
+     "
+
+actions:
+  - action_provide_product_info
+  - action_provide_product_variation
+  - action_check_stock
+  - action_inform_sales
+  - action_inform_combo_discount
+  - action_check_delivery
+  - action_track_order_details
+
+
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

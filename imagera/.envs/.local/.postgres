@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=imagera
+POSTGRES_USER=OsikziBBGcUDQbGfOXpOBCBTbaFrBhgx
+POSTGRES_PASSWORD=UptTW2cDDDPwPc8wXlec0DFOWyKYRttIEri58F4PF4fh3lIvymGIUF7C1Ko0Zl69

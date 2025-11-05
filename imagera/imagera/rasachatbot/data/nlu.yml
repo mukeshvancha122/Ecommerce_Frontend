@@ -1,0 +1,125 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - hello
+      - hi
+      - hey
+      - hi there
+      - hey there
+      - hola
+      - hey, what's up
+      - greetings
+      - namaste
+      - good morning
+      - good afternoon
+      - good evening
+
+  - intent: turn_off
+    examples: |
+      - good bye
+      - thank you
+      - thanks
+      - see you later
+      - see you soon
+      - bye
+      - bye bye
+      - goodnight
+      - night
+      - shut down
+      - turn off
+      - stop
+      - exit
+      - quit
+      - farewell
+      - got it
+      - noted
+
+  - intent: task_perform
+    examples: |
+      - what task can you help me with?
+      - what features do you have?
+      - what are your features?
+      - what tasks can you perform?
+      - on what queries can you help me with?
+      - what can you do?
+      - how powerful tasks can you perform?
+      - list features you can help me with?
+
+  - intent: ask_product_info
+    examples: |
+      - Tell me about [Laptop](product)
+      - What are the specs of [MacBook Pro](product)?
+      - Can you tell me about [iPhone](product)?
+      - What are the features of [Samsung TV](product)?
+      - What is the price of [Samsung](product)?
+      - Price for [Shirt](product)?
+      - What is the price of [Samsung TV](product)?
+      - What is the price of [JBL Speakers](product)?
+      - Tell me about [JBL Speakers](product)?
+      - Can you list all the [JBL Speaker](product)
+
+  - intent: ask_product_variation
+    examples: |
+      - Do you have different variations of [iPhone](product)?
+      - What variations of [Samsung Galaxy](product) do you have?
+      - Are there different models of [MacBook](product)?
+      - Which color of [shirts](product) are availabel?
+
+  - intent: check_stock
+    examples: |
+      - Is [Dell XPS 13](product) in stock?
+      - Do you have [Sony TV](product) available?
+      - Can [Jeans](product) be bought?
+      - Can I order it?
+      - Can I order [Shirt](product)?
+
+  - intent: ask_sales
+    examples: |
+      - What sales are going on?
+      - Any discounts available?
+      - Is there any sale going on?
+      - Is there a discount on [Shirts](product) going
+
+  - intent: ask_combo_discount
+    examples: |
+      - Which products have combo discounts?
+      - Tell me about combo offers.
+      - Are there any bundle deals available?
+      - Do you have any combo discounts on [Laptop](product) and [Mouse](product)
+      - Is there any combo assosiated with [Laptop](product)
+
+  - intent: check_delivery
+    examples: |
+      - Can you deliver [iPad](product) to [Kathmandu](district)?
+      - Is delivery available for [PlayStation](product) in [New York](district)?
+      - Can I get [Shirt](product) delivered to [Pokhara](district)?
+      - Can you deliver [Laptop](product) to [Bhaktapur](district)?
+
+  - intent: track_order
+    examples: |
+      - Can I track my order?
+      - How can I track my order?
+      - Can you track my order?
+      - I want to track my order
+      - Track order
+      - find my order
+      - where is my order?
+      - status of my order?
+
+  - intent: track_order_detail
+    examples: |
+      - Order code is [aA5d8ee](ordercode) and email is [a@gmail.com](email)
+      - [aA5d8ee](ordercode) and [a@gmail.com](email)
+      - [aA5d8ee](ordercode) [a@gmail.com](email)
+
+  - intent: return_product
+    examples: |
+      - Can I return [Shirt](product) if it doesn't fit?
+      - What is the return policy for [Laptop](product)?
+      - Can I return [Jeans](product) if it's damaged?
+      - Can I return [Shirt](product) if I don't like it?
+      - Is there any return policy?
+      - How can I return a product?
+      - Is there a way I can return a product?
