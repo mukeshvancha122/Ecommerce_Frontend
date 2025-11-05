@@ -6,31 +6,31 @@ import { useStateValue } from "../../StateProvider";
 import SearchBar from "./SearchBar/SearchBar";
 import LocationModal from "./LocationModal/LocationModal";
 
+const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+const deriveNameFromEmail = (email = "") => {
+  const local = email.includes("@") ? email.split("@")[0] : email;
+  if (!local) return "";
+  return local
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+};
+
+const truncate = (str = "", max = 18) =>
+  str.length > max ? str.slice(0, max - 1) + "…" : str;
+
 function Header() {
   const [{ cart, user }] = useStateValue();
 
-  // how many total items in cart
-  const cartCount = cart?.reduce(
-    (sum, item) => sum + (item.qty ? item.qty : 1),
-    0
-  );
-
-  // location popup state
+  const cartCount = cart?.reduce((sum, item) => sum + (item.qty ? item.qty : 1), 0);
   const [showLocationModal, setShowLocationModal] = useState(false);
-
-  // saved/detected location for header pill
-  // shape: { label, city, state, postalCode, countryCode }
   const [userLocation, setUserLocation] = useState(null);
-
-  // called by LocationModal after user saves location
-  const handleLocationSaved = (locObj) => {
-    setUserLocation(locObj);
-  };
-
-  // friendly account greeting
-  const accountGreeting = user
-    ? `Hello, ${user.name || user.email || "User"}`
-    : "Hello, sign in";
+  const handleLocationSaved = (locObj) => setUserLocation(locObj);
+  const rawName = (user?.name && user.name.trim()) || deriveNameFromEmail(user?.email);
+  const shortName = rawName ? truncate(rawName) : null;
 
   return (
     <>
@@ -43,19 +43,10 @@ function Header() {
           </Link>
 
           {/* Deliver to ... (click opens modal) */}
-          <div
-            className="header-location"
-            onClick={() => setShowLocationModal(true)}
-          >
+          <div className="header-location" onClick={() => setShowLocationModal(true)}>
             <div className="header-location-line1">Deliver to</div>
             <div className="header-location-line2">
-              <span
-                className="header-location-pin"
-                role="img"
-                aria-label="pin"
-              >
-                📍
-              </span>
+              <span className="header-location-pin" role="img" aria-label="pin">📍</span>
               <span className="header-location-text">
                 {userLocation?.label || "Update location"}
               </span>
@@ -69,24 +60,24 @@ function Header() {
         {/* RIGHT SECTION: Lang / Account / Orders / Cart */}
         <div className="header-right">
           {/* Language selector */}
-          <button
-            className="header-lang"
-            aria-label="Language selector"
-            type="button"
-          >
-            <span className="header-lang-flag" role="img" aria-label="flag">
-              🇺🇸
-            </span>
+          <button className="header-lang" aria-label="Language selector" type="button">
+            <span className="header-lang-flag" role="img" aria-label="flag">🇺🇸</span>
             <span className="header-lang-code">EN</span>
             <span className="header-lang-caret">▾</span>
           </button>
 
           {/* Account & Lists */}
-          <Link
-            to={user ? "/account" : "/login"}
-            className="header-account"
-          >
-            <span className="header-account-line1">{accountGreeting}</span>
+          <Link to={user ? "/account" : "/login"} className="header-account">
+            <span className="header-account-line1">
+              Hello,{" "}
+              {shortName ? (
+                <span className="header-account-name" title={rawName}>
+                  {shortName}
+                </span>
+              ) : (
+                "sign in"
+              )}
+            </span>
             <span className="header-account-line2">
               Account &amp; Lists <span className="caret">▾</span>
             </span>
@@ -100,24 +91,16 @@ function Header() {
 
           {/* Cart */}
           <Link to="/checkout" className="header-cart">
-            <div
-              className="header-cart-icon"
-              role="img"
-              aria-label="cart"
-            >
-              🛒
-            </div>
+            <div className="header-cart-icon" role="img" aria-label="cart">🛒</div>
             <div className="header-cart-info">
-              <span className="header-cart-count">
-                {cartCount || 0}
-              </span>
+              <span className="header-cart-count">{cartCount || 0}</span>
               <span className="header-cart-label">Cart</span>
             </div>
           </Link>
         </div>
       </header>
 
-      {/* Location Modal (Amazon-style "Choose your location") */}
+      {/* Location Modal ("Choose your location") */}
       <LocationModal
         isOpen={showLocationModal}
         onClose={() => setShowLocationModal(false)}
