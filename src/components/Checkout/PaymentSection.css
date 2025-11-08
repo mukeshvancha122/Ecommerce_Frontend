@@ -1,0 +1,4 @@
+.ps-row{ background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:12px; }
+.ps-pay{ margin-top:12px; background:#ffd814; border:1px solid #fcd200; border-radius:8px; padding:10px 14px; font-weight:700; }
+.ps-pay:disabled{ opacity:.6; }
+.ps-error{ color:#b91c1c; margin-top:8px; }

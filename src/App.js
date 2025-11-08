@@ -12,6 +12,8 @@ import Payment from "./components/Payment/Payment";
 import OrdersPage from "./pages/OrdersPage/OrdersPage";
 import ChatWidget from "./components/chatWidget/ChatWidget";
 import ProductPage from "./pages/ProductPage/ProductPage";
+import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
+import ProtectedRoute from "./routing/ProtectedRoute";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -59,8 +61,14 @@ export default function App() {
             <SubHeader />
             <ProductPage />
           </Route>
-         
 
+          <Route path="/proceed-to-checkout">
+            {/* <ProtectedRoute path="/secure-checkout"> */}
+              <Header />
+              <SubHeader />
+              <CheckoutPage />
+          </Route>
+         
           <Route path="/">
             <Header />
             <SubHeader />

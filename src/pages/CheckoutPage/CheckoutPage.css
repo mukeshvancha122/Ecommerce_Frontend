@@ -1,0 +1,15 @@
+.co-header{ background:#134e4a linear-gradient(#0f6,#0a4) ; background:#0f1111; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:10px 16px; }
+.co-brand{ font-weight:800; }
+.co-secure{ font-weight:700; background:#0c4a6e; padding:4px 8px; border-radius:4px; }
+.co-body{ display:grid; grid-template-columns: minmax(640px,1fr) 360px; gap:16px; padding:16px; }
+.co-card{ background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:16px; margin-bottom:16px; }
+.co-card-title{ font-weight:700; margin-bottom:8px; }
+.co-cta{ background:#ffd814; border:1px solid #fcd200; border-radius:8px; font-weight:700; padding:8px 14px; cursor:pointer; }
+.co-cta:disabled{ opacity:.6; cursor:not-allowed; }
+.co-right{ position:sticky; top:12px; align-self:start; }
+.co-summary{ background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:12px; }
+.co-summary-cta{ width:100%; background:#ffd814; border:1px solid #fcd200; border-radius:8px; padding:9px 12px; font-weight:700; margin-bottom:12px; }
+.co-summary-row, .co-summary-total{ display:flex; justify-content:space-between; padding:4px 0; font-size:14px; }
+.co-summary-total{ font-weight:800; }
+.co-muted{ color:#6b7280; }
+@media (max-width: 980px){ .co-body{ grid-template-columns: 1fr; } .co-right{ position:static; } }
