@@ -1,0 +1,11 @@
+.gallery{ padding:12px }
+.gallery__stage{
+  aspect-ratio:4/3; background:#fff; border:1px solid var(--border);
+  border-radius:12px; display:grid; place-items:center;
+}
+.gallery__hero{ max-height:520px; object-fit:contain }
+.gallery__thumbs{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:10px }
+.gallery__thumb{ border:1px solid var(--border); background:#fff; border-radius:10px; padding:6px; cursor:pointer }
+.gallery__thumb.is-active{ outline:2px solid var(--brand) }
+.gallery__thumb img{ aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:8px }
+@media (max-width: 500px){ .gallery__thumbs{ grid-template-columns:repeat(4,1fr) } }

@@ -1,47 +1,27 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
-import { useStateValue } from "../../StateProvider";
-import { getBasketTotal } from "../../reducer";
 import "./Subtotal.css";
+import { useSelector } from "react-redux";
+import { selectCartItems, selectCartTotal } from "../../features/cart/CartSlice";
+import { formatCurrency } from "../../utils/format";
 
-function Subtotal() {
-  const history = useHistory();
-  const [{ cart, user }] = useStateValue();
+export default function Subtotal() {
+  const items = useSelector(selectCartItems);
+  const total = useSelector(selectCartTotal);
 
-  const handleCheckout = () => {
-    if (!user) {
-      // not signed in -> go login first
-      history.push("/login");
-      return;
-    }
-
-    // signed in -> continue to payment page
-    history.push("/payment");
-  };
+  const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   return (
     <div className="subtotal">
-      <div className="subtotal-row">
-        <span className="subtotal-row-label">
-          Subtotal ({cart.length} {cart.length === 1 ? "item" : "items"})
-        </span>
-        <span className="subtotal-row-value">
-          ${getBasketTotal(cart).toFixed(2)}
-        </span>
-      </div>
+      <p>
+        Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"}):{" "}
+        <strong>{formatCurrency(total, "USD")}</strong>
+      </p>
 
-      <div className="subtotal-divider" />
+      <small className="subtotal-gift">
+        <input type="checkbox" id="gift" /> <label htmlFor="gift">This order contains a gift</label>
+      </small>
 
-      <div className="subtotal-gift">
-        <input type="checkbox" />
-        <span>This order contains a gift</span>
-      </div>
-
-      <button onClick={handleCheckout}>
-        {user ? "Proceed to Checkout" : "Sign in to Checkout"}
-      </button>
+      <button className="subtotal-proceed">Proceed to Checkout</button>
     </div>
   );
 }
-
-export default Subtotal;

@@ -1,41 +1,47 @@
 import React from "react";
-import { useStateValue } from "../../StateProvider";
 import "./CheckoutProduct.css";
+import { useDispatch } from "react-redux";
+import { removeItem, setQty } from "../../features/cart/CartSlice";
+import { formatCurrency } from "../../utils/format"; // or inline formatter
 
-function CheckoutProduct({ id, image, title, price, rating, hideButton }) {
-  const [{ basket }, dispatch] = useStateValue();
+export default function CheckoutProduct({ id, title, image, price, rating, qty }) {
+  const dispatch = useDispatch();
 
-  const removeFromBasket = () => {
-    dispatch({
-      type: "REMOVE_FROM_CART",
-      id: id,
-    });
-  };
+  const onRemove = () => dispatch(removeItem({ sku: id }));
+  const onQtyChange = (e) => dispatch(setQty({ sku: id, qty: Number(e.target.value) }));
 
   return (
     <div className="checkoutProduct">
-      <img className="checkoutProduct-image" src={image} />
+      <img className="checkoutProduct-image" src={image} alt={title} />
 
       <div className="checkoutProduct-info">
         <p className="checkoutProduct-title">{title}</p>
-        <p className="checkoutProduct-price">
-          <small>$</small>
-          <strong>{price}</strong>
-        </p>
-        <div className="checkoutProduct-rating">
-          {Array(rating)
-            .fill()
-            .map((_, i) => (
-              <p>⭐</p>
-            ))}
+
+        {typeof rating === "number" && (
+          <div className="checkoutProduct-rating">
+            {"★".repeat(rating)}{"☆".repeat(Math.max(0, 5 - rating))}
+          </div>
+        )}
+
+        <div className="checkoutProduct-row">
+          <strong className="checkoutProduct-price">{formatCurrency(price, "USD")}</strong>
+
+          <label className="checkoutProduct-qty">
+            Qty:{" "}
+            <select value={qty} onChange={onQtyChange} aria-label="Quantity">
+              {Array.from({ length: 99 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
-        {!hideButton && (
-          <button onClick={removeFromBasket}>Remove from Cart</button>
-        )}
+        <button onClick={onRemove} className="checkoutProduct-remove">
+          Remove from Basket
+        </button>
       </div>
     </div>
   );
 }
-
-export default CheckoutProduct;

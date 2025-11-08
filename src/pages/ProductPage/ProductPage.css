@@ -1,0 +1,25 @@
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.pdp-grid{
+  display:grid;
+  grid-template-columns: 1.05fr 1fr 0.65fr;
+  gap:24px;
+  align-items:start;
+}
+@media (max-width: 1100px){
+  .pdp-grid{ grid-template-columns:1fr; }
+}
+.pdp-section{ margin-top:24px; }
+
+:root{
+  --bg:#fff; --surface:#f7f7f8; --text:#111827; --muted:#6b7280;
+  --border:#e5e7eb; --brand:#0ea5e9; --brand-600:#0284c7; --accent:#16a34a;
+  --radius:14px;
+}
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius) }
+.hr{ height:1px; background:var(--border); margin:16px 0 }
+.btn{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1rem; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer }
+.btn--primary{ background:var(--brand); border-color:transparent; color:#fff }
+.btn--primary:hover{ background:var(--brand-600) }
+.btn--accent{ background:var(--accent); color:#fff; border-color:transparent }
+.badge{ display:inline-flex; gap:.35rem; align-items:center; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; border:1px solid var(--border); background:#fff }
+.visually-hidden{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0) }

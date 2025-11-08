@@ -1,42 +1,30 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "./App.css";
-import Header from "./components/Header/Header";
-import Home from "./components/Home/Home";
+
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+
+import Header from "./components/Header/Header";
+import SubHeader from "./components/Header/subheader/SubHeader";
+import Home from "./components/Home/Home";
 import Checkout from "./components/Checkout/Checkout";
 import Login from "./components/Login/Login";
-import { useStateValue } from "./StateProvider";
 import Payment from "./components/Payment/Payment";
+import OrdersPage from "./pages/OrdersPage/OrdersPage";
+import ChatWidget from "./components/chatWidget/ChatWidget";
+import ProductPage from "./pages/ProductPage/ProductPage";
+
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import Orders from "./components/Orders/Order";
-import { auth } from "./firebase";
-import SubHeader from "./components/Header/subheader/SubHeader";
-import ChatWidget from "./components/chatWidget/ChatWidget";
-import OrdersPage from "./pages/OrdersPage/OrdersPage";
 
-const promise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx"); // sandbox key
+// Redux auth 
+import { useSelector } from "react-redux";
+import { selectUser } from "./features/auth/AuthSlice"; 
 
-function App() {
-  const [{ user }, dispatch] = useStateValue();
+const stripePromise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
 
-  useEffect(() => {
-    auth.onAuthStateChanged((authUser) => {
-      console.log("THE USER IS >>>", authUser);
-
-      if (authUser) {
-        dispatch({
-          type: "SET_USER",
-          user: authUser,
-        });
-      } else {
-        dispatch({
-          type: "SET_USER",
-          user: null,
-        });
-      }
-    });
-  }, [dispatch]);
+export default function App() {
+  // user is hydrated from localStorage in index.js via hydrateFromStorage()
+  const user = useSelector(selectUser);
 
   return (
     <Router>
@@ -61,10 +49,17 @@ function App() {
           <Route path="/payment">
             <Header />
             <SubHeader />
-            <Elements stripe={promise}>
+            <Elements stripe={stripePromise}>
               <Payment />
             </Elements>
           </Route>
+
+          <Route path="/product/:slug">
+            <Header />
+            <SubHeader />
+            <ProductPage />
+          </Route>
+         
 
           <Route path="/">
             <Header />
@@ -72,10 +67,9 @@ function App() {
             <Home />
           </Route>
         </Switch>
+
         <ChatWidget user={user} />
       </div>
     </Router>
-  );  
+  );
 }
-
-export default App;

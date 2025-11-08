@@ -1,0 +1,11 @@
+.pinfo{ padding:16px }
+.pinfo__title{ margin:0; font-size:1.25rem; line-height:1.35 }
+.pinfo__meta{ color:var(--muted); display:flex; gap:12px; margin-top:8px; align-items:center; flex-wrap:wrap }
+.pinfo__reviews a{ color:inherit; text-decoration:none }
+.pinfo__dealrow{ display:flex; gap:8px; margin:8px 0 }
+.pinfo__specs{
+  display:grid; grid-template-columns: max-content 1fr; gap:8px 16px;
+  margin-top:12px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+}
+.pinfo__specs dt{ color:var(--muted) }
+.pinfo__specs dd{ margin:0 }

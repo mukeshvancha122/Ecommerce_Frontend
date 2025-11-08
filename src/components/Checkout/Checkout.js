@@ -1,11 +1,20 @@
 import React from "react";
-import { useStateValue } from "../../StateProvider";
 import "./Checkout.css";
 import CheckoutProduct from "./CheckoutProduct";
 import Subtotal from "./Subtotal";
 
-function Checkout() {
-  const [{ cart, user }] = useStateValue();
+// ✅ Redux
+import { useSelector } from "react-redux";
+import { selectCartItems } from "../../features/cart/CartSlice"; // adjust path/case to your file
+import { selectUser } from "../../features/auth/AuthSlice";
+
+const safeName = (user) =>
+  (user?.name && user.name.trim()) ||
+  (user?.email ? user.email : null);
+
+export default function Checkout() {
+  const items = useSelector(selectCartItems);
+  const user = useSelector(selectUser);
 
   return (
     <div className="checkout">
@@ -17,25 +26,25 @@ function Checkout() {
         />
 
         <div>
-          <h3>
-            {user
-              ? `Hello, ${user.name || user.email}`
-              : "Hello, Guest"}
-          </h3>
+          <h3>{user ? `Hello, ${safeName(user)}` : "Hello, Guest"}</h3>
 
           <h2 className="checkout-title">Your shopping cart</h2>
 
-          {cart.map((item) => (
-            <CheckoutProduct
-              key={item.id}          
-              id={item.id}
-              title={item.title}
-              image={item.image}
-              price={item.price}
-              rating={item.rating}
-              qty={item.qty}
-            />
-          ))}
+          {items.length === 0 ? (
+            <p>Your cart is empty.</p>
+          ) : (
+            items.map((item) => (
+              <CheckoutProduct
+                key={item.sku}          // sku is stable identifier
+                id={item.sku}
+                title={item.title}
+                image={item.image}
+                price={item.price}
+                rating={item.rating}
+                qty={item.qty}
+              />
+            ))
+          )}
         </div>
       </div>
 
@@ -45,5 +54,3 @@ function Checkout() {
     </div>
   );
 }
-
-export default Checkout;

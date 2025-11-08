@@ -1,12 +1,20 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./Login.css";
+import API from "../../axios";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../features/auth/AuthSlice";
+import { useHistory } from "react-router-dom"; // v5
 
 export default function Login() {
+
   // shared fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+
+  const dispatch = useDispatch();
+  const history = useHistory();
 
   // business account fields
   const [businessName, setBusinessName] = useState("");
@@ -37,9 +45,7 @@ export default function Login() {
     try {
       // backend should tell us if account already exists
       // e.g. { exists: true } OR { exists: false }
-      const res = await axios.post("/auth/check-email", {
-        email: email.trim(),
-      });
+      const res = await API.post("/auth/check-email", { email: email.trim() });
 
       if (res.data?.exists) {
         // user already registered -> ask password
@@ -69,13 +75,12 @@ export default function Login() {
     try
     {
       // backend should return { token, user }
-      const res = await axios.post("/auth/login", {
-        email: email.trim(),
-        password,
-      });
-
+      const res = await axios.post("/auth/login", { email: email.trim(), password });
       localStorage.setItem("authToken", res.data.token);
       alert("Signed in successfully!");
+      
+      dispatch(setCredentials({ token: res.data.token, user: res.data.user }));
+      history.push("/");
       // window.location.href = "/home"
     }
     catch (err) {
@@ -106,13 +111,9 @@ export default function Login() {
       //  - create temp user with {name,email,password}
       //  - send OTP
       //  - return { pendingUserId: "abc123" }
-      const res = await axios.post("/auth/register", {
-        name: fullName.trim(),
-        email: email.trim(),
-        password,
-        accountType: "personal",
-      });
-
+      const res = await API.post("/auth/register", {
+         name: fullName.trim(), email: email.trim(), password, accountType: "personal",
+       });
       // we'll need this ID to verify OTP
       setPendingUserId(res.data.pendingUserId);
       setStep("otp");
@@ -137,13 +138,10 @@ export default function Login() {
     setErrorMsg("");
 
     try {
-      const res = await axios.post("/auth/register", {
-        name: fullName.trim(),
-        email: email.trim(),
-        password,
-        businessName: businessName.trim(),
-        accountType: "business",
-      });
+      const res = await API.post("/auth/register", {
+         name: fullName.trim(), email: email.trim(), password,
+         businessName: businessName.trim(), accountType: "business",
+       });
 
       setPendingUserId(res.data.pendingUserId);
       setStep("otp");
@@ -169,13 +167,10 @@ export default function Login() {
       // backend should:
       //   POST /auth/verify-otp { pendingUserId, otpCode }
       //   if OK respond { token, user }
-      const res = await axios.post("/auth/verify-otp", {
-        pendingUserId,
-        otpCode: otpCode.trim(),
-      });
-
-      localStorage.setItem("authToken", res.data.token);
+      const res = await API.post("/auth/verify-otp", { pendingUserId, otpCode: otpCode.trim() });
+      dispatch(setCredentials({ token: res.data.token, user: res.data.user }));
       setStep("done");
+      localStorage.setItem("authToken", res.data.token);
     } catch (err) {
       setErrorMsg(
         err?.response?.data?.message || "Invalid or expired OTP code."

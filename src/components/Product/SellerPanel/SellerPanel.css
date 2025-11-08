@@ -1,0 +1,9 @@
+.seller{ padding:16px }
+.seller__title{ margin:0 0 10px 0 }
+.seller__empty{ color:var(--muted) }
+.seller__list{ list-style:none; padding:0; margin:0; display:grid; gap:10px }
+.seller__row{
+  display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center;
+  background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+}
+.seller__price{ font-weight:600 }

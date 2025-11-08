@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "./Header.css";
-
-import { useStateValue } from "../../StateProvider";
 import SearchBar from "./SearchBar/SearchBar";
 import LocationModal from "./LocationModal/LocationModal";
+import { useSelector } from "react-redux";
+import { selectCartCount } from "../../features/cart/CartSlice";
+import { selectUser, logout } from "../../features/auth/AuthSlice";
+import { useDispatch } from "react-redux";
+
 
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -23,9 +26,9 @@ const truncate = (str = "", max = 18) =>
   str.length > max ? str.slice(0, max - 1) + "…" : str;
 
 function Header() {
-  const [{ cart, user }] = useStateValue();
-
-  const cartCount = cart?.reduce((sum, item) => sum + (item.qty ? item.qty : 1), 0);
+  const dispatch = useDispatch();
+  const cartCount = useSelector(selectCartCount);
+  const user = useSelector(selectUser);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const handleLocationSaved = (locObj) => setUserLocation(locObj);
@@ -90,13 +93,19 @@ function Header() {
           </Link>
 
           {/* Cart */}
-          <Link to="/checkout" className="header-cart">
-            <div className="header-cart-icon" role="img" aria-label="cart">🛒</div>
-            <div className="header-cart-info">
-              <span className="header-cart-count">{cartCount || 0}</span>
-              <span className="header-cart-label">Cart</span>
-            </div>
-          </Link>
+        <Link to="/checkout" className="header-cart" aria-label={`Cart, ${cartCount || 0} items`}>
+          <div className="header-cart-icon" role="img" aria-label="cart">🛒</div>
+          <div className="header-cart-info">
+            <span
+              className="header-cart-count"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {cartCount || 0}
+            </span>
+            <span className="header-cart-label">Cart</span>
+          </div>
+        </Link>
         </div>
       </header>
 

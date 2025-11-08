@@ -1,0 +1,8 @@
+.buybox{ padding:16px; position:sticky; top:18px }
+.buybox__price{ font-size:1.75rem; margin-bottom:6px }
+.buybox__stock .badge{ border-color:transparent; background:rgba(22,163,74,.1); color:#166534 }
+.buybox__stock .badge.nope{ background:rgba(220,38,38,.08); color:#991b1b }
+.buybox__qty{ margin:10px 0 }
+.buybox__cta{ display:grid; gap:8px; margin:8px 0 }
+.buybox__ship{ margin-top:8px; color:var(--muted); display:grid; gap:6px }
+.buybox__return{ margin-top:12px; font-size:.9rem; color:var(--muted) }
