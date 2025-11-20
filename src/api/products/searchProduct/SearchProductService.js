@@ -1,12 +1,8 @@
 export const searchProducts = async (filters = {}) => {
   console.log("Dummy product search filters:", filters);
 
-  return {
-    count: 123,
-    next: "http://api.example.org/accounts/?page=4",
-    previous: "http://api.example.org/accounts/?page=2",
-
-    results: [
+  // Base dataset used for local/demo search without a live backend.
+  const allResults = [
       // 1) Fashion - Shoes
       {
         id: 1,
@@ -328,7 +324,157 @@ export const searchProducts = async (filters = {}) => {
         slug: "organic-arabica-coffee-beans",
         tag: { product_tag: "grocery" }
       }
+    ];
+
+  // ----- "Real" ecommerce-like search -----
+  const rawQuery = (filters.product_name || "").trim();
+  const normalizedQuery = rawQuery.toLowerCase();
+  const normalizedCategory = (filters.category || "").toLowerCase().trim();
+
+  // If there is no query at all, just return everything (like browsing all products).
+  if (!normalizedQuery && !normalizedCategory) {
+    return {
+      count: allResults.length,
+      next: null,
+      previous: null,
+      results: allResults,
+    };
+  }
+
+  // Basic stemming for plurals: "shoe" vs "shoes", "sport" vs "sports".
+  const normalizeToken = (t) => {
+    let token = t.toLowerCase().trim();
+    if (token.endsWith("es")) token = token.slice(0, -2);
+    else if (token.endsWith("s")) token = token.slice(0, -1);
+    return token;
+  };
+
+  // Break query into words and normalise
+  const queryTokens = normalizedQuery
+    ? normalizedQuery.split(/\s+/).map(normalizeToken)
+    : [];
+
+  // Some simple synonym mapping for common ecommerce terms
+  const synonymMap = {
+    shoe: ["shoes", "sneaker", "sneakers", "sports shoes", "footwear"],
+    sport: ["sports", "fitness", "gym"],
+    mobile: ["phone", "smartphone", "android", "5g"],
+    laptop: ["notebook", "computer"],
+    beauty: ["skin care", "serum"],
+  };
+
+  const expandTokensWithSynonyms = (tokens) => {
+    const expanded = new Set(tokens);
+    tokens.forEach((token) => {
+      const syns = synonymMap[token];
+      if (syns) {
+        syns.forEach((s) => expanded.add(normalizeToken(s)));
+      }
+    });
+    return Array.from(expanded);
+  };
+
+  const searchTokens = expandTokensWithSynonyms(queryTokens);
+
+  const textForProduct = (product) => {
+    const parts = [
+      product.product_name,
+      product.product_description,
+      product.product_category?.category_name,
+      product.sub_category?.sub_category_name,
+      product.brand?.brand_name,
+      product.tag?.product_tag,
     ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return parts;
+  };
+
+  const matchesCategoryFilter = (product) => {
+    if (!normalizedCategory) return true;
+    const productCategory =
+      product.product_category?.category_name?.toLowerCase() || "";
+    return productCategory.includes(normalizedCategory);
+  };
+
+  // Scoring function: higher score = more relevant result
+  const scoreProduct = (product, productText) => {
+    if (!searchTokens.length) return 0;
+
+    let score = 0;
+
+    searchTokens.forEach((token) => {
+      if (!token) return;
+
+      if (product.product_name.toLowerCase().includes(token)) {
+        score += 5;
+      }
+
+      if (
+        product.sub_category?.sub_category_name
+          ?.toLowerCase()
+          .includes(token)
+      ) {
+        score += 3;
+      }
+
+      if (
+        product.product_category?.category_name
+          ?.toLowerCase()
+          .includes(token)
+      ) {
+        score += 3;
+      }
+
+      if (product.brand?.brand_name?.toLowerCase().includes(token)) {
+        score += 2;
+      }
+
+      if (product.tag?.product_tag?.toLowerCase().includes(token)) {
+        score += 2;
+      }
+
+      if (productText.includes(token)) {
+        score += 1;
+      }
+    });
+
+    return score;
+  };
+
+  // 1) Try to find direct / strong matches using the scoring function
+  const scored = allResults
+    .filter(matchesCategoryFilter)
+    .map((product) => {
+      const textBlob = textForProduct(product);
+      const score = scoreProduct(product, textBlob);
+      return { product, score };
+    })
+    .filter((item) => item.score > 0);
+
+  let finalResults;
+
+  if (scored.length > 0) {
+    // Sort by relevance score (desc), then keep in original order if tie
+    scored.sort((a, b) => b.score - a.score);
+    finalResults = scored.map((item) => item.product);
+  } else {
+    // 2) Fallback: no strong matches → show "similar" items by loosest match (category / tag)
+    const looseResults = allResults.filter((product) => {
+      const textBlob = textForProduct(product);
+      // If any token appears anywhere in the combined text, treat as "similar"
+      return searchTokens.some((token) => token && textBlob.includes(token));
+    });
+
+    finalResults = looseResults.length ? looseResults : allResults;
+  }
+
+  return {
+    count: finalResults.length,
+    next: null,
+    previous: null,
+    results: finalResults,
   };
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./BuyBox.css";
 import { useDispatch } from "react-redux";
 import { addItem } from "../../../features/cart/CartSlice";
@@ -8,33 +8,50 @@ import QuantitySelect from "../QuantitySelect";
 export default function BuyBox({ product }) {
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
-  const p = product;
+  const variation = product?.product_variations?.[0] || {};
+
+  const price = useMemo(
+    () => Number(variation?.get_discounted_price || variation?.product_price || 0),
+    [variation]
+  );
+  const listPrice = Number(variation?.product_price);
+  const inStock = Number(variation?.stock || 0) > 0;
+  const heroImage = variation?.product_images?.[0]?.product_image;
 
   const onAdd = () => {
     dispatch(
       addItem({
-        sku: p.sku,
-        title: p.title,
-        price: p.salePrice ?? p.listPrice,
+        sku: variation?.id || product?.id,
+        title: product?.product_name,
+        price,
         qty,
-        image: p.gallery?.hero || p.hero,
+        image: heroImage,
       })
     );
-    // Optional: toast or UI feedback
   };
 
   return (
     <aside className="buybox card" aria-labelledby="buybox-title">
-      <h2 id="buybox-title" className="visually-hidden">Purchase options</h2>
+      <h2 id="buybox-title" className="visually-hidden">
+        Purchase options
+      </h2>
 
       <div className="buybox__price">
-        <strong>{formatCurrency(p.salePrice ?? p.listPrice, p.currency)}</strong>
+        <strong>{formatCurrency(price || listPrice, "INR", "en-IN")}</strong>
+        {listPrice && price < listPrice && (
+          <span className="buybox__list">M.R.P: {formatCurrency(listPrice, "INR", "en-IN")}</span>
+        )}
       </div>
 
       <div className="buybox__stock">
-        <span className={`badge ${p.inventory?.inStock ? "ok" : "nope"}`}>
-          {p.inventory?.inStock ? "In Stock" : "Out of Stock"}
+        <span className={`badge ${inStock ? "ok" : "nope"}`}>
+          {inStock ? "In Stock" : "Currently unavailable"}
         </span>
+      </div>
+
+      <div className="buybox__deliveries">
+        <p>{product?.free_delivery ? "FREE delivery available within 2-4 days." : "Delivery charges may apply."}</p>
+        <p>Ships from our trusted seller partners.</p>
       </div>
 
       <div className="buybox__qty">
@@ -42,11 +59,23 @@ export default function BuyBox({ product }) {
       </div>
 
       <div className="buybox__cta">
-        <button className="btn btn--primary" onClick={onAdd}>Add to Cart</button>
-        <button className="btn btn--accent" onClick={() => alert("Buy Now")}>Buy Now</button>
+        <button className="btn btn--primary" onClick={onAdd} disabled={!inStock}>
+          Add to Cart
+        </button>
+        <button
+          className="btn btn--accent"
+          onClick={() => alert("Proceed to checkout")}
+          disabled={!inStock}
+        >
+          Buy Now
+        </button>
       </div>
 
-      {/* shipping & returns ... */}
+      <div className="buybox__policy">
+        <p>Secure transaction • {product?.returnPolicy || "Easy returns available"}</p>
+        <p>Cash on Delivery eligible • 7-day replacement.</p>
+      </div>
     </aside>
   );
 }
+

@@ -34,7 +34,47 @@ export const getSaleCategories = async () => {
     },
     {
       id: 4,
+      category_name: "Electronics",
+      category_image: "https://via.placeholder.com/300x200?text=Home+Sale",
+      slug: "home-appliances-sale",
+      is_discount_active: true,
+      discount_start_date: "2025-11-19T01:53:07.465Z",
+      discount_end_date: "2025-12-15T01:53:07.465Z",
+      description: "Kitchen & home essentials under massive discounts."
+    },
+    {
+      id: 5,
       category_name: "Home Appliances",
+      category_image: "https://via.placeholder.com/300x200?text=Home+Sale",
+      slug: "home-appliances-sale",
+      is_discount_active: true,
+      discount_start_date: "2025-11-19T01:53:07.465Z",
+      discount_end_date: "2025-12-15T01:53:07.465Z",
+      description: "Kitchen & home essentials under massive discounts."
+    },
+    {
+      id: 6,
+      category_name: "Sports & Fitness",
+      category_image: "https://via.placeholder.com/300x200?text=Home+Sale",
+      slug: "home-appliances-sale",
+      is_discount_active: true,
+      discount_start_date: "2025-11-19T01:53:07.465Z",
+      discount_end_date: "2025-12-15T01:53:07.465Z",
+      description: "Kitchen & home essentials under massive discounts."
+    },
+    {
+      id: 7,
+      category_name: "Furniture",
+      category_image: "https://via.placeholder.com/300x200?text=Home+Sale",
+      slug: "home-appliances-sale",
+      is_discount_active: true,
+      discount_start_date: "2025-11-19T01:53:07.465Z",
+      discount_end_date: "2025-12-15T01:53:07.465Z",
+      description: "Kitchen & home essentials under massive discounts."
+    },
+    {
+      id: 7,
+      category_name: "Medicines",
       category_image: "https://via.placeholder.com/300x200?text=Home+Sale",
       slug: "home-appliances-sale",
       is_discount_active: true,

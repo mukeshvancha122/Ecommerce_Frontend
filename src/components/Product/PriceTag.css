@@ -1,0 +1,28 @@
+.priceTag {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.priceTag__sale {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #b12704;
+}
+
+.priceTag__list {
+  color: #565959;
+  text-decoration: line-through;
+  font-size: 0.95rem;
+}
+
+.priceTag__badge {
+  background: #cc0c39;
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+

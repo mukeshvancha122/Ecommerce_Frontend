@@ -1,8 +1,8 @@
 import React from "react";
 import "./RecommendationPrompt.css";
 
-const RecommendationPrompt = ({ isLoggedIn }) => {
-  if (isLoggedIn) return null; // don’t render if the user is logged in
+const RecommendationPrompt = ({ isLoggedIn, onSignIn }) => {
+  if (isLoggedIn) return null;
 
   return (
     <section className="recommendationPrompt">
@@ -11,7 +11,13 @@ const RecommendationPrompt = ({ isLoggedIn }) => {
           See personalized recommendations
         </h2>
 
-        <button className="recommendationPrompt-signinBtn">Sign in</button>
+        <button
+          className="recommendationPrompt-signinBtn"
+          type="button"
+          onClick={onSignIn}
+        >
+          Sign in
+        </button>
 
         <div className="recommendationPrompt-footer">
           New customer?{" "}

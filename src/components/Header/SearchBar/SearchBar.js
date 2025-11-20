@@ -1,6 +1,10 @@
 import React, { useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
-import API from "../../../axios";
+
+// Use the dedicated search services instead of calling axios directly.
+import { searchProducts } from "../../../api/products/searchProduct/SearchProductService";
+import { searchProductsByImage } from "../../../api/products/searchProduct/ImageSearchService";
+
 import SearchCategoryDropdown from "./SearchCategoryDropDown";
 import "./SearchBar.css";
 
@@ -28,20 +32,16 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      // Try the search endpoint - adjust endpoint based on your backend
-      const res = await API.get("/v1/products/search-product-view/", {
-        params: {
-          product_name: query.trim(),
-          category: category === "all" ? null : category,
-          page: 1,
-          page_size: 20,
-        },
+      // Call the search service (currently backed by a rich mock dataset).
+      const response = await searchProducts({
+        product_name: query.trim(),
+        category: category === "all" ? undefined : category,
+        page: 1,
+        page_size: 20,
       });
 
-      // Handle different response structures
-      const responseData = res?.data?.data || res?.data || {};
-      const results = responseData.results || [];
-      const total = responseData.count || results.length;
+      const results = response?.results || [];
+      const total = response?.count ?? results.length;
 
       history.push("/search", {
         mode: "text",
@@ -93,19 +93,15 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      const formData = new FormData();
-      formData.append("image", file);
-
-      // Try the image search endpoint - adjust endpoint based on your backend
-      const res = await API.post("/v1/products/search/image/", formData, {
-        params: { page: 1, page_size: 20 },
-        headers: { "Content-Type": "multipart/form-data" },
+      // Use image search service so the app works even without a live backend.
+      const response = await searchProductsByImage({
+        image: file,
+        page: 1,
+        page_size: 20,
       });
 
-      // Handle different response structures
-      const responseData = res?.data?.data || res?.data || {};
-      const results = responseData.results || [];
-      const total = responseData.count || results.length;
+      const results = response?.results || [];
+      const total = response?.count ?? results.length;
 
       history.push("/search", {
         mode: "image",

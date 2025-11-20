@@ -1,86 +1,66 @@
-import API from "../../axios";
+import { searchProducts } from "./searchProduct/SearchProductService";
 
-// switch `useMock` off when backend is ready
-const useMock = true;
+let cachedProducts = null;
 
-// ---- MOCK DATA (matches your PDP component structure) ----
-const mockProduct = {
-  id: "p_001",
-  slug: "national-tree-6ft-slim-spruce",
-  title:
-    "National Tree Company 6 ft Pre-Lit North Valley Spruce Slim Artificial Christmas Tree, 250 Clear Lights, 636 Tips, Includes Stand, Green",
-  brand: "National Tree Company",
-  rating: 4.0,
-  reviews: 1010,
-  listPrice: 131.24,
-  salePrice: 88.99,
-  currency: "USD",
-  badges: [{ type: "deal", label: "Limited time deal" }],
-  details: {
-    dimensions: '29"D x 29"W x 72"H',
-    color: "Green",
-    material: "Metal, Polyvinyl Chloride",
-    weight: "12.5 lb",
-    packageCount: 1,
-  },
-  inventory: { inStock: true },
-  shipping: {
-    cost: 136.49,
-    shipsTo: "India",
-    eta: "Monday, December 8",
-    location: "Hyderabad 500092",
-  },
-  gallery: {
-    hero: "/assets/tree-hero.jpg",
-    images: [
-      "/assets/tree-1.jpg",
-      "/assets/tree-2.jpg",
-      "/assets/tree-3.jpg",
-      "/assets/tree-4.jpg",
-      "/assets/tree-5.jpg",
-    ],
-  },
-  about: [
-    "Slim profile 6 ft tree with 29 inch base diameter and 636 branch tips for a full appearance.",
-    "250 pre-strung white lights that stay lit even when a bulb goes out.",
-    "Pre-attached hinged branches for quick setup and easy storage.",
-    "Includes metal stand; realistic PVC needles for lifelike look.",
-  ],
-  otherSellers: [
-    { name: "Festive Store", price: 92.49 },
-    { name: "Holiday Hub", price: 94.99 },
-  ],
-  returnPolicy: "Returnable until Jan 31, 2026",
+const hydrateProducts = async () => {
+  if (cachedProducts) return cachedProducts;
+  const response = await searchProducts({});
+  cachedProducts = response?.results || [];
+  return cachedProducts;
 };
 
-// ---- PUBLIC API ----
-export const getProductBySlug = async (slug) => {
-  if (useMock) {
-    // simulate latency
-    await new Promise((r) => setTimeout(r, 400));
-    return mockProduct;
-  } else {
-    const { data } = await API.get(`/products/${slug}`);
-    return data;
-  }
+const normalizeId = (value) => String(value ?? "").toLowerCase();
+
+const findProduct = async (predicate) => {
+  const products = await hydrateProducts();
+  return products.find(predicate) || products[0] || null;
 };
 
-export const getProductById = async (id) => {
-  if (useMock) {
-    await new Promise((r) => setTimeout(r, 400));
-    return { ...mockProduct, id };
-  } else {
-    const { data } = await API.get(`/products/id/${id}`);
-    return data;
-  }
+export const getProductBySlug = async (slugOrId) =>
+  findProduct(
+    (product) =>
+      normalizeId(product.slug) === normalizeId(slugOrId) ||
+      normalizeId(product.id) === normalizeId(slugOrId)
+  );
+
+export const getProductById = async (id) =>
+  findProduct((product) => normalizeId(product.id) === normalizeId(id));
+
+export const getAllProducts = async () => hydrateProducts();
+
+export const getRelatedProducts = async ({
+  categorySlug,
+  excludeSlug,
+  minRating = 0,
+  limit = 20,
+} = {}) => {
+  const products = await hydrateProducts();
+  return products
+    .filter((product) => {
+      if (excludeSlug && product.slug === excludeSlug) return false;
+      const productCategory =
+        product.product_category?.slug ||
+        product.product_category?.category_name?.toLowerCase();
+      const rating = parseFloat(product.get_rating_info || "0");
+      const matchesCategory = categorySlug
+        ? productCategory === categorySlug ||
+          product.product_category?.category_name
+            ?.toLowerCase()
+            ?.includes(categorySlug.toLowerCase())
+        : true;
+      return matchesCategory && (!minRating || rating >= minRating);
+    })
+    .slice(0, limit);
 };
 
-export const getAllProducts = async () => {
-  if (useMock) {
-    await new Promise((r) => setTimeout(r, 400));
-    return [mockProduct];
-  } else {
-    const { data } = await API.get("/products");
-    return data;
-  }
+export const getFrequentlyViewedProducts = async (limit = 12) => {
+  const products = await hydrateProducts();
+  return products
+    .slice()
+    .sort((a, b) => {
+      const ratingA = parseFloat(a.get_rating_info || "0");
+      const ratingB = parseFloat(b.get_rating_info || "0");
+      return ratingB - ratingA;
+    })
+    .slice(0, limit);
 };
