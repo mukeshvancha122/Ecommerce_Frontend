@@ -1,0 +1,46 @@
+.productsPage-header {
+  margin: 1rem 0;
+}
+.productsPage-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.productsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.productCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+.productCard-imgWrap {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #f8fafc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.productCard-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.productCard-body {
+  padding: 0.5rem 0.25rem 0.25rem;
+}
+.productCard-title {
+  font-size: 0.9rem;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  min-height: 2.4em;
+}
+.productCard-price {
+  color: #0ea5e9;
+  font-weight: 600;
+}
+
+

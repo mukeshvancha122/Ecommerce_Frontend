@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Home.css";
 import CategoryCarousel from "../CategoryCarousel/CategoryCarousel";
 import SectionHeaderWithSponsored from "../SectionHeaderWithSponsored/SectionHeaderWithSponsored";
@@ -7,8 +7,47 @@ import BestSellersStrip from "../BestSellersStrip/BestSellersStrip";
 import PromoGridRow from "../PromoGridRow/PromoGridRow";
 import RecommendationPrompt from "../RecommendationPrompt/RecommendationPrompt";
 import Footer from "../Footer/Footer";
+import { getFeaturedProducts } from "../../api/products/FeaturedProductService";
+import { getMostSoldProducts } from "../../api/products/MostSoldProductService";
+import { getSaleCategories } from "../../api/products/SaleCategoryService";
 
 function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [mostSoldProducts, setMostSoldProducts] = useState([]);
+  const [bestSellerImages, setBestSellerImages] = useState([]);
+  const [saleCategories, setSaleCategories] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const fp = await getFeaturedProducts(1);
+        setFeaturedProducts(Array.isArray(fp?.results) ? fp.results : []);
+      } catch {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const products = await getMostSoldProducts();
+        setMostSoldProducts(products || []);
+        const imgs = (products || [])
+          .map((p) => p?.product_variations?.[0]?.product_images?.[0]?.product_image)
+          .filter(Boolean);
+        setBestSellerImages(imgs);
+      } catch {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const sc = await getSaleCategories();
+        setSaleCategories(Array.isArray(sc) ? sc : []);
+      } catch {}
+    })();
+  }, []);
+
   return (
     <div className="homePage">
       {/* HERO / TOP BANNER */}
@@ -55,113 +94,75 @@ function Home() {
 
       {/* MAIN CONTENT GRID UNDER HERO */}
       <section className="homePage-contentRow">
-        {/* COLUMN 1: Shop gifts by price */}
+        {/* COLUMN 1: Featured Products */}
         <div className="merchCard">
-          <div className="merchCard-header">Shop gifts by price</div>
+          <div className="merchCard-header">Featured Products</div>
 
           <div className="merchCard-grid">
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Under+%2410"
-                  alt="Under $10"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Under $10</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Under+%2425"
-                  alt="Under $25"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Under $25</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Under+%2450"
-                  alt="Under $50"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Under $50</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Deals"
-                  alt="Deals"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Deals</div>
-            </div>
+            {(featuredProducts.length ? featuredProducts : [null, null, null, null]).map((p, idx) => {
+              const v = p?.product_variations?.[0];
+              const img = v?.product_images?.[0]?.product_image || "https://via.placeholder.com/200x140?text=Loading";
+              const name = p?.product_name || "Loading…";
+              const price = v?.get_discounted_price || v?.product_price || "";
+              const slug = p?.slug || "#";
+              return (
+                <div className="merchTile" key={p?.id || idx}>
+                  <a className="merchTile-imgWrap" href={`/product/${slug}`}>
+                    <img
+                      src={img}
+                      alt={name}
+                      className="merchTile-img"
+                    />
+                  </a>
+                  <div className="merchTile-label" title={name}>
+                    {name.length > 26 ? name.slice(0, 24) + "…" : name}
+                  </div>
+                  {price !== "" && (
+                    <div className="merchTile-price">₹{price}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <a className="merchCard-footerLink" href="#">
-            Discover more for Holiday ›
+            Browse featured ›
           </a>
         </div>
 
-        {/* COLUMN 2: Find gifts for everyone */}
+        {/* COLUMN 2: Most Sold Products */}
         <div className="merchCard">
-          <div className="merchCard-header">Find gifts for everyone</div>
+          <div className="merchCard-header">Most Sold Products</div>
 
           <div className="merchCard-grid">
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=For+her"
-                  alt="For her"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">For her</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=For+him"
-                  alt="For him"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">For him</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=For+kids"
-                  alt="For kids"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">For kids</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=For+teens"
-                  alt="For teens"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">For teens</div>
-            </div>
+            {(mostSoldProducts.length ? mostSoldProducts : [null, null, null, null]).map((p, idx) => {
+              const v = p?.product_variations?.[0];
+              const img = v?.product_images?.[0]?.product_image || "https://via.placeholder.com/200x140?text=Loading";
+              const name = p?.product_name || "Loading…";
+              const price = v?.get_discounted_price || v?.product_price || "";
+              const slug = p?.slug || "#";
+              return (
+                <div className="merchTile" key={p?.id || idx}>
+                  <a className="merchTile-imgWrap" href={`/product/${slug}`}>
+                    <img
+                      src={img}
+                      alt={name}
+                      className="merchTile-img"
+                    />
+                  </a>
+                  <div className="merchTile-label" title={name}>
+                    {name.length > 26 ? name.slice(0, 24) + "…" : name}
+                  </div>
+                  {price !== "" && (
+                    <div className="merchTile-price">₹{price}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <a className="merchCard-footerLink" href="#">
-            Discover more for Holiday ›
+            See more top sellers ›
           </a>
         </div>
 
@@ -265,37 +266,37 @@ function Home() {
 
       </section>
 
-    {/* 1. Category / Christmas carousel */}
+    {/* 1. Sale categories carousel */}
 <SectionWrapper>
   <SectionHeaderWithSponsored
-    title="Here comes Christmas!"
+    title="Sale Categories"
     sponsored={true}
   />
   <CategoryCarousel
-    items={[
-      { img: "/img/pillow.png", label: "Festive deals" },
-      { img: "/img/stocking.png", label: "The Holiday Shop" },
-      { img: "/img/tree.png", label: "Decor" },
-      { img: "/img/reindeer-board.png", label: "Hosting essentials" },
-      { img: "/img/red-top.png", label: "Festive looks" },
-      { img: "/img/games.png", label: "Holiday activities" },
-      { img: "/img/wrap.png", label: "Gift wrap" },
-    ]}
+    items={
+      saleCategories.length
+        ? saleCategories.map(c => ({
+            img: c.category_image,
+            label: c.category_name,
+          }))
+        : [
+            { img: "https://via.placeholder.com/120?text=Loading", label: "Loading" },
+            { img: "https://via.placeholder.com/120?text=…", label: "…" },
+            { img: "https://via.placeholder.com/120?text=…", label: "…" },
+            { img: "https://via.placeholder.com/120?text=…", label: "…" },
+          ]
+    }
   />
 </SectionWrapper>
 
 {/* 2. Best Sellers strip */}
 <BestSellersStrip
   title="Best Sellers in Computers & Accessories"
-  items={[
-    "/img/ipad-bundle.png",
-    "/img/charger.png",
-    "/img/case.png",
-    "/img/pencil.png",
-    "/img/power.png",
-    "/img/bag.png",
-    "/img/protector.png",
-  ]}
+  items={
+    bestSellerImages.length
+      ? bestSellerImages
+      : ["https://via.placeholder.com/240x180?text=Loading"]
+  }
 />
 
 {/* 3. Promo grid row */}

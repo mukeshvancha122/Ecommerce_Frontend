@@ -10,8 +10,9 @@ import Checkout from "./components/Checkout/Checkout";
 import Login from "./components/Login/Login";
 import Payment from "./components/Payment/Payment";
 import OrdersPage from "./pages/OrdersPage/OrdersPage";
-import ChatWidget from "./components/chatWidget/ChatWidget";
+import ChatWidget from "./components/chatwidget/ChatWidget";
 import ProductPage from "./pages/ProductPage/ProductPage";
+import ProductsPage from "./pages/ProductsPage/ProductsPage";
 import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
 import ProtectedRoute from "./routing/ProtectedRoute";
 
@@ -60,6 +61,12 @@ export default function App() {
             <Header />
             <SubHeader />
             <ProductPage />
+          </Route>
+
+          <Route path="/products">
+            <Header />
+            <SubHeader />
+            <ProductsPage />
           </Route>
 
           <Route path="/proceed-to-checkout">

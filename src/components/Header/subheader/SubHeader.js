@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
 import "./SubHeader.css";
 import SideNavDrawer from "../../SideNavDrawer/SideNavDrawer";
+import { getAllCategories } from "../../../api/products/CategoryService";
+import { getCategorySubcategories } from "../../../api/products/CategorySubCategoryService";
 
 function SubHeader() {
+  const history = useHistory();
   const [showSideNav, setShowSideNav] = useState(false);
   const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
   useEffect(() => {
     if (!showSideNav) return;
@@ -12,6 +18,40 @@ function SubHeader() {
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [showSideNav]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch {
+        setCategories([]);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategorySubcategories();
+        setSubcategories(Array.isArray(data) ? data : []);
+      } catch {
+        setSubcategories([]);
+      }
+    })();
+  }, []);
+
+  const subsByCategory = subcategories.reduce((acc, sc) => {
+    const key = sc.category_name;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(sc);
+    return acc;
+  }, {});
+
+  const onSubcategoryClick = (e, sc) => {
+    e.preventDefault();
+    history.push(`/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`);
+  };
 
   return (
     <>
@@ -50,35 +90,36 @@ function SubHeader() {
             </a>
           </li>
 
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/electronics">
-              Electronics <span className="subHeader-caret">▾</span>
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/home-kitchen">
-              Home &amp; Kitchen
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/beauty">
-              Beauty
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/grocery">
-              Grocery <span className="subHeader-caret">▾</span>
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/customer-service">
-              Customer Service
-            </a>
-          </li>
+          {categories.map((cat) => {
+            const subs = subsByCategory[cat.category_name] || [];
+            const hasSubs = subs.length > 0;
+            return (
+              <li className={`subHeader-item${hasSubs ? " hasDropdown" : ""}`} key={cat.id}>
+                <a
+                  className="subHeader-link"
+                  href={`/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(cat.category_name)}`}
+                >
+                  {cat.category_name}
+                  {hasSubs && <span className="subHeader-caret">▾</span>}
+                </a>
+                {hasSubs && (
+                  <div className="subHeader-dropdown" role="menu" aria-label={`${cat.category_name} subcategories`}>
+                    {subs.map((sc) => (
+                      <a
+                        key={sc.id}
+                        className="subHeader-dropdownLink"
+                        href={`/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`}
+                        onClick={(e) => onSubcategoryClick(e, sc)}
+                        role="menuitem"
+                      >
+                        {sc.sub_category}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
