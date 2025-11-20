@@ -1,0 +1,85 @@
+// api: /api/v1/admin-products/create-category/
+
+
+[
+    {
+      "category_name": "Electronics",
+      "category_discount": 10,
+      "discount_start_date": "2025-12-01T00:00:00Z",
+      "discount_end_date": "2025-12-31T23:59:59Z",
+      "category_image": "https://t3.ftcdn.net/jpg/02/57/16/84/360_F_257168460_AwhicdEIavp7bdCbHXyTaBTHnBoBcZad.jpg",
+      "description": "Gadgets, devices, and electronic accessories."
+    },
+    {
+      "category_name": "Fashion & Clothing",
+      "category_discount": 20,
+      "discount_start_date": "2025-11-25T10:00:00Z",
+      "discount_end_date": "2025-12-25T23:59:59Z",
+      "category_image": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Ffree-photos-vectors%2Fmens-fashion&psig=AOvVaw0MNPbjEBJPlIcRBaadv5OF&ust=1763757924656000&source=images&cd=vfe&opi=89978449&ved=0CBMQjRxqFwoTCODjjbjMgZEDFQAAAAAdAAAAABAE",
+      "description": "Men's, women's, and kids' clothing."
+    },
+    {
+      "category_name": "Home Appliances",
+      "category_discount": 15,
+      "discount_start_date": "2025-11-22T08:00:00Z",
+      "discount_end_date":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPSg9XMYs7qwQZ9SHHs6l6s8Uhdf5gKiWHEg&s",
+      "description": "Daily household appliance products."
+    },
+    {
+      "category_name": "Sports & Fitness",
+      "category_discount": 12,
+      "discount_start_date": "2025-12-05T09:00:00Z",
+      "discount_end_date": "2026-01-05T23:59:59Z",
+      "category_image": "https://t4.ftcdn.net/jpg/02/43/13/15/360_F_243131531_jmNppYX9Ux2Hj2RV9yYR1swicwcYr8EQ.jpg",
+      "description": "Fitness equipment, sportswear, and accessories."
+    },
+    {
+      "category_name": "Beauty & Personal Care",
+      "category_discount": 18,
+      "discount_start_date": "2025-11-20T07:00:00Z",
+      "discount_end_date": "2025-12-20T23:59:59Z",
+      "category_image": "https://media.gettyimages.com/id/1309118928/photo/trendy-collage-made-of-natural-cosmetics-and-beauty-products-for-body-and-face-care.jpg?s=612x612&w=gi&k=20&c=msPfuisfb4HMV4qmws-NRVz4JGQRSAnKsaPEVk-NFn4=",
+      "description": "Skincare, haircare, and cosmetic products."
+    },
+    {
+      "category_name": "Books & Stationery",
+      "category_discount": 5,
+      "discount_start_date": "2025-12-01T10:00:00Z",
+      "discount_end_date": "2026-01-01T23:59:59Z",
+      "category_image": "https://media.gettyimages.com/id/182060333/photo/large-assortment-of-office-supplies-on-white-backdrop.jpg?s=612x612&w=gi&k=20&c=hVwgOma9MxReFpKzm6bgL3iWYeENnVSZs93ZQBoKEpw=",
+      "description": "Books, notebooks, office stationery."
+    },
+    {
+      "category_name": "Baby Products",
+      "category_discount": 22,
+      "discount_start_date": "2025-11-28T11:00:00Z",
+      "discount_end_date": "2025-12-28T23:59:59Z",
+      "category_image": "https://lovevery.com/_next/image/?url=https%3A%2F%2Fimages.ctfassets.net%2F0sea1vycfyqy%2F3fQb5Ix1bvOfMSHd97IAdl%2F3e6bd3e266cfffa216b4a7cb48f12826%2FThe_Looker_Play_Kit_3-4-2.png&w=1920&q=75",
+      "description": "Baby food, toys, clothes, and essentials."
+    },
+    {
+      "category_name": "Groceries",
+      "category_discount": 8,
+      "discount_start_date": "2025-11-30T07:00:00Z",
+      "discount_end_date": "2025-12-30T23:59:59Z",
+      "category_image": "https://media.gettyimages.com/id/182060333/photo/large-assortment-of-office-supplies-on-white-backdrop.jpg?s=612x612&w=gi&k=20&c=hVwgOma9MxReFpKzm6bgL3iWYeENnVSZs93ZQBoKEpw=",
+      "description": "Daily grocery and household food products."
+    },
+    {
+      "category_name": "Furniture",
+      "category_discount": 30,
+      "discount_start_date": "2025-12-10T08:00:00Z",
+      "discount_end_date": "2026-01-10T23:59:59Z",
+      "category_image": "https://www.istanbulfurniture.com/cdn/shop/files/My-Luxury-Royal-Turkish-Furniture-Traditional-Living-Room-Set-2_1080x.jpg?v=1733490475",
+      "description": "Home and office furniture items."
+    },
+    {
+      "category_name": "Automotive Accessories",
+      "category_discount": 15,
+      "discount_start_date": "2025-11-27T09:00:00Z",
+      "discount_end_date": "2025-12-27T23:59:59Z",
+      "category_image": "https://usedcardealersaustin.com/wp-content/uploads/2023/01/used-car-accessories.jpeg",
+      "description": "Car parts, bike accessories, and maintenance tools."
+    }
+  ]
+  

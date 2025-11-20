@@ -1,0 +1,94 @@
+// api: /api/v1/admin-products/create-subcategory/
+[
+    {
+      "sub_category_name": "Smartphones",
+      "sub_category_discount": 10,
+      "discount_start_date": "2025-12-01T00:00:00Z",
+      "discount_end_date": "2025-12-15T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+      "category_id": "1",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Headphones & Earbuds",
+      "sub_category_discount": 5,
+      "discount_start_date": "2025-11-28T00:00:00Z",
+      "discount_end_date": "2025-12-10T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1590650046871-62c7969a0454",
+      "category_id": "1",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Men's Clothing",
+      "sub_category_discount": 15,
+      "discount_start_date": "2025-11-20T00:00:00Z",
+      "discount_end_date": "2025-12-20T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1539533113208-f6df8cc8b543",
+      "category_id": "2",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Women's Fashion",
+      "sub_category_discount": 20,
+      "discount_start_date": "2025-11-25T06:00:00Z",
+      "discount_end_date": "2025-12-25T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa",
+      "category_id": "2",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Kitchen Appliances",
+      "sub_category_discount": 12,
+      "discount_start_date": "2025-11-22T10:00:00Z",
+      "discount_end_date": "2025-12-22T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1616627454802-9504c7d59ee3",
+      "category_id": "3",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Electric Kettles & Cookware",
+      "sub_category_discount": 8,
+      "discount_start_date": "2025-11-24T08:00:00Z",
+      "discount_end_date": "2025-12-15T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1616626763244-dad542efb1b9",
+      "category_id": "3",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Fitness Equipment",
+      "sub_category_discount": 10,
+      "discount_start_date": "2025-12-05T07:00:00Z",
+      "discount_end_date": "2026-01-05T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1598970434795-0c54fe7c0648",
+      "category_id": "4",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Gym Accessories",
+      "sub_category_discount": 7,
+      "discount_start_date": "2025-12-10T07:00:00Z",
+      "discount_end_date": "2026-01-10T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1599058917727-5a9f707c31d9",
+      "category_id": "4",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Skincare Products",
+      "sub_category_discount": 18,
+      "discount_start_date": "2025-11-20T05:00:00Z",
+      "discount_end_date": "2025-12-20T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1522337660859-02fbefca4702",
+      "category_id": "5",
+      "parent_sub_category_id": null
+    },
+    {
+      "sub_category_name": "Cosmetics & Makeup",
+      "sub_category_discount": 22,
+      "discount_start_date": "2025-11-22T05:00:00Z",
+      "discount_end_date": "2025-12-22T23:59:59Z",
+      "sub_category_image": "https://images.unsplash.com/photo-1512499617640-c2f999098c01",
+      "category_id": "5",
+      "parent_sub_category_id": null
+    }
+  ]
+  

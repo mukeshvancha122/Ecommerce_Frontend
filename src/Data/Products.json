@@ -1,0 +1,301 @@
+// /api/v1/admin-products/create-product/
+
+[
+    {
+      "product_name": "Smartphone X100",
+      "product_description": "A high-performance smartphone with advanced features.",
+      "product_discount": 10,
+      "product_category": 1,
+      "sub_category": 101,
+      "is_top_selling": true,
+      "weekly_drop": false,
+      "featured_product": true,
+      "faq": "Is it waterproof? Yes.",
+      "brand": 1,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Black",
+          "product_size": "128GB",
+          "product_quantity": 50,
+          "product_weight": "180g",
+          "product_price": 599,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9"
+          ],
+          "laptop_product": {},
+          "extra_attributes": [
+            { "attribute_name": "Battery", "attribute_value": "5000mAh" }
+          ]
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 10, "business_discount": 5 },
+      "forbidden_delivery": [],
+      "handpicked": true,
+      "best_seller": false,
+      "free_delivery": true,
+      "has_cashback": true,
+      "tag": 301,
+      "excitingdeal_start_date": "2025-12-01T00:00:00Z",
+      "excitingdeal_end_date": "2025-12-10T23:59:59Z"
+    },
+    {
+      "product_name": "Wireless Earbuds Pro",
+      "product_description": "Noise-cancelling wireless earbuds.",
+      "product_discount": 8,
+      "product_category": 1,
+      "sub_category": 102,
+      "is_top_selling": false,
+      "weekly_drop": true,
+      "featured_product": true,
+      "faq": "Battery lasts up to 24 hours.",
+      "brand": 2,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "White",
+          "product_size": "Standard",
+          "product_quantity": 200,
+          "product_weight": "40g",
+          "product_price": 129,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1590650046871-62c7969a0454"
+          ],
+          "laptop_product": {},
+          "extra_attributes": [
+            { "attribute_name": "Bluetooth", "attribute_value": "5.3" }
+          ]
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 20, "business_discount": 10 },
+      "forbidden_delivery": [],
+      "handpicked": false,
+      "best_seller": true,
+      "free_delivery": true,
+      "has_cashback": false,
+      "tag": 302,
+      "excitingdeal_start_date": "2025-12-05T00:00:00Z",
+      "excitingdeal_end_date": "2025-12-20T23:59:59Z"
+    },
+  
+    {
+      "product_name": "Men's Winter Jacket",
+      "product_description": "Warm and stylish winter jacket.",
+      "product_discount": 20,
+      "product_category": 2,
+      "sub_category": 201,
+      "is_top_selling": true,
+      "weekly_drop": false,
+      "featured_product": false,
+      "faq": "Is it waterproof? Yes.",
+      "brand": 5,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Navy Blue",
+          "product_size": "L",
+          "product_quantity": 40,
+          "product_weight": "900g",
+          "product_price": 89,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1539533113208-f6df8cc8b543"
+          ],
+          "extra_attributes": [
+            { "attribute_name": "Fabric", "attribute_value": "Polyester" }
+          ]
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 15, "business_discount": 7 },
+      "forbidden_delivery": [],
+      "handpicked": false,
+      "best_seller": true,
+      "free_delivery": true,
+      "has_cashback": true,
+      "tag": 303,
+      "excitingdeal_start_date": "2025-11-25T10:00:00Z",
+      "excitingdeal_end_date": "2025-12-25T23:59:59Z"
+    },
+    {
+      "product_name": "Women's Handbag",
+      "product_description": "Elegant and premium handbag.",
+      "product_discount": 15,
+      "product_category": 2,
+      "sub_category": 202,
+      "is_top_selling": false,
+      "weekly_drop": true,
+      "featured_product": true,
+      "faq": "Does it come with long strap? Yes.",
+      "brand": 6,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Brown",
+          "product_size": "Medium",
+          "product_quantity": 70,
+          "product_weight": "600g",
+          "product_price": 55,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1548036328-c9fa89d128fa"
+          ],
+          "extra_attributes": []
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 25, "business_discount": 12 },
+      "forbidden_delivery": [],
+      "handpicked": true,
+      "best_seller": false,
+      "free_delivery": true,
+      "has_cashback": false,
+      "tag": 304,
+      "excitingdeal_start_date": "2025-12-01T00:00:00Z",
+      "excitingdeal_end_date": "2025-12-21T23:59:59Z"
+    },
+  
+    {
+      "product_name": "Air Fryer Max 5L",
+      "product_description": "Healthy oil-free frying.",
+      "product_discount": 15,
+      "product_category": 3,
+      "sub_category": 301,
+      "is_top_selling": true,
+      "weekly_drop": false,
+      "featured_product": true,
+      "faq": "Is the basket removable? Yes.",
+      "brand": 7,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Black",
+          "product_size": "5L",
+          "product_quantity": 120,
+          "product_weight": "2.5kg",
+          "product_price": 99,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1616627454802-9504c7d59ee3"
+          ],
+          "extra_attributes": [
+            { "attribute_name": "Power", "attribute_value": "1400W" }
+          ]
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 20, "business_discount": 8 },
+      "forbidden_delivery": [],
+      "handpicked": true,
+      "best_seller": true,
+      "free_delivery": true,
+      "has_cashback": false,
+      "tag": 305,
+      "excitingdeal_start_date": "2025-11-23T08:00:00Z",
+      "excitingdeal_end_date": "2025-12-10T23:59:59Z"
+    },
+    {
+      "product_name": "Electric Kettle Steel 2L",
+      "product_description": "Fast heating steel kettle.",
+      "product_discount": 10,
+      "product_category": 3,
+      "sub_category": 302,
+      "is_top_selling": false,
+      "weekly_drop": false,
+      "featured_product": false,
+      "faq": "Auto cut-off available? Yes.",
+      "brand": 8,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Silver",
+          "product_size": "2L",
+          "product_quantity": 300,
+          "product_weight": "1kg",
+          "product_price": 29,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1616626763244-dad542efb1b9"
+          ],
+          "extra_attributes": []
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 30, "business_discount": 10 },
+      "forbidden_delivery": [],
+      "handpicked": false,
+      "best_seller": false,
+      "free_delivery": true,
+      "has_cashback": true,
+      "tag": 306,
+      "excitingdeal_start_date": "2025-11-24T10:00:00Z",
+      "excitingdeal_end_date": "2025-12-05T23:59:59Z"
+    },
+  
+    {
+      "product_name": "Treadmill Pro 3000",
+      "product_description": "High-end fitness treadmill for home use.",
+      "product_discount": 12,
+      "product_category": 4,
+      "sub_category": 401,
+      "is_top_selling": true,
+      "weekly_drop": false,
+      "featured_product": true,
+      "faq": "Does it fold? Yes.",
+      "brand": 11,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Black",
+          "product_size": "Standard",
+          "product_quantity": 15,
+          "product_weight": "40kg",
+          "product_price": 499,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1598970434795-0c54fe7c0648"
+          ],
+          "extra_attributes": [
+            { "attribute_name": "Motor", "attribute_value": "3HP" }
+          ]
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 5, "business_discount": 5 },
+      "forbidden_delivery": ["hilly_regions"],
+      "handpicked": true,
+      "best_seller": true,
+      "free_delivery": false,
+      "has_cashback": false,
+      "tag": 401,
+      "excitingdeal_start_date": "2025-12-05T09:00:00Z",
+      "excitingdeal_end_date": "2026-01-05T23:59:59Z"
+    },
+    {
+      "product_name": "Adjustable Dumbbells Set",
+      "product_description": "Gym-grade adjustable dumbbells.",
+      "product_discount": 10,
+      "product_category": 4,
+      "sub_category": 402,
+      "is_top_selling": false,
+      "weekly_drop": true,
+      "featured_product": false,
+      "faq": "Are weights removable? Yes.",
+      "brand": 12,
+      "age_restriction": false,
+      "product_variations": [
+        {
+          "product_color": "Black",
+          "product_size": "20kg",
+          "product_quantity": 200,
+          "product_weight": "20kg",
+          "product_price": 79,
+          "uploaded_images": [
+            "https://images.unsplash.com/photo-1599058917727-5a9f707c31d9"
+          ],
+          "extra_attributes": []
+        }
+      ],
+      "business_product": { "minimum_bulk_quantity": 20, "business_discount": 10 },
+      "forbidden_delivery": [],
+      "handpicked": false,
+      "best_seller": false,
+      "free_delivery": true,
+      "has_cashback": false,
+      "tag": 402,
+      "excitingdeal_start_date": "2025-12-10T09:00:00Z",
+      "excitingdeal_end_date": "2026-01-05T23:59:59Z"
+    }
+  
+  ]
+  
