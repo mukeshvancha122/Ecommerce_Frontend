@@ -20,7 +20,10 @@ import AddressBook from "../../components/Checkout/AddressBook";
 import AddressModal from "../../components/Checkout/AddressModal";
 import PaymentSection from "../../components/Checkout/PaymentSection";
 import OrderSuccessOverlay from "../../components/Checkout/OrderSuccessOverlay";
+import CountryErrorModal from "../../components/Checkout/CountryErrorModal";
 import { useTranslation } from "../../i18n/TranslationProvider";
+import { selectCountry } from "../../features/country/countrySlice";
+import { formatCurrency } from "../../utils/currency";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch();
@@ -37,6 +40,9 @@ export default function CheckoutPage() {
 
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [showCountryError, setShowCountryError] = useState(false);
+  const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
+  const selectedCountry = useSelector(selectCountry);
 
   useEffect(() => {
     dispatch(fetchAddresses());
@@ -98,6 +104,10 @@ export default function CheckoutPage() {
                 onSelect={(id) => dispatch(selectAddressAction(id))}
                 onAddNew={() => setShowAddressModal(true)}
                 onChangeClick={() => setShowAddressModal(true)}
+                onCountryMismatch={(selected, address) => {
+                  setCountryErrorData({ selectedCountry: selected, addressCountry: address });
+                  setShowCountryError(true);
+                }}
               />
               <button
                 className="co-cta"
@@ -151,30 +161,37 @@ export default function CheckoutPage() {
             </button>
             <div className="co-summary-row">
               <span>{t("checkout.items")}:</span>
-              <b>${itemsTotal.toFixed(2)}</b>
+              <b>{formatCurrency(itemsTotal)}</b>
             </div>
             <div className="co-summary-row">
               <span>{t("checkout.shipping")}:</span>
-              <b>${(shipping.shipping || 0).toFixed(2)}</b>
+              <b>{formatCurrency(shipping.shipping || 0)}</b>
             </div>
             <div className="co-summary-row">
               <span>{t("checkout.tax")}:</span>
-              <b>${(shipping.tax || 0).toFixed(2)}</b>
+              <b>{formatCurrency(shipping.tax || 0)}</b>
             </div>
             <div className="co-summary-row">
               <span>{t("checkout.importCharges")}:</span>
-              <b>${(shipping.importCharges || 0).toFixed(2)}</b>
+              <b>{formatCurrency(shipping.importCharges || 0)}</b>
             </div>
             <hr />
             <div className="co-summary-total">
               <span>{t("checkout.total")}:</span>
-              <b>${orderTotal.toFixed(2)}</b>
+              <b>{formatCurrency(orderTotal)}</b>
             </div>
           </aside>
         </section>
       </main>
 
       <AddressModal open={showAddressModal} onClose={() => setShowAddressModal(false)} />
+
+      <CountryErrorModal
+        isOpen={showCountryError}
+        onClose={() => setShowCountryError(false)}
+        selectedCountry={countryErrorData.selectedCountry}
+        addressCountry={countryErrorData.addressCountry}
+      />
 
       {showSuccessOverlay && (
         <OrderSuccessOverlay orderId={payment.orderId} onComplete={handleOverlayComplete} />

@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./AddressModal.css";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { createAddress, editAddress } from "../../features/checkout/CheckoutSlice";
+import { selectCountry, COUNTRIES } from "../../features/country/countrySlice";
 
 export default function AddressModal({ open, onClose, initial }) {
   const dispatch = useDispatch();
+  const selectedCountry = useSelector(selectCountry);
   const [form, setForm] = useState(
     initial || {
-      country: "United States",
+      country: selectedCountry.name,
       fullName: "",
       phone: "",
       address1: "",
@@ -17,6 +19,13 @@ export default function AddressModal({ open, onClose, initial }) {
       zip: "",
     }
   );
+
+  // Update country when selected country changes (only for new addresses)
+  useEffect(() => {
+    if (!initial && open) {
+      setForm((prev) => ({ ...prev, country: selectedCountry.name }));
+    }
+  }, [selectedCountry, open, initial]);
 
   if (!open) return null;
 
@@ -39,7 +48,11 @@ export default function AddressModal({ open, onClose, initial }) {
         <form onSubmit={onSubmit} className="am-form">
           <label>Country/Region
             <select value={form.country} onChange={set("country")}>
-              <option>United States</option><option>India</option><option>Canada</option>
+              {COUNTRIES.map((country) => (
+                <option key={country.code} value={country.name}>
+                  {country.flag} {country.name}
+                </option>
+              ))}
             </select>
           </label>
 

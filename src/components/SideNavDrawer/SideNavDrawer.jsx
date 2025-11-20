@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import "./SideNavDrawer.css";
 import { getAllCategories } from "../../api/products/CategoryService";
 import { getCategorySubcategories } from "../../api/products/CategorySubCategoryService";
+import { setCountry, selectCountry, COUNTRIES } from "../../features/country/countrySlice";
 
 export default function SideNavDrawer({
   isOpen,
@@ -11,12 +13,15 @@ export default function SideNavDrawer({
   onSignOut,
   userName = "",      
 }) {
+  const dispatch = useDispatch();
+  const selectedCountry = useSelector(selectCountry);
   const [deptOpen, setDeptOpen] = useState(false);
   const [programsOpen, setProgramsOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [trendingOpen, setTrendingOpen] = useState(false);
   const [openCats, setOpenCats] = useState({});
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
 
   // Lock scroll + close on ESC
   useEffect(() => {
@@ -95,10 +100,32 @@ export default function SideNavDrawer({
           <span className="snd-leadingIcon">🌐</span>
           <span className="snd-rowLabel">English</span>
         </li>
-        <li className="snd-row" onClick={() => goto("/country")}>
-          <span className="snd-leadingIcon">🇺🇸</span>
-          <span className="snd-rowLabel">United States</span>
+        <li 
+          className="snd-row snd-row-country"
+          onClick={() => setShowCountryMenu(!showCountryMenu)}
+        >
+          <span className="snd-leadingIcon">{selectedCountry.flag}</span>
+          <span className="snd-rowLabel">{selectedCountry.name} ({selectedCountry.currency})</span>
+          <span className={`snd-caret ${showCountryMenu ? "snd-caret--up" : ""}`}>▾</span>
         </li>
+        {showCountryMenu && (
+          <li className="snd-country-menu">
+            {COUNTRIES.map((country) => (
+              <button
+                key={country.code}
+                className={`snd-country-item ${country.code === selectedCountry.code ? "is-active" : ""}`}
+                onClick={() => {
+                  dispatch(setCountry(country.code));
+                  setShowCountryMenu(false);
+                }}
+              >
+                <span className="snd-country-flag">{country.flag}</span>
+                <span className="snd-country-name">{country.name}</span>
+                <span className="snd-country-currency">{country.currency}</span>
+              </button>
+            ))}
+          </li>
+        )}
         <li className="snd-row" onClick={() => goto("/help")}>
           <span className="snd-rowLabel">Customer Service</span>
         </li>
