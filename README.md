@@ -16,7 +16,16 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
    REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
    REACT_APP_PAYPAL_CLIENT_ID=sb
    REACT_APP_API_BASE_URL=http://localhost:5000/api
+   
+   # AI Chatbot Configuration (Optional)
+   # Option 1: Use backend proxy (recommended for production)
+   REACT_APP_CHATBOT_API_URL=/api/v1/chatbot
+   
+   # Option 2: Direct OpenAI API (for development/testing)
+   REACT_APP_OPENAI_API_KEY=sk-xxx
    ```
+   
+   **Note:** The chatbot works with intelligent fallback responses even without API keys. For production, set up a backend proxy to handle OpenAI API calls securely.
 3. **Run the dev server**
    ```bash
    npm start
@@ -43,8 +52,15 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
   - PayPal wallet via official SDK, ready for sandbox/live client IDs.
   - Post-payment overlay animation/redirect to orders in 3 seconds.
 - **Dynamic order placement**: places mock orders, stores them, surfaces in the redesigned Orders page (with filtering/search placeholders, Amazon UI).
+- **AI-Powered Customer Service**:
+  - Intelligent chatbot with OpenAI GPT integration (via backend proxy or direct API).
+  - Natural, human-like conversational responses.
+  - Voice capabilities: Text-to-Speech (TTS) and Speech-to-Text (STT).
+  - Intelligent fallback responses when API is unavailable.
+  - Conversation history and context awareness.
+  - Comprehensive FAQ section with expandable categories.
 - **Translations / Localization**:
-  - EN / HI / TE dictionaries in `src/i18n/translations.js`.
+  - EN / HI / DE / ES dictionaries in `src/i18n/translations.js`.
   - Redux-powered locale store, context-based `useTranslation`.
   - `Accept-Language` header automatically forwarded for backend-backed translations.
 - **Performance & Scale Considerations**:
@@ -61,6 +77,7 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
 | --- | --- |
 | UI & state | React 17, Redux Toolkit, React Router 5 |
 | Payments | `@stripe/react-stripe-js`, `@stripe/stripe-js`, `@paypal/react-paypal-js` |
+| AI Chatbot | OpenAI GPT API (via backend proxy or direct), Web Speech API |
 | Data & APIs | Axios with auth + language interceptors |
 | Tooling | React Scripts, Testing Library, Moment (legacy) |
 
@@ -68,6 +85,7 @@ Internal util layers:
 - `src/api/CheckoutService.js` – addresses, shipping, PaymentIntent mocks, order placement.
 - `src/api/payment/PaymentMethodsService.js` – saved cards & PhonePe simulation.
 - `src/api/orders/OrdersService.js` – mock persistence feeding Orders page.
+- `src/api/chatbot/ChatbotService.js` – AI chatbot integration with OpenAI API and intelligent fallback.
 
 ---
 

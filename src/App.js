@@ -15,6 +15,7 @@ import ProductPage from "./pages/ProductPage/ProductPage";
 import ProductsPage from "./pages/ProductsPage/ProductsPage";
 import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
 import AccountPage from "./pages/AccountPage/AccountPage";
+import CustomerServicePage from "./pages/CustomerServicePage/CustomerServicePage";
 import ProtectedRoute from "./routing/ProtectedRoute";
 import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
 import SearchResults from "./pages/SearchPage/SearchResultsPage";
@@ -99,6 +100,12 @@ export default function App() {
                 <CheckoutPage />
               </Elements>
             </ProtectedRoute>
+
+            <Route path="/help">
+              <Header />
+              <SubHeader />
+              <CustomerServicePage />
+            </Route>
 
             <Route path="/">
               <Header />
