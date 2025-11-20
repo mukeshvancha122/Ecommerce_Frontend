@@ -1,4 +1,4 @@
-import API from "../axios";
+import API from "../../axios";
 
 // switch `useMock` off when backend is ready
 const useMock = true;
