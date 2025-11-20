@@ -152,6 +152,7 @@ export const ProductResultsExperience = ({
   loading = false,
   error = "",
   onProductClick = () => {},
+  history = null,
 }) => {
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [selectedPrice, setSelectedPrice] = useState("");
@@ -388,6 +389,17 @@ export const ProductResultsExperience = ({
             <div className="searchResultsImagePreview">
               <span className="searchResultsImageLabel">Your image</span>
               <img src={previewImageUrl} alt="uploaded" />
+              {history && (
+                <button
+                  type="button"
+                  className="searchResultsImageClose"
+                  onClick={() => history.push("/")}
+                  aria-label="Remove image and go to home"
+                  title="Remove image and go to home"
+                >
+                  ×
+                </button>
+              )}
             </div>
           )}
 
@@ -441,6 +453,7 @@ const SearchResultsPage = () => {
           ? "No products found for this search. Showing similar products below."
           : ""
       }
+      history={history}
       onProductClick={(product) => {
         if (!product) return;
         const target = product.slug || product.id;
