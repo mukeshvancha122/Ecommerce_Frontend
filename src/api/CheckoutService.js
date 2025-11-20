@@ -13,11 +13,15 @@
 // // payload: { addressId, items, paymentIntentId }
 // src/api/checkout.js
 import API from "../axios";
+import { createOrderRecord } from "./orders/OrdersService";
 
 // ======= TEMPORARY MOCK IMPLEMENTATION =======
 // Comment these out once you connect real backend.
 
 const delay = (ms = 500) => new Promise((res) => setTimeout(res, ms));
+
+const calculateItemsTotal = (items = []) =>
+  items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
 
 export const getAddresses = async () => {
   await delay();
@@ -91,9 +95,10 @@ export const setDefaultAddress = async (id) => {
 // ====== Shipping Quote ======
 export const getShippingQuote = async () => {
   await delay();
+  const itemsTotal = 89.99;
   return {
     data: {
-      itemsTotal: 89.99,
+      itemsTotal,
       shipping: 52.31,
       tax: 0.0,
       importCharges: 59.88,
@@ -104,12 +109,14 @@ export const getShippingQuote = async () => {
 // ====== Payment ======
 export const createPaymentIntent = async (payload) => {
   await delay(1000);
-  console.log("Mock PaymentIntent payload", payload);
+  const itemsTotal = calculateItemsTotal(payload?.items);
+  const amount =
+    itemsTotal + 52.31 + 0 + 59.88; // include mock shipping/tax to align with UI summary
   return {
     data: {
       clientSecret: "pi_mock_client_secret_12345",
       currency: "USD",
-      amount: 202.18,
+      amount: Math.round(amount * 100) / 100,
       orderId: "order_" + Date.now(),
     },
   };
@@ -118,11 +125,21 @@ export const createPaymentIntent = async (payload) => {
 // ====== Order placement ======
 export const placeOrder = async (payload) => {
   await delay(800);
-  console.log("Mock order placed:", payload);
+  const order = {
+    id: payload.paymentIntentId || `order_${Date.now()}`,
+    status: "succeeded",
+    paymentIntentId: payload.paymentIntentId,
+    addressId: payload.addressId,
+    items: payload.items,
+    total: payload.total,
+    placedAt: new Date().toISOString(),
+    paymentMethod: payload.paymentMethod || "card",
+  };
+  await createOrderRecord(order);
   return {
     data: {
-      orderId: payload.paymentIntentId,
-      status: "succeeded",
+      orderId: order.id,
+      status: order.status,
       message: "Order placed successfully (mock)",
     },
   };

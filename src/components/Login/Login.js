@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
 
 import { setCredentials } from "../../features/auth/AuthSlice";
+import { useTranslation } from "../../i18n/TranslationProvider";
 
 // auth services
 import { getUserToken } from "../../api/user/UserTokenService";
@@ -17,6 +18,7 @@ import { resetPassword } from "../../api/user/UserResetPasswordService";
 export default function Login() {
   const dispatch = useDispatch();
   const history = useHistory();
+  const { t } = useTranslation();
 
   /**
    * UI modes:
@@ -264,10 +266,10 @@ export default function Login() {
         {/* SIGN-IN */}
         {mode === "signin" && (
           <form className="authCard" onSubmit={handleSignIn}>
-            <h1 className="authTitle">Sign-In</h1>
+            <h1 className="authTitle">{t("auth.signIn")}</h1>
 
             <label className="authLabel" htmlFor="login_email">
-              Email
+              {t("auth.email")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -282,7 +284,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="login_password">
-              Password
+              {t("auth.password")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -297,7 +299,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="authBtnPrimary" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "…" : t("auth.signInCta")}
             </button>
 
             {errorMsg && <div className="errorText">{errorMsg}</div>}
@@ -309,7 +311,7 @@ export default function Login() {
                 className="switchEmailBtn"
                 onClick={switchToForgotEmail}
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </button>
             </p>
 
@@ -320,7 +322,7 @@ export default function Login() {
               className="authBtnSecondary"
               onClick={switchToRegister}
             >
-              Create your account
+              {t("auth.createAccount")}
             </button>
           </form>
         )}
@@ -328,10 +330,10 @@ export default function Login() {
         {/* REGISTER */}
         {mode === "register" && (
           <form className="authCard" onSubmit={handleRegister}>
-            <h1 className="authTitle">Create account</h1>
+            <h1 className="authTitle">{t("auth.createAccount")}</h1>
 
             <label className="authLabel" htmlFor="reg_name">
-              Full name
+              {t("auth.fullName")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -345,7 +347,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="reg_email">
-              Email
+              {t("auth.email")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -360,7 +362,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="reg_dob">
-              Date of birth
+              {t("auth.dob")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -374,7 +376,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="reg_password">
-              Password
+              {t("auth.password")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -389,7 +391,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="reg_password_confirm">
-              Re-enter password
+              {t("auth.confirmPassword")}
             </label>
             <div className="authInputWrapper">
               <input
@@ -407,7 +409,7 @@ export default function Login() {
               className="authBtnPrimary"
               disabled={loading}
             >
-              {loading ? "Creating..." : "Create your account"}
+              {loading ? "…" : t("auth.createAccountCta")}
             </button>
 
             {errorMsg && <div className="errorText">{errorMsg}</div>}
@@ -419,7 +421,7 @@ export default function Login() {
               onClick={switchToSignIn}
               style={{ marginTop: "16px" }}
             >
-              Already have an account? Sign in
+              Already have an account? {t("auth.signInCta")}
             </button>
           </form>
         )}
@@ -568,9 +570,7 @@ export default function Login() {
           <a href="#">Privacy Notice</a>
           <a href="#">Help</a>
         </div>
-        <div className="footerCopy">
-          © 1996-2025, MyStore Inc. or its affiliates
-        </div>
+        <div className="footerCopy">{t("auth.footerCopy")}</div>
       </footer>
     </main>
   );

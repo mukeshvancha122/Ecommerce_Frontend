@@ -1,10 +1,12 @@
 import React from "react";
 import "./OrdersHeaderBar.css";
+import { useTranslation } from "../../i18n/TranslationProvider";
 
 export default function OrdersHeaderBar({ searchQuery, onSearchChange }) {
+  const { t } = useTranslation();
   return (
     <div className="ordersHeaderBar">
-      <h1 className="ordersHeaderBar-title">Your Orders</h1>
+      <h1 className="ordersHeaderBar-title">{t("orders.title")}</h1>
 
       <div className="ordersHeaderBar-searchWrapper">
         <div className="ordersHeaderBar-searchInputWrapper">
@@ -17,9 +19,7 @@ export default function OrdersHeaderBar({ searchQuery, onSearchChange }) {
           />
         </div>
 
-        <button className="ordersHeaderBar-searchBtn">
-          Search Orders
-        </button>
+        <button className="ordersHeaderBar-searchBtn">Search Orders</button>
       </div>
     </div>
   );

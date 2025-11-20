@@ -6,25 +6,27 @@ import OrdersTabsBar from "../../components/Orders/OrdersTabsBar";
 import OrdersFilterRow from "../../components/Orders/OrdersFilterRow";
 import OrdersContent from "../../components/Orders/OrdersContent";
 import OrdersBottomHistoryBar from "../../components/Orders/OrdersBottomHistoryBar";
-import axios from "axios";
+import { fetchOrders } from "../../api/orders/OrdersService";
+import { useTranslation } from "../../i18n/TranslationProvider";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [timeRange, setTimeRange] = useState("past 3 months");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    axios
-      .get("/api/orders", {
-        params: { timeRange, q: searchQuery },
-        withCredentials: true,
+    let mounted = true;
+    setLoading(true);
+    fetchOrders({ timeRange, query: searchQuery })
+      .then(({ data }) => {
+        if (mounted) setOrders(data.orders || []);
       })
-      .then((res) => {
-        setOrders(res.data.orders || []);
-      })
-      .catch(() => {
-        setOrders([]);
-      });
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
   }, [timeRange, searchQuery]);
 
   return (
@@ -32,10 +34,7 @@ export default function OrdersPage() {
       <div className="ordersPage-inner">
         <OrdersBreadcrumb />
 
-        <OrdersHeaderBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+        <OrdersHeaderBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
         <OrdersTabsBar activeTab="Orders" />
 
@@ -47,8 +46,9 @@ export default function OrdersPage() {
 
         <OrdersContent
           orders={orders}
-          emptyMessage={`Looks like you haven't placed an order in the last 3 months.`}
-          emptyLinkText="View orders in 2025"
+          loading={loading}
+          emptyMessage={t("orders.empty")}
+          emptyLinkText={t("orders.viewYear")}
           emptyLinkHref="#"
         />
 

@@ -56,8 +56,8 @@ function getBotReply(userText, user) {
 
   if (msg.includes("contact") || msg.includes("agent") || msg.includes("human")) {
     return [
-      "You can contact support at support@yourshop.com.",
-      "Live chat with a human is available 9am–6pm EST.",
+      "You can contact support at support@hydernexa.com.",
+      "Live chat with a human is available 9am–6pm IST.",
     ];
   }
 

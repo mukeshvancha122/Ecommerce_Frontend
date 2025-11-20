@@ -16,89 +16,93 @@ import ProductsPage from "./pages/ProductsPage/ProductsPage";
 import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
 import ProtectedRoute from "./routing/ProtectedRoute";
 import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
+import SearchResults from "./pages/SearchPage/SearchResultsPage";
+import { TranslationProvider } from "./i18n/TranslationProvider";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
-// Redux auth 
 import { useSelector } from "react-redux";
-import { selectUser } from "./features/auth/AuthSlice"; 
-import SearchResults from "./pages/SearchPage/SearchResultsPage";
+import { selectUser } from "./features/auth/AuthSlice";
 
-const stripePromise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
+const stripePromise = loadStripe(
+  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_TYooMQauvdEDq54NiTphI7jx"
+);
 
 export default function App() {
-  // user is hydrated from localStorage in index.js via hydrateFromStorage()
   const user = useSelector(selectUser);
 
   return (
-    <Router>
-      <div className="app">
-        <Switch>
-          <Route path="/orders">
-            <Header />
-            <SubHeader />
-            <OrdersPage />
-          </Route>
-
-          <Route path="/login">
-            <Login />
-          </Route>
-
-          <Route path="/checkout">
-            <Header />
-            <SubHeader />
-            <Checkout />
-          </Route>
-
-          <Route path="/payment">
-            <Header />
-            <SubHeader />
-            <Elements stripe={stripePromise}>
-              <Payment />
-            </Elements>
-          </Route>
-
-          <Route path="/search">
-            <Header />
-            <SubHeader />
-            <SearchResults />
-          </Route>
-
-          <Route path="/product/:slug">
-            <Header />
-            <SubHeader />
-            <ProductPage />
-          </Route>
-
-          <Route path="/products">
-            <Header />
-            <SubHeader />
-            <ProductsPage />
-          </Route>
-
-          <Route path="/search-results">
-            <Header />
-            <SubHeader />
-            <SearchResultPage />
-          </Route>
-
-          <Route path="/proceed-to-checkout">
-            {/* <ProtectedRoute path="/secure-checkout"> */}
+    <TranslationProvider>
+      <Router>
+        <div className="app">
+          <Switch>
+            <ProtectedRoute path="/orders">
               <Header />
               <SubHeader />
-              <CheckoutPage />
-          </Route>
-         
-          <Route path="/">
-            <Header />
-            <SubHeader />
-            <Home />
-          </Route>
-        </Switch>
+              <OrdersPage />
+            </ProtectedRoute>
 
-        <ChatWidget user={user} />
-      </div>
-    </Router>
+            <Route path="/login">
+              <Login />
+            </Route>
+
+            <ProtectedRoute path="/checkout">
+              <Header />
+              <SubHeader />
+              <Checkout />
+            </ProtectedRoute>
+
+            <ProtectedRoute path="/payment">
+              <Header />
+              <SubHeader />
+              <Elements stripe={stripePromise}>
+                <Payment />
+              </Elements>
+            </ProtectedRoute>
+
+            <Route path="/search">
+              <Header />
+              <SubHeader />
+              <SearchResults />
+            </Route>
+
+            <Route path="/product/:slug">
+              <Header />
+              <SubHeader />
+              <ProductPage />
+            </Route>
+
+            <Route path="/products">
+              <Header />
+              <SubHeader />
+              <ProductsPage />
+            </Route>
+
+            <Route path="/search-results">
+              <Header />
+              <SubHeader />
+              <SearchResultPage />
+            </Route>
+
+            <ProtectedRoute path="/proceed-to-checkout">
+              <Header />
+              <SubHeader />
+              <Elements stripe={stripePromise}>
+                <CheckoutPage />
+              </Elements>
+            </ProtectedRoute>
+
+            <Route path="/">
+              <Header />
+              <SubHeader />
+              <Home />
+            </Route>
+          </Switch>
+
+          <ChatWidget user={user} />
+        </div>
+      </Router>
+    </TranslationProvider>
   );
 }

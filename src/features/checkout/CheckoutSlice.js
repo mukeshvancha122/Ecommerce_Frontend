@@ -39,8 +39,14 @@ export const startPayment = createAsyncThunk(
 
 export const confirmOrderThunk = createAsyncThunk(
   "checkout/confirmOrder",
-  async ({ addressId, items, paymentIntentId }) => {
-    const { data } = await placeOrder({ addressId, items, paymentIntentId });
+  async ({ addressId, items, paymentIntentId, paymentMethod, total }) => {
+    const { data } = await placeOrder({
+      addressId,
+      items,
+      paymentIntentId,
+      paymentMethod,
+      total,
+    });
     return data; // { orderId, status }
   }
 );
@@ -104,9 +110,17 @@ const slice = createSlice({
         s.payment.lastError = a.error?.message || "Failed to start payment";
      })
 
-     .addCase(confirmOrderThunk.fulfilled, (s) => {
+     .addCase(confirmOrderThunk.pending, (s) => {
+        s.payment.status = "confirming";
+     })
+     .addCase(confirmOrderThunk.fulfilled, (s, a) => {
         s.step = "done";
         s.payment.status = "succeeded";
+        s.payment.orderId = a.payload.orderId;
+     })
+     .addCase(confirmOrderThunk.rejected, (s, a) => {
+        s.payment.status = "error";
+        s.payment.lastError = a.error?.message || "Failed to place order";
      });
   },
 });

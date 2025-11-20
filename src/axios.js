@@ -1,6 +1,7 @@
 import axios from "axios";
 import { store } from "./store";
 import { logout } from "./features/auth/AuthSlice";
+import { getSupportedLanguage } from "./i18n/translations";
 
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
@@ -13,6 +14,9 @@ API.interceptors.request.use((config) => {
   const state = store.getState();
   const token = state?.auth?.token || JSON.parse(localStorage.getItem("auth_v1"))?.token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  const language = getSupportedLanguage(state?.locale?.language || "en");
+  config.headers["Accept-Language"] = language;
   return config;
 });
 
