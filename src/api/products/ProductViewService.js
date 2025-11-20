@@ -1,9 +1,10 @@
 import API from "../../axios";
+import { translateProduct } from "../../utils/productTranslations";
 
 export const getProductView = async (id, slug) => {
   console.log("Dummy product-view params:", { id, slug });
 
-  return [
+  const products = [
     {
       id: Number(id) || 1,
       product_name: "Ultimate Gaming Laptop",
@@ -100,6 +101,9 @@ export const getProductView = async (id, slug) => {
       excitingdeal_end_date: "2025-11-30T01:49:36.343Z"
     }
   ];
+
+  // Translate products based on current language
+  return products.map(translateProduct);
 };
 
 // export const getProductView = async (id, slug) => {

@@ -5,8 +5,9 @@ import Subtotal from "./Subtotal";
 
 // ✅ Redux
 import { useSelector } from "react-redux";
-import { selectCartItems } from "../../features/cart/CartSlice"; // adjust path/case to your file
+import { selectCartItems } from "../../features/cart/CartSlice";
 import { selectUser } from "../../features/auth/AuthSlice";
+import { useTranslation } from "../../i18n/TranslationProvider";
 
 const safeName = (user) =>
   (user?.name && user.name.trim()) ||
@@ -15,6 +16,7 @@ const safeName = (user) =>
 export default function Checkout() {
   const items = useSelector(selectCartItems);
   const user = useSelector(selectUser);
+  const { t } = useTranslation();
 
   return (
     <div className="checkout">
@@ -26,16 +28,20 @@ export default function Checkout() {
         />
 
         <div>
-          <h3>{user ? `Hello, ${safeName(user)}` : "Hello, Guest"}</h3>
+          <h3>
+            {user
+              ? `${t("header.accountHello")}, ${safeName(user)}`
+              : `${t("header.accountHello")}, Guest`}
+          </h3>
 
-          <h2 className="checkout-title">Your shopping cart</h2>
+          <h2 className="checkout-title">{t("cart.title")}</h2>
 
           {items.length === 0 ? (
-            <p>Your cart is empty.</p>
+            <p>{t("cart.empty")}</p>
           ) : (
             items.map((item) => (
               <CheckoutProduct
-                key={item.sku}          // sku is stable identifier
+                key={item.sku}
                 id={item.sku}
                 title={item.title}
                 image={item.image}

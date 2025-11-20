@@ -166,13 +166,11 @@ export default function SideNavDrawer({
                 <>
                   {dummyTrending.bestSellers.map((it, idx) => (
                     <li key={`bs-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
-                      <span className="snd-leadingIcon">•</span>
                       <span className="snd-rowLabel">{it.title}</span>
                     </li>
                   ))}
                   {dummyTrending.newReleases.map((it, idx) => (
                     <li key={`nr-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
-                      <span className="snd-leadingIcon">•</span>
                       <span className="snd-rowLabel">{it.title}</span>
                     </li>
                   ))}
@@ -235,16 +233,14 @@ export default function SideNavDrawer({
                         </li>
                         {(deptOpen || isOpen) && (
                           <li className="snd-row" onClick={() => goto(href)}>
-                            <span className="snd-leadingIcon">↪</span>
-                            <span className="snd-rowLabel">View all in {cat.category_name}</span>
+                            <span className="snd-rowLabel" style={{ paddingLeft: '20px', fontStyle: 'italic', color: 'var(--snd-accent)' }}>View all in {cat.category_name}</span>
                           </li>
                         )}
                         {(deptOpen || isOpen) && subs.map((sc) => {
                           const shref = `/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`;
                           return (
                             <li key={`${cat.id}-${sc.id}`} className="snd-row" onClick={() => goto(shref)}>
-                              <span className="snd-leadingIcon">•</span>
-                              <span className="snd-rowLabel">{sc.sub_category}</span>
+                              <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{sc.sub_category}</span>
                             </li>
                           );
                         })}
@@ -258,20 +254,17 @@ export default function SideNavDrawer({
                   {/* Featured items per department (dummy) */}
                   {dummyDepartment.clothing.map((it, idx) => (
                     <li key={`clo-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
-                      <span className="snd-leadingIcon">•</span>
-                      <span className="snd-rowLabel">{it.title}</span>
+                      <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
                   {dummyDepartment.shoes.map((it, idx) => (
                     <li key={`sho-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
-                      <span className="snd-leadingIcon">•</span>
-                      <span className="snd-rowLabel">{it.title}</span>
+                      <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
                   {dummyDepartment.jewelryWatches.map((it, idx) => (
                     <li key={`jew-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
-                      <span className="snd-leadingIcon">•</span>
-                      <span className="snd-rowLabel">{it.title}</span>
+                      <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
                   <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-fresh")}>

@@ -5,39 +5,31 @@ import { useHistory } from "react-router-dom";
 import { selectCartItems, selectCartTotal } from "../../features/cart/CartSlice";
 import { selectUser } from "../../features/auth/AuthSlice";
 import { formatCurrency } from "../../utils/format";
+import { useTranslation } from "../../i18n/TranslationProvider";
 
 export default function Subtotal() {
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const user = useSelector(selectUser);
   const history = useHistory();
+  const { t } = useTranslation();
 
   const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   const handleProceedToCheckout = () => {
-    // if (!user) {
-      // If not logged in, send them to login
-      // and remember the page they wanted to visit
-    //   history.push({
-    //     pathname: "/login",
-    //     state: { from: "/secure-checkout" },
-    //   });
-    // } else {
-      // Logged in — go to secure checkout
-      history.push("/proceed-to-checkout");
-    // }
+    history.push("/proceed-to-checkout");
   };
 
   return (
     <div className="subtotal">
       <p>
-        Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"}):{" "}
+        {t("cart.subtotal")} ({itemCount} {itemCount === 1 ? t("cart.items").slice(0, -1) : t("cart.items")}):{" "}
         <strong>{formatCurrency(total, "USD")}</strong>
       </p>
 
       <small className="subtotal-gift">
         <input type="checkbox" id="gift" />{" "}
-        <label htmlFor="gift">This order contains a gift</label>
+        <label htmlFor="gift">{t("checkout.giftOption", {})}</label>
       </small>
 
       <button
@@ -45,7 +37,7 @@ export default function Subtotal() {
         onClick={handleProceedToCheckout}
         disabled={itemCount === 0}
       >
-        Proceed to Checkout
+        {t("cart.checkout")}
       </button>
     </div>
   );

@@ -1,8 +1,16 @@
 import { searchProducts } from "./searchProduct/SearchProductService";
+import { getCurrentLanguage } from "../../utils/language";
 
 let cachedProducts = null;
+let cachedLanguage = null;
 
 const hydrateProducts = async () => {
+  const currentLang = getCurrentLanguage();
+  // Clear cache if language changed
+  if (cachedLanguage !== currentLang) {
+    cachedProducts = null;
+    cachedLanguage = currentLang;
+  }
   if (cachedProducts) return cachedProducts;
   const response = await searchProducts({});
   cachedProducts = response?.results || [];

@@ -1,3 +1,5 @@
+import { translateProduct } from "../../../utils/productTranslations";
+
 export const searchProducts = async (filters = {}) => {
   console.log("Dummy product search filters:", filters);
 
@@ -470,11 +472,14 @@ export const searchProducts = async (filters = {}) => {
     finalResults = looseResults.length ? looseResults : allResults;
   }
 
+  // Translate all products based on current language
+  const translatedResults = finalResults.map(translateProduct);
+
   return {
-    count: finalResults.length,
+    count: translatedResults.length,
     next: null,
     previous: null,
-    results: finalResults,
+    results: translatedResults,
   };
 };
 
