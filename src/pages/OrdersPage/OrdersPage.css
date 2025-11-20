@@ -1,13 +1,13 @@
 .ordersPage {
-  background-color: #fff;
+  background-color: #f6f7fb;
   min-height: 100vh;
   color: #0f1111;
 }
 
 .ordersPage-inner {
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 24px 20px 60px;
   box-sizing: border-box;
   font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
     "Inter", Roboto, "Segoe UI", sans-serif;

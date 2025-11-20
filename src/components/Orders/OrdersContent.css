@@ -44,6 +44,14 @@
   align-items:center;
   padding:14px 20px 0;
 }
+.ordersCard-tracking{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  padding:12px 20px;
+  border-bottom:1px solid #e5e7eb;
+  align-items:center;
+}
 .ordersCard-statusBadge{
   background:#d1fae5;
   color:#065f46;
@@ -83,6 +91,7 @@
 .ordersItem-actions{
   display:flex;
   gap:12px;
+  flex-wrap:wrap;
 }
 .ordersItem-btn{
   background:#fbbf24;
@@ -96,6 +105,21 @@
   background:none;
   border:none;
   color:#2563eb;
+  cursor:pointer;
+  font-weight:600;
+}
+.ordersCard-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  padding:12px 20px 20px;
+  border-top:1px solid #e5e7eb;
+}
+.ordersFooter-btn{
+  border:1px solid #d1d5db;
+  border-radius:50px;
+  background:#fff;
+  padding:8px 16px;
   cursor:pointer;
   font-weight:600;
 }

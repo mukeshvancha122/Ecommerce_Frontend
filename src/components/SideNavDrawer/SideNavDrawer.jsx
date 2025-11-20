@@ -129,12 +129,23 @@ export default function SideNavDrawer({
         {/* Header Bar */}
         <div className="snd-header">
           <div className="snd-avatar" aria-hidden="true">👤</div>
-          <div className="snd-hello">
-            {loggedIn ? `Hello, ${userName || "User"}` : "Hello, sign in"}
+          <div className="snd-helloWrap">
+            <div className="snd-hello">
+              {loggedIn ? `Hello, ${userName || "User"}` : "Hello, sign in"}
+            </div>
+            <div className="snd-tagline">
+              Personalize HyderNexa and pick up where you left off.
+            </div>
           </div>
           <button className="snd-close" aria-label="Close menu" onClick={onClose}>
             <span className="snd-closeX" aria-hidden>✕</span>
           </button>
+        </div>
+
+        <div className="snd-quickActions">
+          <button onClick={() => goto("/orders")}>Your orders</button>
+          <button onClick={() => goto("/account")}>Account</button>
+          <button onClick={() => goto("/wishlists")}>Wishlists</button>
         </div>
 
         {/* Scroll body */}

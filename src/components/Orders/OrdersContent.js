@@ -20,6 +20,7 @@ export default function OrdersContent({
   emptyMessage,
   emptyLinkText,
   emptyLinkHref,
+  tab,
 }) {
   if (loading) {
     return <div className="orders-loading">Loading your orders…</div>;
@@ -61,11 +62,31 @@ export default function OrdersContent({
             </div>
           </header>
           <div className="ordersCard-status">
-            <span className="ordersCard-statusBadge">{order.status}</span>
+            <div>
+              <span className="ordersCard-statusBadge">{order.status}</span>
+              <span className="ordersCard-statusText">
+                {order.fulfillment?.lastUpdate}
+              </span>
+            </div>
             <span className="ordersCard-statusText">
               Paid via {order.paymentMethod?.toUpperCase()}
             </span>
           </div>
+          {order.fulfillment && (
+            <div className="ordersCard-tracking">
+              <div>
+                <p className="ordersCard-label">Tracking ID</p>
+                <p className="ordersCard-value">{order.fulfillment.trackingId}</p>
+              </div>
+              <div>
+                <p className="ordersCard-label">Arriving by</p>
+                <p className="ordersCard-value">
+                  {formatDate(order.fulfillment.expectedBy)}
+                </p>
+              </div>
+              <button className="ordersItem-link">Track package</button>
+            </div>
+          )}
           <div className="ordersCard-items">
             {order.items.map((item) => (
               <div className="ordersItem" key={`${order.id}-${item.sku}`}>
@@ -77,11 +98,18 @@ export default function OrdersContent({
                   </div>
                   <div className="ordersItem-actions">
                     <button className="ordersItem-btn">Buy it again</button>
-                    <button className="ordersItem-link">Track package</button>
+                    <button className="ordersItem-link">Return or replace</button>
+                    {tab === "buyAgain" && (
+                      <button className="ordersItem-link">View similar</button>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+          <div className="ordersCard-footer">
+            <button className="ordersFooter-btn">Get invoice</button>
+            <button className="ordersFooter-btn">Archive order</button>
           </div>
         </article>
       ))}

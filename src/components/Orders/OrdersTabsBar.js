@@ -1,26 +1,28 @@
 import React from "react";
 import "./OrdersTabsBar.css";
 
-export default function OrdersTabsBar({ activeTab }) {
-  const tabs = [
-    "Orders",
-    "Buy Again",
-    "Not Yet Shipped",
-    "Digital Orders",
-    "Amazon Pay",
+export default function OrdersTabsBar({ activeTab, onTabChange, options }) {
+  const tabs = options || [
+    { id: "orders", label: "Orders" },
+    { id: "buyAgain", label: "Buy Again" },
+    { id: "notShipped", label: "Not Yet Shipped" },
+    { id: "digital", label: "Digital Orders" },
+    { id: "amazonPay", label: "Amazon Pay" },
   ];
 
   return (
     <div className="ordersTabsBar">
       {tabs.map((tab) => (
-        <div
-          key={tab}
+        <button
+          type="button"
+          key={tab.id}
           className={`ordersTabsBar-tab ${
-            tab === activeTab ? "ordersTabsBar-tab--active" : ""
+            tab.id === activeTab ? "ordersTabsBar-tab--active" : ""
           }`}
+          onClick={() => onTabChange?.(tab.id)}
         >
-          {tab}
-        </div>
+          {tab.label}
+        </button>
       ))}
     </div>
   );

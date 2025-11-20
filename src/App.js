@@ -14,6 +14,7 @@ import ChatWidget from "./components/chatwidget/ChatWidget";
 import ProductPage from "./pages/ProductPage/ProductPage";
 import ProductsPage from "./pages/ProductsPage/ProductsPage";
 import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
+import AccountPage from "./pages/AccountPage/AccountPage";
 import ProtectedRoute from "./routing/ProtectedRoute";
 import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
 import SearchResults from "./pages/SearchPage/SearchResultsPage";
@@ -41,6 +42,12 @@ export default function App() {
               <Header />
               <SubHeader />
               <OrdersPage />
+            </ProtectedRoute>
+
+            <ProtectedRoute path="/account">
+              <Header />
+              <SubHeader />
+              <AccountPage />
             </ProtectedRoute>
 
             <Route path="/login">

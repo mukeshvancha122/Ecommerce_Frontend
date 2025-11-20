@@ -1,8 +1,6 @@
 .ordersHeaderBar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -67,4 +65,34 @@
 }
 .ordersHeaderBar-searchBtn:hover {
   background-color: #131921;
+}
+.ordersHeaderBar-subtitle{
+  margin:6px 0 0;
+  color:#4b5563;
+  font-size:15px;
+}
+.ordersHeaderBar-metrics{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.ordersHeaderBar-metric{
+  min-width:150px;
+  background:#fff;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 8px 18px rgba(15,17,17,.08);
+}
+.ordersHeaderBar-metricLabel{
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  font-size:11px;
+  color:#6b7280;
+  margin:0 0 6px;
+}
+.ordersHeaderBar-metricValue{
+  font-size:20px;
+  font-weight:700;
+  margin:0;
 }
