@@ -1,5 +1,3 @@
-// searchProductService.js (Dummy Version)
-
 export const searchProducts = async (filters = {}) => {
   console.log("Dummy product search filters:", filters);
 

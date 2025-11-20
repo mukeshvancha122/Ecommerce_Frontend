@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./ProductPage.css";
-import { getProductBySlug } from "../../api/ProductService";
+import { getProductBySlug } from "../../api/products/ProductService";
 
 import PDPBreadcrumbs from "../../components/Product/PDPBreadcrumbs/PDPBreadcrumbs";
 import ProductGallery from "../../components/Product/ProductGallery/ProductGallery";
