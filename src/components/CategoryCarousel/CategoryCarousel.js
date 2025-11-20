@@ -16,13 +16,23 @@ export default function CategoryCarousel({ items }) {
       <div className="catCarousel-track">
         {items.map((item, idx) => (
           <div className="catCarousel-item" key={idx}>
-            <div className="catCarousel-circle">
-              <img
-                className="catCarousel-img"
-                src={item.img}
-                alt={item.label}
-              />
-            </div>
+            {item.href ? (
+              <a className="catCarousel-circle" href={item.href}>
+                <img
+                  className="catCarousel-img"
+                  src={item.img}
+                  alt={item.label}
+                />
+              </a>
+            ) : (
+              <div className="catCarousel-circle">
+                <img
+                  className="catCarousel-img"
+                  src={item.img}
+                  alt={item.label}
+                />
+              </div>
+            )}
             <div className="catCarousel-label">{item.label}</div>
           </div>
         ))}

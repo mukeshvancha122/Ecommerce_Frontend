@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getProductsByCategory, getProductsBySubcategory } from "../../api/products/CategoryProductsService";
+import { getProductsByCategory, getProductsBySubcategory, getAllProducts } from "../../api/products/CategoryProductsService";
 import "./ProductsPage.css";
 
 const useQuery = () => new URLSearchParams(useLocation().search);
@@ -20,9 +20,13 @@ export default function ProductsPage() {
         setLoading(true);
         setError("");
         let data;
-        if (subcategory) data = await getProductsBySubcategory(subcategory, 1);
-        else if (category) data = await getProductsByCategory(category, 1);
-        else data = { results: [] };
+        if (subcategory) {
+          data = await getProductsBySubcategory(subcategory, 1);
+        } else if (category) {
+          data = category === "all" ? await getAllProducts(1) : await getProductsByCategory(category, 1);
+        } else {
+          data = await getAllProducts(1);
+        }
         setItems(Array.isArray(data?.results) ? data.results : []);
       } catch (e) {
         setError(e?.message || "Failed to load products");

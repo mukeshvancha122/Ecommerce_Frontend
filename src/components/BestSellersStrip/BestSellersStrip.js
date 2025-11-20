@@ -23,11 +23,13 @@ export default function BestSellersStrip({ title, items }) {
           <div className="bestSellers-track">
             {items.map((src, idx) => (
               <div className="bestSellers-item" key={idx}>
-                <img
-                  className="bestSellers-img"
-                  src={src}
-                  alt={`item-${idx}`}
-                />
+                <a href="/products?category=electronics&label=Best%20Sellers">
+                  <img
+                    className="bestSellers-img"
+                    src={src}
+                    alt={`item-${idx}`}
+                  />
+                </a>
               </div>
             ))}
           </div>

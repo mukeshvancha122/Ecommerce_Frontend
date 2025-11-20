@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./ProductPage.css";
-import { getProductBySlug } from "../../api/products/ProductService";
+import { getProductBySlug, getProductById } from "../../api/products/ProductService";
 
 import PDPBreadcrumbs from "../../components/Product/PDPBreadcrumbs/PDPBreadcrumbs";
 import ProductGallery from "../../components/Product/ProductGallery/ProductGallery";
@@ -20,7 +20,8 @@ export default function ProductPage() {
     (async () => {
       try {
         setLoading(true);
-        const data = await getProductBySlug(slug);
+        const isNumericId = /^[0-9]+$/.test(String(slug));
+        const data = isNumericId ? await getProductById(Number(slug)) : await getProductBySlug(slug);
         setProduct(data);
       } catch (err) {
         console.error("Error fetching product:", err);

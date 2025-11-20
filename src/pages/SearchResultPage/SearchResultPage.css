@@ -1,0 +1,225 @@
+/* SearchResults.css */
+
+.srpPage {
+    padding: 16px 24px 40px;
+    background-color: #eaeded;
+    min-height: calc(100vh - 120px); /* leave room for header */
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  
+  .srpHeader {
+    max-width: 1200px;
+    margin: 0 auto 16px;
+  }
+  
+  .srpTitle {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  
+  .srpSubtitle {
+    margin: 0 0 8px;
+    color: #565959;
+    font-size: 14px;
+  }
+  
+  .srpContextRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 14px;
+  }
+  
+  .srpContextHeading {
+    font-weight: 500;
+  }
+  
+  .srpContextHeading b,
+  .srpContextHeading span {
+    font-weight: 700;
+  }
+  
+  .srpContextCount {
+    color: #565959;
+  }
+  
+  .srpImageContext {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #565959;
+  }
+  
+  .srpImageContext img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #d5d9d9;
+  }
+  
+  /* GRID */
+  
+  .srpGrid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+  }
+  
+  /* CARD */
+  
+  .srpCard {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(15, 17, 17, 0.15);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  
+  .srpCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(15, 17, 17, 0.2);
+  }
+  
+  .srpCardImageWrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 75%; /* 4:3 ratio */
+    margin-bottom: 8px;
+    overflow: hidden;
+    border-radius: 6px;
+    background-color: #f3f3f3;
+  }
+  
+  .srpCardImageWrapper img,
+  .srpImagePlaceholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .srpImagePlaceholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 12px;
+  }
+  
+  .srpBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #111;
+  }
+  
+  .srpBadgeBestSeller {
+    background-color: #c45500;
+    color: #fff;
+  }
+  
+  .srpBadgePick {
+    background-color: #232f3e;
+    color: #fff;
+  }
+  
+  .srpCardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .srpProductName {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .srpBrand {
+    font-size: 13px;
+    color: #565959;
+  }
+  
+  .srpRatingRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  
+  .srpStar {
+    color: #ffa41c;
+    font-size: 14px;
+  }
+  
+  .srpRatingValue {
+    font-weight: 600;
+  }
+  
+  .srpStoreName {
+    color: #007185;
+  }
+  
+  .srpPriceRow {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  
+  .srpPrice {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  
+  .srpMRP {
+    font-size: 13px;
+    color: #565959;
+    text-decoration: line-through;
+  }
+  
+  .srpDescription {
+    font-size: 13px;
+    color: #111;
+    margin-top: 4px;
+  }
+  
+  .srpViewBtn {
+    margin-top: 8px;
+    align-self: flex-start;
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #d5d9d9;
+    background-color: #ffd814;
+    cursor: pointer;
+  }
+  
+  .srpViewBtn:hover {
+    background-color: #f7ca00;
+  }
+  
+  .srpEmpty {
+    grid-column: 1 / -1;
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 8px;
+    text-align: center;
+    color: #565959;
+  }

@@ -65,6 +65,16 @@ export const getProductBySlug = async (slug) => {
   }
 };
 
+export const getProductById = async (id) => {
+  if (useMock) {
+    await new Promise((r) => setTimeout(r, 400));
+    return { ...mockProduct, id };
+  } else {
+    const { data } = await API.get(`/products/id/${id}`);
+    return data;
+  }
+};
+
 export const getAllProducts = async () => {
   if (useMock) {
     await new Promise((r) => setTimeout(r, 400));

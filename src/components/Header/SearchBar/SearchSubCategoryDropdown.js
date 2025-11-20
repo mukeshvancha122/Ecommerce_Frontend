@@ -1,54 +1,48 @@
-// src/components/Search/SearchSubCategoryDropdown.js
-import React, { useMemo } from "react";
-import Dropdown from "./DropDown";
+import React from "react";
+import DropDown from "./DropDown";
 
-// simple example – you can replace with real options from API
-const SUBCATEGORY_MAP = {
+const SUBS = {
   electronics: [
-    { value: "mobiles", label: "Mobiles" },
+    { value: "all", label: "All" },
+    { value: "smartphones", label: "Smartphones" },
     { value: "laptops", label: "Laptops" },
-    { value: "audio", label: "Headphones & Audio" },
+    { value: "headphones", label: "Headphones" },
   ],
   fashion: [
-    { value: "mens-clothing", label: "Men's clothing" },
-    { value: "womens-clothing", label: "Women's clothing" },
-    { value: "footwear", label: "Footwear" },
+    { value: "all", label: "All" },
+    { value: "mens-casual-shirts", label: "Casual Shirts" },
+    { value: "mens-formal-shoes", label: "Formal Shoes" },
   ],
   home: [
-    { value: "kitchen", label: "Kitchen" },
-    { value: "decor", label: "Home Decor" },
+    { value: "all", label: "All" },
+    { value: "cookware", label: "Cookware" },
+    { value: "kitchen-appliances", label: "Appliances" },
   ],
   beauty: [
-    { value: "makeup", label: "Makeup" },
-    { value: "skincare", label: "Skincare" },
+    { value: "all", label: "All" },
   ],
   grocery: [
-    { value: "snacks", label: "Snacks" },
-    { value: "beverages", label: "Beverages" },
+    { value: "all", label: "All" },
   ],
 };
 
-function SearchSubCategoryDropdown({ category, value, onChange, disabled }) {
-  const options = useMemo(() => {
-    if (!category || category === "all") return [];
-    const list = SUBCATEGORY_MAP[category] || [];
-    return [{ value: "all", label: "All subcategories" }, ...list];
-  }, [category]);
-
-  // if no options, render nothing
-  if (!category || category === "all" || options.length === 0) {
-    return null;
+export default function SearchSubCategoryDropdown({ category, value, onChange, disabled }) {
+  const options = SUBS[category] || [{ value: "all", label: "All" }];
+  // Hide subcategory dropdown if only "All"
+  if (!options || options.length <= 1) {
+    return (
+      <div style={{ display: "none" }} aria-hidden="true" />
+    );
   }
-
   return (
-    <Dropdown
+    <DropDown
       value={value}
       onChange={onChange}
       disabled={disabled}
       options={options}
-      className="subCategoryDropdown"
+      className="searchBarSubCategory"
     />
   );
 }
 
-export default SearchSubCategoryDropdown;
+

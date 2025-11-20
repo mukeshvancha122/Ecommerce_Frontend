@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../../features/auth/AuthSlice";
 import { useHistory } from "react-router-dom";
 import "./SubHeader.css";
 import SideNavDrawer from "../../SideNavDrawer/SideNavDrawer";
@@ -7,6 +9,7 @@ import { getCategorySubcategories } from "../../../api/products/CategorySubCateg
 
 function SubHeader() {
   const history = useHistory();
+  const user = useSelector(selectUser);
   const [showSideNav, setShowSideNav] = useState(false);
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -126,15 +129,18 @@ function SubHeader() {
      <SideNavDrawer
   isOpen={open}
   onClose={() => setOpen(false)}
-  // loggedIn={/* true/false */}
+  loggedIn={!!user}
+  userName={(user?.name && user.name.trim()) || (user?.email || "").split("@")[0]}
   onSignOut={() => {
     // call your logout endpoint here, then navigate
     // axios.post('/api/auth/logout', {}, { withCredentials: true }).finally(...)
   }}
   onNavigate={(href) => {
-    // router push or window.location
-    // history.replace(href)  // v5
-    // navigate(href, { replace: true }) // v6
+    try {
+      history.push(href);
+    } catch {
+      window.location.href = href;
+    }
   }}
 />
     </>

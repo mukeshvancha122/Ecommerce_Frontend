@@ -191,10 +191,46 @@ const DATASET = {
       slug: "yoga-mat-pro",
     }),
   ],
+  // Category: Medical & Pharmacy
+  "medical-pharmacy": [
+    mkProduct({
+      id: 51,
+      name: "Acetaminophen Pain Relief (500mg, 100 caplets)",
+      cat: "Medical & Pharmacy",
+      catSlug: "medical-pharmacy",
+      sub: "OTC Medicines",
+      subSlug: "medical-otc",
+      img: "https://via.placeholder.com/260?text=Pain+Relief",
+      price: 499,
+      slug: "acetaminophen-500mg-100",
+    }),
+    mkProduct({
+      id: 52,
+      name: "Vitamin C 1000mg (60 tablets)",
+      cat: "Medical & Pharmacy",
+      catSlug: "medical-pharmacy",
+      sub: "Vitamins & Supplements",
+      subSlug: "medical-vitamins",
+      img: "https://via.placeholder.com/260?text=Vitamin+C",
+      price: 699,
+      slug: "vitamin-c-1000-60",
+    }),
+    mkProduct({
+      id: 53,
+      name: "Digital Thermometer (Fast Read)",
+      cat: "Medical & Pharmacy",
+      catSlug: "medical-pharmacy",
+      sub: "Health Devices",
+      subSlug: "medical-devices",
+      img: "https://via.placeholder.com/260?text=Thermometer",
+      price: 899,
+      slug: "digital-thermometer-fast-read",
+    }),
+  ],
 };
 
 // Create subcategory keys based on products above
-["mens-casual-shirts","mens-formal-shoes","electronics-smartphones","electronics-laptops","womens-dresses","womens-handbags","cookware","kitchen-appliances","gym-equipment","outdoor-yoga"].forEach((sub) => {
+["mens-casual-shirts","mens-formal-shoes","electronics-smartphones","electronics-laptops","womens-dresses","womens-handbags","cookware","kitchen-appliances","gym-equipment","outdoor-yoga","medical-otc","medical-vitamins","medical-devices"].forEach((sub) => {
   if (!DATASET[sub]) {
     DATASET[sub] = Object.values(DATASET).flat().filter(p => p?.sub_category?.slug === sub);
   }
@@ -222,6 +258,24 @@ export const getProductsBySubcategory = async (subcategorySlug, page = 1) => {
   await new Promise((r) => setTimeout(r, 300));
   const list = DATASET[subcategorySlug] || [];
   return paginate(list, page, PAGE_SIZE);
+};
+
+// Aggregate all category products (across top-level categories)
+const CATEGORY_SLUGS = ["mens-fashion","womens-fashion","electronics","home-kitchen","sports-fitness","medical-pharmacy"];
+export const getAllProducts = async (page = 1) => {
+  await new Promise((r) => setTimeout(r, 300));
+  const seen = new Set();
+  const all = [];
+  CATEGORY_SLUGS.forEach((slug) => {
+    const arr = DATASET[slug] || [];
+    arr.forEach((p) => {
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        all.push(p);
+      }
+    });
+  });
+  return paginate(all, page, PAGE_SIZE);
 };
 
 

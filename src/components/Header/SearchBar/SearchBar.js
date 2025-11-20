@@ -1,32 +1,26 @@
-// src/components/Header/SearchBar/SearchBar.js
 import React, { useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
+import API from "../../../axios";
+import SearchCategoryDropdown from "./SearchCategoryDropDown";
 import "./SearchBar.css";
-
-// 🔁 adjust these import paths to match your project
-import { searchProducts } from "../../../api/products/searchProduct/SearchProductService";
-import { searchProductsByImage } from "../../../api/products/searchProduct/ImageSearchService";
-
-const CATEGORIES = [
-  { value: "all", label: "All" },
-  { value: "electronics", label: "Electronics" },
-  { value: "fashion", label: "Fashion" },
-  { value: "home", label: "Home & Kitchen" },
-  { value: "beauty", label: "Beauty" },
-  { value: "grocery", label: "Grocery" },
-];
 
 function SearchBar() {
   const history = useHistory();
 
+  // state
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [imageInputKey, setImageInputKey] = useState(Date.now());
   const [error, setError] = useState("");
 
+  // refs
   const fileInputRef = useRef(null);
 
-  // ---------- TEXT SEARCH ----------
+  // ---- helpers ----
+
+  // Text search -> backend
   const handleSearch = async () => {
     if (!query.trim() || loading) return;
 
@@ -34,45 +28,63 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      const filters = {
-        products: query.trim(),
-        category: category === "all" ? undefined : category,
-        page: 1,
-        page_size: 20,
-      };
+      // Try the search endpoint - adjust endpoint based on your backend
+      const res = await API.get("/v1/products/search-product-view/", {
+        params: {
+          product_name: query.trim(),
+          category: category === "all" ? null : category,
+          page: 1,
+          page_size: 20,
+        },
+      });
 
-      const data = await searchProducts(filters);
-      const results = data?.results || [];
-      const count = data?.count ?? results.length;
+      // Handle different response structures
+      const responseData = res?.data?.data || res?.data || {};
+      const results = responseData.results || [];
+      const total = responseData.count || results.length;
 
-      history.push("/search-results", {
+      history.push("/search", {
         mode: "text",
         query: query.trim(),
         category,
         results,
-        totalCount: count,
+        total,
       });
     } catch (err) {
       console.error("Text search error:", err);
-      setError("Search failed. Please try again.");
+      const errorMessage = err?.response?.data?.message || err?.message || "Search failed. Please try again.";
+      setError(errorMessage);
+      
+      // Still navigate to search page with empty results so user can see the error
+      history.push("/search", {
+        mode: "text",
+        query: query.trim(),
+        category,
+        results: [],
+        total: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTextKeyDown = (e) => {
+  // Enter key in the text input triggers search
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleSearch();
     }
   };
 
-  // ---------- IMAGE SEARCH ----------
-  const handleImageButtonClick = () => {
+  // Trigger hidden file input on camera click
+  const handleImageSearchClick = () => {
     if (loading) return;
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
+  // Image search -> backend
   const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || loading) return;
@@ -81,101 +93,122 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      const data = await searchProductsByImage({
-        image: file,
-        page: 1,
-        page_size: 20,
+      const formData = new FormData();
+      formData.append("image", file);
+
+      // Try the image search endpoint - adjust endpoint based on your backend
+      const res = await API.post("/v1/products/search/image/", formData, {
+        params: { page: 1, page_size: 20 },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const results = data?.results || [];
-      const count = data?.count ?? results.length;
+      // Handle different response structures
+      const responseData = res?.data?.data || res?.data || {};
+      const results = responseData.results || [];
+      const total = responseData.count || results.length;
 
-      history.push("/search-results", {
+      history.push("/search", {
         mode: "image",
         previewImageUrl: URL.createObjectURL(file),
         results,
-        totalCount: count,
+        total,
       });
     } catch (err) {
       console.error("Image search error:", err);
-      setError("Image search failed. Please try again.");
+      const errorMessage = err?.response?.data?.message || err?.message || "Image search failed. Please try again.";
+      setError(errorMessage);
+      
+      // Still navigate to search page with empty results so user can see the error
+      history.push("/search", {
+        mode: "image",
+        previewImageUrl: URL.createObjectURL(file),
+        results: [],
+        total: 0,
+      });
     } finally {
       setLoading(false);
-      // allow selecting the same file again if needed
-      e.target.value = "";
+      // re-allow same file upload twice in a row
+      setImageInputKey(Date.now());
     }
   };
 
   return (
-    <div className="searchBar-container">
-      <div className={`searchBar ${loading ? "searchBar--loading" : ""}`}>
-        {/* Category select */}
-        <div className="searchBar-categoryWrapper">
-          <select
-            className="searchBar-categorySelect"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            disabled={loading}
-            aria-label="Select category"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="searchBarWrapper">
+      <div className={`searchBarOuter ${loading ? "isLoading" : ""}`}>
+        {/* CATEGORY DROPDOWN (moved out to its own component) */}
+        <SearchCategoryDropdown
+          value={category}
+          onChange={setCategory}
+          disabled={loading}
+        />
 
-        {/* Text input */}
+        {/* TEXT INPUT */}
         <input
-          className="searchBar-input"
+          id="search-query"
+          name="searchQuery"
+          className="searchBarInput"
           type="text"
           placeholder="Search products, brands and more…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleTextKeyDown}
+          onKeyDown={handleKeyDown}
           disabled={loading}
         />
 
-        {/* Image search (camera) */}
-        <button
-          type="button"
-          className="searchBar-iconBtn searchBar-iconBtn--camera"
-          onClick={handleImageButtonClick}
-          disabled={loading}
+        {/* IMAGE SEARCH BUTTON */}
+        <div
+          className="searchBarImageBtn"
+          onClick={handleImageSearchClick}
+          role="button"
+          tabIndex={0}
+          title="Search by image"
           aria-label="Search by image"
         >
-          <span role="img" aria-hidden="true">
-            📷
-          </span>
           <input
+            id="searchImageUpload"
+            name="searchImageUpload"
+            key={imageInputKey}
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleImageFileChange}
             style={{ display: "none" }}
+            onChange={handleImageFileChange}
+            disabled={loading}
           />
-        </button>
+          <span
+            className="searchBarCameraIcon"
+            role="img"
+            aria-hidden="false"
+            aria-label="camera"
+          >
+            📷
+          </span>
+        </div>
 
-        {/* Search submit */}
+        {/* SUBMIT BUTTON */}
         <button
-          type="button"
-          className="searchBar-iconBtn searchBar-iconBtn--submit"
+          className="searchBarSubmit"
           onClick={handleSearch}
           disabled={loading}
           aria-label="Search"
         >
           {loading ? (
-            <span className="searchBar-spinner" />
+            <span className="searchBarMagnifier">…</span>
           ) : (
-            <span role="img" aria-hidden="true">
+            <span
+              className="searchBarMagnifier"
+              role="img"
+              aria-hidden="false"
+              aria-label="search"
+            >
               🔍
             </span>
           )}
         </button>
       </div>
 
-      {error && <div className="searchBar-error">{error}</div>}
+      {/* error line */}
+      {error && <div className="searchBarError">{error}</div>}
     </div>
   );
 }

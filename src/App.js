@@ -15,6 +15,7 @@ import ProductPage from "./pages/ProductPage/ProductPage";
 import ProductsPage from "./pages/ProductsPage/ProductsPage";
 import CheckoutPage from "./pages/CheckoutPage/CheckoutPage";
 import ProtectedRoute from "./routing/ProtectedRoute";
+import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -74,6 +75,12 @@ export default function App() {
             <Header />
             <SubHeader />
             <ProductsPage />
+          </Route>
+
+          <Route path="/search-results">
+            <Header />
+            <SubHeader />
+            <SearchResultPage />
           </Route>
 
           <Route path="/proceed-to-checkout">

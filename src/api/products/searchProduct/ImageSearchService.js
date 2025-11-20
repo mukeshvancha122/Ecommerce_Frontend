@@ -1,4 +1,4 @@
-// imageSearchService.js
+// imageSearchService.js (dummy - API import kept for parity if you wire backend)
 import API from "../../../axios";
 
 export const searchProductsByImage = async ({ image, page = 1, page_size = 10 }) => {

@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from "react";
 import "./SideNavDrawer.css";
+import { getAllCategories } from "../../api/products/CategoryService";
+import { getCategorySubcategories } from "../../api/products/CategorySubCategoryService";
 
 export default function SideNavDrawer({
   isOpen,
   onClose,
   onNavigate,    
   loggedIn = false,
-  onSignOut,      
+  onSignOut,
+  userName = "",      
 }) {
   const [deptOpen, setDeptOpen] = useState(false);
   const [programsOpen, setProgramsOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [trendingOpen, setTrendingOpen] = useState(false);
+  const [openCats, setOpenCats] = useState({});
 
   // Lock scroll + close on ESC
   useEffect(() => {
@@ -27,6 +34,54 @@ export default function SideNavDrawer({
   const goto = (href) => {
     onNavigate?.(href);
     onClose?.();
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const cats = await getAllCategories();
+        setCategories(Array.isArray(cats) ? cats : []);
+      } catch {
+        setCategories([]);
+      }
+      try {
+        const subs = await getCategorySubcategories();
+        setSubcategories(Array.isArray(subs) ? subs : []);
+      } catch {
+        setSubcategories([]);
+      }
+    })();
+  }, []);
+
+  const subsByCategory = subcategories.reduce((acc, sc) => {
+    const key = sc.category_name;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(sc);
+    return acc;
+  }, {});
+
+  // Dummy data for Trending and Departments
+  const dummyTrending = {
+    bestSellers: [
+      { title: "Ultra Comfort Gaming Chair", slug: "ultra-comfort-gaming-chair" },
+      { title: "Noise Cancelling Earbuds", slug: "noise-cancelling-earbuds" },
+    ],
+    newReleases: [
+      { title: "5G Android Smartphone", slug: "5g-android-smartphone" },
+      { title: "14-inch Thin Laptop", slug: "14-inch-thin-laptop" },
+    ],
+  };
+
+  const dummyDepartment = {
+    clothing: [
+      { title: "Slim Fit Casual Shirt", slug: "slim-fit-casual-shirt" },
+    ],
+    shoes: [
+      { title: "Classic Formal Shoes", slug: "classic-formal-shoes" },
+    ],
+    jewelryWatches: [
+      { title: "Leather Handbag", slug: "leather-handbag" },
+    ],
   };
 
   const HelpSettings = () => (
@@ -74,7 +129,9 @@ export default function SideNavDrawer({
         {/* Header Bar */}
         <div className="snd-header">
           <div className="snd-avatar" aria-hidden="true">👤</div>
-          <div className="snd-hello">{loggedIn ? "Hello" : "Hello, sign in"}</div>
+          <div className="snd-hello">
+            {loggedIn ? `Hello, ${userName || "User"}` : "Hello, sign in"}
+          </div>
           <button className="snd-close" aria-label="Close menu" onClick={onClose}>
             <span className="snd-closeX" aria-hidden>✕</span>
           </button>
@@ -94,9 +151,28 @@ export default function SideNavDrawer({
                 <span className="snd-rowLabel">New Releases</span>
                 <span className="snd-chev">›</span>
               </li>
-              <li className="snd-row snd-row--chev" onClick={() => goto("/movers-shakers")}>
-                <span className="snd-rowLabel">Movers &amp; Shakers</span>
-                <span className="snd-chev">›</span>
+              {trendingOpen && (
+                <>
+                  {dummyTrending.bestSellers.map((it, idx) => (
+                    <li key={`bs-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                      <span className="snd-leadingIcon">•</span>
+                      <span className="snd-rowLabel">{it.title}</span>
+                    </li>
+                  ))}
+                  {dummyTrending.newReleases.map((it, idx) => (
+                    <li key={`nr-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                      <span className="snd-leadingIcon">•</span>
+                      <span className="snd-rowLabel">{it.title}</span>
+                    </li>
+                  ))}
+                </>
+              )}
+              <li
+                className="snd-row snd-row--seeall"
+                onClick={() => setTrendingOpen((v) => !v)}
+              >
+                <span className="snd-rowLabel">{trendingOpen ? "Hide items" : "See items"}</span>
+                <span className={`snd-caret ${trendingOpen ? "snd-caret--up" : ""}`}>▾</span>
               </li>
             </ul>
           </div>
@@ -104,28 +180,7 @@ export default function SideNavDrawer({
           <div className="snd-divider" />
 
           {/* Digital Content & Devices */}
-          <div className="snd-section">
-            <div className="snd-sectionTitle">Digital Content &amp; Devices</div>
-            <ul className="snd-list">
-              {[
-                "Prime Video",
-                "Amazon Music",
-                "Echo & Alexa",
-                "Fire Tablets",
-                "Fire TV",
-                "Amazon Luna",
-                "Kindle E-readers & Books",
-                "Audible Books & Originals",
-                "Amazon Photos",
-                "Amazon Appstore",
-              ].map((label) => (
-                <li key={label} className="snd-row snd-row--chev" onClick={() => goto(`/${label.toLowerCase().replace(/[ &']/g,"-")}`)}>
-                  <span className="snd-rowLabel">{label}</span>
-                  <span className="snd-chev">›</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        
 
           <div className="snd-divider" />
 
@@ -133,12 +188,81 @@ export default function SideNavDrawer({
           <div className="snd-section">
             <div className="snd-sectionTitle">Shop by Department</div>
             <ul className="snd-list">
-              <li className="snd-row snd-row--chev" onClick={() => goto("/clothing-shoes-jewelry-watches")}>
+              <li
+                className="snd-row snd-row--chev"
+                onClick={()  =>
+                  goto("/products?category=mens-fashion&label=Clothing%2C%20Shoes%2C%20Jewelry%20%26%20Watches")
+                }
+              >
                 <span className="snd-rowLabel">Clothing, Shoes, Jewelry &amp; Watches</span>
                 <span className="snd-chev">›</span>
               </li>
+              <li className="snd-row snd-row--chev" onClick={() => goto("/whole-foods-market")}>
+                <span className="snd-rowLabel">Whole Foods Market</span>
+                <span className="snd-chev">›</span>
+              </li>
+              {/* Dynamic Categories with nested subcategories */}
+              {categories.map((cat) => {
+                const href = `/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(cat.category_name)}`;
+                const subs = subsByCategory[cat.category_name] || [];
+                const isOpen = !!openCats[cat.id];
+                return (
+                  <React.Fragment key={cat.id}>
+                    {subs.length === 0 ? (
+                      <li className="snd-row snd-row--chev" onClick={() => goto(href)}>
+                        <span className="snd-rowLabel">{cat.category_name}</span>
+                        <span className="snd-chev">›</span>
+                      </li>
+                    ) : (
+                      <>
+                        <li
+                          className="snd-row snd-row--chev"
+                          onClick={() => setOpenCats((s) => ({ ...s, [cat.id]: !s[cat.id] }))}
+                        >
+                          <span className="snd-rowLabel">{cat.category_name}</span>
+                          <span className={`snd-caret ${isOpen ? "snd-caret--up" : ""}`}>▾</span>
+                        </li>
+                        {(deptOpen || isOpen) && (
+                          <li className="snd-row" onClick={() => goto(href)}>
+                            <span className="snd-leadingIcon">↪</span>
+                            <span className="snd-rowLabel">View all in {cat.category_name}</span>
+                          </li>
+                        )}
+                        {(deptOpen || isOpen) && subs.map((sc) => {
+                          const shref = `/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`;
+                          return (
+                            <li key={`${cat.id}-${sc.id}`} className="snd-row" onClick={() => goto(shref)}>
+                              <span className="snd-leadingIcon">•</span>
+                              <span className="snd-rowLabel">{sc.sub_category}</span>
+                            </li>
+                          );
+                        })}
+                      </>
+                    )}
+                  </React.Fragment>
+                );
+              })}
               {deptOpen && (
                 <>
+                  {/* Featured items per department (dummy) */}
+                  {dummyDepartment.clothing.map((it, idx) => (
+                    <li key={`clo-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                      <span className="snd-leadingIcon">•</span>
+                      <span className="snd-rowLabel">{it.title}</span>
+                    </li>
+                  ))}
+                  {dummyDepartment.shoes.map((it, idx) => (
+                    <li key={`sho-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                      <span className="snd-leadingIcon">•</span>
+                      <span className="snd-rowLabel">{it.title}</span>
+                    </li>
+                  ))}
+                  {dummyDepartment.jewelryWatches.map((it, idx) => (
+                    <li key={`jew-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                      <span className="snd-leadingIcon">•</span>
+                      <span className="snd-rowLabel">{it.title}</span>
+                    </li>
+                  ))}
                   <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-fresh")}>
                     <span className="snd-rowLabel">Amazon Fresh</span>
                     <span className="snd-chev">›</span>
@@ -169,33 +293,21 @@ export default function SideNavDrawer({
           <div className="snd-section">
             <div className="snd-sectionTitle">Programs &amp; Features</div>
             <ul className="snd-list">
-              <li className="snd-row snd-row--chev" onClick={() => goto("/medical-care-pharmacy")}>
+              <li
+                className="snd-row snd-row--chev"
+                onClick={() =>
+                  goto("/products?category=medical-pharmacy&label=Medical%20Care%20%26%20Pharmacy")
+                }
+              >
                 <span className="snd-rowLabel">Medical Care &amp; Pharmacy</span>
                 <span className="snd-chev">›</span>
               </li>
               {programsOpen && (
                 <>
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-physical-stores")}>
-                    <span className="snd-rowLabel">Amazon Physical Stores</span>
-                    <span className="snd-chev">›</span>
-                  </li>
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-haul")}>
-                    <span className="snd-rowLabel">Amazon Haul</span>
-                    <span className="snd-chev">›</span>
-                  </li>
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-business")}>
-                    <span className="snd-rowLabel">Amazon Business</span>
-                    <span className="snd-chev">›</span>
-                  </li>
+                 
                 </>
               )}
-              <li
-                className="snd-row snd-row--seeall"
-                onClick={() => setProgramsOpen((v) => !v)}
-              >
-                <span className="snd-rowLabel">See all</span>
-                <span className={`snd-caret ${programsOpen ? "snd-caret--up" : ""}`}>▾</span>
-              </li>
+             
             </ul>
           </div>
 

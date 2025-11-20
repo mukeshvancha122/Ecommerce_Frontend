@@ -16,6 +16,34 @@ function Home() {
   const [mostSoldProducts, setMostSoldProducts] = useState([]);
   const [bestSellerImages, setBestSellerImages] = useState([]);
   const [saleCategories, setSaleCategories] = useState([]);
+  // ---- HERO CAROUSEL STATE ----
+  const heroSlides = [
+    {
+      headline: "Fast, free shipping plus streaming",
+      sub: "Join Prime",
+      ctaInfo: "Terms apply.",
+      image: "/images/banner/Banner_1.webp",
+    },
+    {
+      headline: "Shop holiday collections",
+      sub: "New arrivals · White elephant",
+      ctaInfo: "Explore holiday deals",
+      image: "/images/banner/Banner_2.webp",
+    },
+    {
+      headline: "Buy again from your past items",
+      sub: "Handpicked for you",
+      ctaInfo: "See recommendations",
+      image: "https://t3.ftcdn.net/jpg/04/65/46/52/360_F_465465254_1pN9MGrA831idD6zIBL7q8rnZZpUCQTy.jpg",
+    },
+  ];
+  const [heroIndex, setHeroIndex] = useState(0);
+  const goPrevHero = () => setHeroIndex((i) => (i - 1 + heroSlides.length) % heroSlides.length);
+  const goNextHero = () => setHeroIndex((i) => (i + 1) % heroSlides.length);
+  useEffect(() => {
+    const id = setInterval(goNextHero, 6000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +84,7 @@ function Home() {
   <button
     className="homePage-heroArrow homePage-heroArrow--left"
     aria-label="Previous"
+    onClick={goPrevHero}
   >
     ‹
   </button>
@@ -66,19 +95,26 @@ function Home() {
       {/* LEFT COPY */}
       <div className="homePage-heroCopy">
         <div className="homePage-heroHeadline">
-          Unlock Alexa+ with our new AI-powered devices
+          {heroSlides[heroIndex].headline}
         </div>
 
-        <div className="homePage-heroSub">alexa+</div>
+        <div className="homePage-heroSub">{heroSlides[heroIndex].sub}</div>
 
         <div className="homePage-heroCTAInfo">
-          1 order lowers fees for next delivery
+          {heroSlides[heroIndex].ctaInfo}
         </div>
       </div>
 
       {/* RIGHT PROMO CARD */}
       <div className="homePage-heroPromoWrapper">
-        <div className="homePage-heroPromoCard" />
+        <div
+          className="homePage-heroPromoCard"
+          style={{
+            backgroundImage: `url(${heroSlides[heroIndex].image})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        />
       </div>
     </div>
   </div>
@@ -87,15 +123,16 @@ function Home() {
   <button
     className="homePage-heroArrow homePage-heroArrow--right"
     aria-label="Next"
+    onClick={goNextHero}
   >
     ›
   </button>
 </section>
 
       {/* MAIN CONTENT GRID UNDER HERO */}
-      <section className="homePage-contentRow">
+      <section className="homePage-contentRow ">
         {/* COLUMN 1: Featured Products */}
-        <div className="merchCard">
+        <div className="merchCard mt-5">
           <div className="merchCard-header">Featured Products</div>
 
           <div className="merchCard-grid">
@@ -107,7 +144,7 @@ function Home() {
               const slug = p?.slug || "#";
               return (
                 <div className="merchTile" key={p?.id || idx}>
-                  <a className="merchTile-imgWrap" href={`/product/${slug}`}>
+                  <a className="merchTile-imgWrap" href={`/product/${p?.id ?? slug}`}>
                     <img
                       src={img}
                       alt={name}
@@ -143,7 +180,7 @@ function Home() {
               const slug = p?.slug || "#";
               return (
                 <div className="merchTile" key={p?.id || idx}>
-                  <a className="merchTile-imgWrap" href={`/product/${slug}`}>
+                  <a className="merchTile-imgWrap" href={`/product/${p?.id ?? slug}`}>
                     <img
                       src={img}
                       alt={name}
@@ -171,49 +208,23 @@ function Home() {
           <div className="merchCard-header">Shop gifts by category</div>
 
           <div className="merchCard-grid">
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Toys"
-                  alt="Toys"
-                  className="merchTile-img"
-                />
+            {[
+              { label: "Toys", img: "https://via.placeholder.com/200x140?text=Toys", href: "/products?category=electronics&label=Toys" },
+              { label: "Home & kitchen", img: "https://via.placeholder.com/200x140?text=Home+%26+Kitchen", href: "/products?category=home-kitchen&label=Home%20%26%20kitchen" },
+              { label: "Electronics", img: "https://via.placeholder.com/200x140?text=Electronics", href: "/products?category=electronics&label=Electronics" },
+              { label: "Sports & outdoors", img: "https://via.placeholder.com/200x140?text=Sports+%26+Outdoors", href: "/products?category=sports-fitness&label=Sports%20%26%20outdoors" },
+            ].map((t, idx) => (
+              <div className="merchTile" key={idx}>
+                <a className="merchTile-imgWrap" href={t.href}>
+                  <img
+                    src={t.img}
+                    alt={t.label}
+                    className="merchTile-img"
+                  />
+                </a>
+                <div className="merchTile-label">{t.label}</div>
               </div>
-              <div className="merchTile-label">Toys</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Home+%26+Kitchen"
-                  alt="Home & kitchen"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Home &amp; kitchen</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Electronics"
-                  alt="Electronics"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Electronics</div>
-            </div>
-
-            <div className="merchTile">
-              <div className="merchTile-imgWrap">
-                <img
-                  src="https://via.placeholder.com/200x140?text=Sports+%26+Outdoors"
-                  alt="Sports & Outdoors"
-                  className="merchTile-img"
-                />
-              </div>
-              <div className="merchTile-label">Sports &amp; outdoors</div>
-            </div>
+            ))}
           </div>
 
           <a className="merchCard-footerLink" href="#">
@@ -222,47 +233,41 @@ function Home() {
         </div>
 
         <div className="sideRail">
-  {/* Sign-in promo card */}
-  <div className="signInCard">
-    <div className="signInCard-heading">
-      Sign in for the best experience
-    </div>
-    <button className="signInCard-btnFullWidth">
-      Sign in securely
-    </button>
-  </div>
+          {/* Card: Our Top 100+ Christmas decor */}
+          <div className="merchCard merchCard--compact">
+            <div className="merchCard-header">Our Top 100+ Christmas decor</div>
+            <div className="merchTile">
+              <div className="merchTile-imgWrap">
+                <img
+                  src="https://via.placeholder.com/320x180?text=Christmas+Decor"
+                  alt="Christmas decor"
+                  className="merchTile-img"
+                />
+              </div>
+            </div>
+            <a className="merchCard-footerLink" href="#">
+              Shop all
+            </a>
+          </div>
+          <div className="merchCard merchCard--compact">
+            <div className="merchCard-header">Our Top 100+ Christmas decor</div>
+            <div className="merchTile">
+              <div className="merchTile-imgWrap">
+                <img
+                  src="https://via.placeholder.com/320x180?text=Christmas+Decor"
+                  alt="Christmas decor"
+                  className="merchTile-img"
+                />
+              </div>
+            </div>
+            <a className="merchCard-footerLink" href="#">
+              Shop all
+            </a>
+          </div>
 
-  {/* Fidelity Ad card */}
-  <div className="adCardBox">
-    <div className="adCard-body">
-      <div className="adCard-left">
-        <div className="adCard-headline">Fidelity Go®</div>
-
-        <div className="adCard-title">
-          Invest your money. Not your time.
+          {/* Amazon Business Ad card (sponsored) */}
+         
         </div>
-
-        <div className="adCard-desc">
-          No advisory fees under $25K.
-        </div>
-
-        <button className="adCard-ctaBtn">Get started</button>
-
-        <div className="adCard-legal">
-          Fidelity Brokerage Services LLC, Member NYSE, SIPC
-        </div>
-      </div>
-
-      <div className="adCard-right">
-        <div className="adCard-imagePlaceholder" />
-      </div>
-    </div>
-
-    <div className="adCard-footerRow">
-      <span className="adCard-sponsoredText">Sponsored • i</span>
-    </div>
-  </div>
-</div>
 
       </section>
 
@@ -275,10 +280,22 @@ function Home() {
   <CategoryCarousel
     items={
       saleCategories.length
-        ? saleCategories.map(c => ({
-            img: c.category_image,
-            label: c.category_name,
-          }))
+        ? saleCategories.map(c => {
+            const name = c.category_name || "";
+            let categorySlug = "";
+            if (/electronics/i.test(name)) categorySlug = "electronics";
+            else if (/home/i.test(name)) categorySlug = "home-kitchen";
+            else if (/fashion/i.test(name)) categorySlug = "mens-fashion";
+            else if (/footwear/i.test(name)) categorySlug = "mens-fashion";
+            const href = categorySlug
+              ? `/products?category=${encodeURIComponent(categorySlug)}&label=${encodeURIComponent(name)}`
+              : undefined;
+            return {
+              img: c.category_image,
+              label: name,
+              href
+            };
+          })
         : [
             { img: "https://via.placeholder.com/120?text=Loading", label: "Loading" },
             { img: "https://via.placeholder.com/120?text=…", label: "…" },
