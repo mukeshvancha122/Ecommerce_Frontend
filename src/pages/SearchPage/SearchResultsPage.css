@@ -1,0 +1,187 @@
+/* src/pages/SearchResultsPage.css */
+
+.searchResultsPage {
+  padding: 16px 24px 40px;
+  background-color: #eaeded;
+  min-height: 100vh;
+}
+
+.searchResultsHeader {
+  margin-bottom: 16px;
+}
+
+.searchResultsTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.searchResultsSub {
+  font-size: 14px;
+  color: #565959;
+  margin: 4px 0 8px;
+}
+
+.searchResultsMeta {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.searchResultsMeta strong {
+  font-weight: 700;
+}
+
+.searchResultsImagePreview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #d5d9d9;
+}
+
+.searchResultsImagePreview img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.searchResultsImageLabel {
+  font-size: 13px;
+  color: #555;
+}
+
+/* GRID OF CARDS */
+
+.searchResultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.searchResultCard {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(15, 17, 17, 0.2);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.searchResultCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(15, 17, 17, 0.25);
+}
+
+/* image */
+
+.searchResultImageWrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.searchResultImageWrapper img {
+  width: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.searchResultBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #ffa41c;
+  color: #111;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+/* info text */
+
+.searchResultInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.searchResultTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.searchResultBrand {
+  font-size: 13px;
+  color: #565959;
+}
+
+.searchResultRating {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.searchResultRatingScore {
+  font-weight: 700;
+}
+
+.searchResultRatingStar {
+  color: #ffa41c;
+}
+
+.searchResultRatingStore {
+  color: #565959;
+}
+
+/* prices */
+
+.searchResultPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.searchResultPrice {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.searchResultOldPrice {
+  font-size: 13px;
+  color: #565959;
+  text-decoration: line-through;
+}
+
+/* desc + button */
+
+.searchResultDesc {
+  font-size: 12px;
+  color: #565959;
+  margin: 4px 0 8px;
+}
+
+.searchResultButton {
+  align-self: flex-start;
+  font-size: 13px;
+  padding: 6px 10px;
+  background: #ffd814;
+  border: 1px solid #fcd200;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.searchResultButton:hover {
+  background: #f7ca00;
+}
+
+.searchResultsEmpty {
+  margin-top: 32px;
+  font-size: 15px;
+}

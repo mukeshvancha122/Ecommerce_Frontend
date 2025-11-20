@@ -1,5 +1,5 @@
 // imageSearchService.js
-import API from "../API";
+import API from "../../../axios";
 
 export const searchProductsByImage = async ({ image, page = 1, page_size = 10 }) => {
   console.log("Dummy image search:", { image, page, page_size });

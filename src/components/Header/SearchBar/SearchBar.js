@@ -1,26 +1,32 @@
+// src/components/Header/SearchBar/SearchBar.js
 import React, { useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
-import API from "../../../axios";
-import SearchCategoryDropdown from "./SearchCategoryDropDown";
 import "./SearchBar.css";
+
+// 🔁 adjust these import paths to match your project
+import { searchProducts } from "../../../api/products/searchProduct/SearchProductService";
+import { searchProductsByImage } from "../../../api/products/searchProduct/ImageSearchService";
+
+const CATEGORIES = [
+  { value: "all", label: "All" },
+  { value: "electronics", label: "Electronics" },
+  { value: "fashion", label: "Fashion" },
+  { value: "home", label: "Home & Kitchen" },
+  { value: "beauty", label: "Beauty" },
+  { value: "grocery", label: "Grocery" },
+];
 
 function SearchBar() {
   const history = useHistory();
 
-  // state
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [imageInputKey, setImageInputKey] = useState(Date.now());
   const [error, setError] = useState("");
 
-  // refs
   const fileInputRef = useRef(null);
 
-  // ---- helpers ----
-
-  // Text search -> backend
+  // ---------- TEXT SEARCH ----------
   const handleSearch = async () => {
     if (!query.trim() || loading) return;
 
@@ -28,18 +34,23 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      const res = await API.post("/search/text", {
-        query,
-        category: category === "all" ? null : category,
-      });
+      const filters = {
+        products: query.trim(),
+        category: category === "all" ? undefined : category,
+        page: 1,
+        page_size: 20,
+      };
 
-      const results = res?.data?.results || [];
+      const data = await searchProducts(filters);
+      const results = data?.results || [];
+      const count = data?.count ?? results.length;
 
-      history.push("/search", {
+      history.push("/search-results", {
         mode: "text",
-        query,
+        query: query.trim(),
         category,
         results,
+        totalCount: count,
       });
     } catch (err) {
       console.error("Text search error:", err);
@@ -49,23 +60,19 @@ function SearchBar() {
     }
   };
 
-  // Enter key in the text input triggers search
-  const handleKeyDown = (e) => {
+  const handleTextKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleSearch();
     }
   };
 
-  // Trigger hidden file input on camera click
-  const handleImageSearchClick = () => {
+  // ---------- IMAGE SEARCH ----------
+  const handleImageButtonClick = () => {
     if (loading) return;
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    fileInputRef.current?.click();
   };
 
-  // Image search -> backend
   const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || loading) return;
@@ -74,107 +81,101 @@ function SearchBar() {
       setLoading(true);
       setError("");
 
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const res = await API.post("/search/image", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const data = await searchProductsByImage({
+        image: file,
+        page: 1,
+        page_size: 20,
       });
 
-      const results = res?.data?.results || [];
+      const results = data?.results || [];
+      const count = data?.count ?? results.length;
 
-      history.push("/search", {
+      history.push("/search-results", {
         mode: "image",
         previewImageUrl: URL.createObjectURL(file),
         results,
+        totalCount: count,
       });
     } catch (err) {
       console.error("Image search error:", err);
       setError("Image search failed. Please try again.");
     } finally {
       setLoading(false);
-      // re-allow same file upload twice in a row
-      setImageInputKey(Date.now());
+      // allow selecting the same file again if needed
+      e.target.value = "";
     }
   };
 
   return (
-    <div className="searchBarWrapper">
-      <div className={`searchBarOuter ${loading ? "isLoading" : ""}`}>
-        {/* CATEGORY DROPDOWN (moved out to its own component) */}
-        <SearchCategoryDropdown
-          value={category}
-          onChange={setCategory}
-          disabled={loading}
-        />
+    <div className="searchBar-container">
+      <div className={`searchBar ${loading ? "searchBar--loading" : ""}`}>
+        {/* Category select */}
+        <div className="searchBar-categoryWrapper">
+          <select
+            className="searchBar-categorySelect"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={loading}
+            aria-label="Select category"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* TEXT INPUT */}
+        {/* Text input */}
         <input
-          id="search-query"
-          name="searchQuery"
-          className="searchBarInput"
+          className="searchBar-input"
           type="text"
           placeholder="Search products, brands and more…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleTextKeyDown}
           disabled={loading}
         />
 
-        {/* IMAGE SEARCH BUTTON */}
-        <div
-          className="searchBarImageBtn"
-          onClick={handleImageSearchClick}
-          role="button"
-          tabIndex={0}
-          title="Search by image"
+        {/* Image search (camera) */}
+        <button
+          type="button"
+          className="searchBar-iconBtn searchBar-iconBtn--camera"
+          onClick={handleImageButtonClick}
+          disabled={loading}
           aria-label="Search by image"
         >
+          <span role="img" aria-hidden="true">
+            📷
+          </span>
           <input
-            id="searchImageUpload"
-            name="searchImageUpload"
-            key={imageInputKey}
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            style={{ display: "none" }}
             onChange={handleImageFileChange}
-            disabled={loading}
+            style={{ display: "none" }}
           />
-          <span
-            className="searchBarCameraIcon"
-            role="img"
-            aria-hidden="false"
-            aria-label="camera"
-          >
-            📷
-          </span>
-        </div>
+        </button>
 
-        {/* SUBMIT BUTTON */}
+        {/* Search submit */}
         <button
-          className="searchBarSubmit"
+          type="button"
+          className="searchBar-iconBtn searchBar-iconBtn--submit"
           onClick={handleSearch}
           disabled={loading}
           aria-label="Search"
         >
           {loading ? (
-            <span className="searchBarMagnifier">…</span>
+            <span className="searchBar-spinner" />
           ) : (
-            <span
-              className="searchBarMagnifier"
-              role="img"
-              aria-hidden="false"
-              aria-label="search"
-            >
+            <span role="img" aria-hidden="true">
               🔍
             </span>
           )}
         </button>
       </div>
 
-      {/* error line */}
-      {error && <div className="searchBarError">{error}</div>}
+      {error && <div className="searchBar-error">{error}</div>}
     </div>
   );
 }

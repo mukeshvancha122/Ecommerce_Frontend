@@ -22,6 +22,7 @@ import { Elements } from "@stripe/react-stripe-js";
 // Redux auth 
 import { useSelector } from "react-redux";
 import { selectUser } from "./features/auth/AuthSlice"; 
+import SearchResults from "./pages/SearchPage/SearchResultsPage";
 
 const stripePromise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
 
@@ -55,6 +56,12 @@ export default function App() {
             <Elements stripe={stripePromise}>
               <Payment />
             </Elements>
+          </Route>
+
+          <Route path="/search">
+            <Header />
+            <SubHeader />
+            <SearchResults />
           </Route>
 
           <Route path="/product/:slug">
