@@ -10,46 +10,46 @@ const Footer = () => {
           <h4 className="footer-title">Get to Know Us</h4>
           <ul>
             <li>Careers</li>
-            <li>Amazon Newsletter</li>
-            <li>About Amazon</li>
+            <li>HyderNexa Newsletter</li>
+            <li>About HyderNexa</li>
             <li>Accessibility</li>
             <li>Sustainability</li>
             <li>Press Center</li>
             <li>Investor Relations</li>
-            <li>Amazon Devices</li>
-            <li>Amazon Science</li>
+            <li>HyderNexa Devices</li>
+            <li>HyderNexa Innovation</li>
           </ul>
         </div>
 
         <div className="footer-column">
           <h4 className="footer-title">Make Money with Us</h4>
           <ul>
-            <li>Sell on Amazon</li>
-            <li>Sell apps on Amazon</li>
-            <li>Supply to Amazon</li>
+            <li>Sell on HyderNexa</li>
+            <li>Sell apps on HyderNexa</li>
+            <li>Supply to HyderNexa</li>
             <li>Protect & Build Your Brand</li>
             <li>Become an Affiliate</li>
             <li>Become a Delivery Driver</li>
             <li>Start a Package Delivery Business</li>
             <li>Advertise Your Products</li>
             <li>Self-Publish with Us</li>
-            <li>Become an Amazon Hub Partner</li>
+            <li>Become a HyderNexa Hub Partner</li>
             <li className="footer-highlight">› See More Ways to Make Money</li>
           </ul>
         </div>
 
         <div className="footer-column">
-          <h4 className="footer-title">Amazon Payment Products</h4>
+          <h4 className="footer-title">HyderNexa Payment Products</h4>
           <ul>
-            <li>Amazon Visa</li>
-            <li>Amazon Store Card</li>
-            <li>Amazon Secured Card</li>
-            <li>Amazon Business Card</li>
+            <li>HyderNexa Visa</li>
+            <li>HyderNexa Store Card</li>
+            <li>HyderNexa Secured Card</li>
+            <li>HyderNexa Business Card</li>
             <li>Shop with Points</li>
             <li>Credit Card Marketplace</li>
             <li>Reload Your Balance</li>
             <li>Gift Cards</li>
-            <li>Amazon Currency Converter</li>
+            <li>HyderNexa Currency Converter</li>
           </ul>
         </div>
 
@@ -59,7 +59,7 @@ const Footer = () => {
             <li>Your Account</li>
             <li>Your Orders</li>
             <li>Shipping Rates & Policies</li>
-            <li>Amazon Prime</li>
+            <li>HyderNexa Prime</li>
             <li>Returns & Replacements</li>
             <li>Manage Your Content and Devices</li>
             <li>Recalls and Product Safety Alerts</li>
@@ -72,10 +72,10 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="footer-bottom">
         <div className="footer-logo">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg"
-            alt="Amazon logo"
-          />
+          <div className="footer-logo-text">
+            <span className="footer-logo-primary">Hyder</span>
+            <span className="footer-logo-accent">Nexa</span>
+          </div>
         </div>
         <div className="footer-locale">
           <div className="footer-select">
@@ -83,7 +83,7 @@ const Footer = () => {
             <span className="footer-select-arrow">▾</span>
           </div>
           <div className="footer-select">
-            🇺🇸 United States
+            🇮🇳 India
             <span className="footer-select-arrow">▾</span>
           </div>
         </div>

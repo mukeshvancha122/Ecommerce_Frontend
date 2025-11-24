@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import "./SearchResultPage.css";
+import { getProductImageUrl } from "../../utils/imageUtils";
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -9,8 +10,6 @@ const SearchResultsPage = () => {
   const {
     mode = "text",
     query = "",
-    category = "all",
-    subCategory = "all",
     results = [],
     total = 0,
     previewImageUrl,
@@ -55,8 +54,7 @@ const SearchResultsPage = () => {
       <div className="srpGrid">
         {results.map((p) => {
           const mainVariation = p.product_variations?.[0];
-          const mainImage =
-            mainVariation?.product_images?.[0]?.product_image || "";
+          const mainImage = getProductImageUrl(p, "");
           const price = mainVariation?.product_price;
           const discounted = mainVariation?.get_discounted_price;
           const rating = p.get_rating_info;

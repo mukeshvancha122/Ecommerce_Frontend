@@ -220,7 +220,7 @@ const SUBCATEGORY_TRANSLATIONS = {
  */
 export const translateProduct = (product) => {
   if (!product) return product;
-  const lang = getCurrentLanguage();
+  getCurrentLanguage(); // Get language for potential future use
   const translations = PRODUCT_TRANSLATIONS[product.slug];
 
   const translated = { ...product };

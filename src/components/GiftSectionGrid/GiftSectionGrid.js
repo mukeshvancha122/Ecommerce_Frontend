@@ -10,19 +10,19 @@ export default function GiftSectionGrid() {
         footerText="Discover more for Holiday"
         tiles={[
           {
-            img: "https://via.placeholder.com/140x100/aa0077/ffffff?text=%24%3C10",
+            img: "/images/NO_IMG.png",
             label: "Under $10",
           },
           {
-            img: "https://via.placeholder.com/140x100/fcd535/000000?text=%24%3C25",
+            img: "/images/NO_IMG.png",
             label: "Under $25",
           },
           {
-            img: "https://via.placeholder.com/140x100/fc008b/ffffff?text=%24%3C50",
+            img: "/images/NO_IMG.png",
             label: "Under $50",
           },
           {
-            img: "https://via.placeholder.com/140x100/ff66cc/000000?text=Deals",
+            img: "/images/NO_IMG.png",
             label: "Deals",
           },
         ]}
@@ -34,19 +34,19 @@ export default function GiftSectionGrid() {
         footerText="Discover more for Holiday"
         tiles={[
           {
-            img: "https://via.placeholder.com/140x100/cc0033/ffffff?text=Her",
+            img: "/images/NO_IMG.png",
             label: "For her",
           },
           {
-            img: "https://via.placeholder.com/140x100/00b59a/ffffff?text=Him",
+            img: "/images/NO_IMG.png",
             label: "For him",
           },
           {
-            img: "https://via.placeholder.com/140x100/00aaff/ffffff?text=Kids",
+            img: "/images/NO_IMG.png",
             label: "For kids",
           },
           {
-            img: "https://via.placeholder.com/140x100/3344ff/ffffff?text=Teens",
+            img: "/images/NO_IMG.png",
             label: "For teens",
           },
         ]}
@@ -58,19 +58,19 @@ export default function GiftSectionGrid() {
         footerText="Discover more for Holiday"
         tiles={[
           {
-            img: "https://via.placeholder.com/140x100/d32f2f/ffffff?text=Toys",
+            img: "/images/NO_IMG.png",
             label: "Toys",
           },
           {
-            img: "https://via.placeholder.com/140x100/ffb3b3/000000?text=Home",
+            img: "/images/NO_IMG.png",
             label: "Home & kitchen",
           },
           {
-            img: "https://via.placeholder.com/140x100/9900ff/ffffff?text=Electronics",
+            img: "/images/NO_IMG.png",
             label: "Electronics",
           },
           {
-            img: "https://via.placeholder.com/140x100/0099ff/ffffff?text=Sports",
+            img: "/images/NO_IMG.png",
             label: "Sports & outdoors",
           },
         ]}

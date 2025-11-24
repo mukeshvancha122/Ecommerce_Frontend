@@ -21,11 +21,12 @@ export default function Checkout() {
   return (
     <div className="checkout">
       <div className="checkout-left">
-        <img
-          className="checkout-ad"
-          src="https://images-na.ssl-images-amazon.com/images/G/02/UK_CCMP/TM/OCC_Amazon1._CB423492668_.jpg"
-          alt="ad-banner"
-        />
+        <div className="checkout-ad">
+          <div className="checkout-ad-content">
+            <h3>HyderNexa Secure Checkout</h3>
+            <p>Your payment information is protected with industry-leading security</p>
+          </div>
+        </div>
 
         <div>
           <h3>

@@ -15,6 +15,9 @@ import BuyBox from "../../components/Product/BuyBox/BuyBox";
 import FeatureList from "../../components/Product/FeatureList/FeatureList";
 import RatingStars from "../../components/Product/RatingStars";
 import { formatCurrency } from "../../utils/format";
+import { formatImageUrl } from "../../utils/imageUtils";
+import { normalizeProduct } from "../../utils/productNormalization";
+import { PageLoader, ProductCardSkeleton } from "../../components/Loading/LoadingSpinner";
 
 const SpecsTable = ({ title, rows }) => {
   if (!rows.length) return null;
@@ -92,7 +95,7 @@ const ProductCarousel = ({ title, products }) => {
           const priceValue = Number(
             variation?.get_discounted_price || variation?.product_price || 0
           );
-          const image = variation?.product_images?.[0]?.product_image;
+          const image = formatImageUrl(variation?.product_images?.[0]?.product_image, "/images/NO_IMG.png");
           const rating = parseFloat(item?.get_rating_info || "0");
           return (
             <a key={item.slug} className="pdp-carousel__card" href={`/product/${item.slug}`}>
@@ -134,7 +137,8 @@ export default function ProductPage() {
         if (!data) {
           setError("Product not found");
         } else {
-          setProduct(data);
+          // Normalize product data to handle different backend formats
+          setProduct(normalizeProduct(data));
           setError("");
         }
       } catch (err) {
@@ -164,10 +168,10 @@ export default function ProductPage() {
     })();
   }, [product]);
 
-  const variation = product?.product_variations?.[0] || {};
+  const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
 
   const galleryImages = useMemo(() => {
-    const imgs = variation?.product_images?.map((img) => img.product_image) || [];
+    const imgs = variation?.product_images?.map((img) => formatImageUrl(img.product_image, "/images/NO_IMG.png")) || [];
     return imgs.length ? imgs : ["/images/NO_IMG.png"];
   }, [variation]);
 
@@ -214,9 +218,29 @@ export default function ProductPage() {
     [product]
   );
 
-  if (loading) return <div className="container">Loading…</div>;
-  if (error) return <div className="container error">{error}</div>;
-  if (!product) return null;
+  if (loading) {
+    return <PageLoader message="Loading product details..." />;
+  }
+  
+  if (error) {
+    return (
+      <div className="container" style={{ padding: "2rem", textAlign: "center" }}>
+        <div className="error" style={{ color: "#dc2626", fontSize: "1.25rem" }}>
+          {error}
+        </div>
+      </div>
+    );
+  }
+  
+  if (!product) {
+    return (
+      <div className="container" style={{ padding: "2rem", textAlign: "center" }}>
+        <div style={{ color: "#64748b", fontSize: "1.25rem" }}>
+          Product not found
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container productPageContainer">

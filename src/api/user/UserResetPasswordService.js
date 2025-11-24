@@ -6,7 +6,7 @@ import API from "../../axios";
  */
 export const resetPassword = async (password, re_password) => {
   try {
-    const response = await API.post("/v1/user/reset_password/", {
+    const response = await API.post("/api/v1/user/reset_password/", {
       password,
       re_password
     });

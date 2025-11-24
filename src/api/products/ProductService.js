@@ -1,5 +1,6 @@
 import { searchProducts } from "./searchProduct/SearchProductService";
 import { getCurrentLanguage } from "../../utils/language";
+import { getRatingValue } from "../../utils/productNormalization";
 
 let cachedProducts = null;
 let cachedLanguage = null;
@@ -49,7 +50,7 @@ export const getRelatedProducts = async ({
       const productCategory =
         product.product_category?.slug ||
         product.product_category?.category_name?.toLowerCase();
-      const rating = parseFloat(product.get_rating_info || "0");
+      const rating = getRatingValue(product);
       const matchesCategory = categorySlug
         ? productCategory === categorySlug ||
           product.product_category?.category_name

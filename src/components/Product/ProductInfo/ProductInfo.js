@@ -2,11 +2,12 @@ import React, { useMemo } from "react";
 import "./ProductInfo.css";
 import RatingStars from "../RatingStars";
 import PriceTag from "../PriceTag";
+import { getRatingValue, getDiscountedPrice, getStockText } from "../../../utils/productNormalization";
 
 export default function ProductInfo({ product }) {
-  const variation = product?.product_variations?.[0] || {};
+  const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
   const brand = product?.brand?.brand_name;
-  const rating = parseFloat(product?.get_rating_info || "0");
+  const rating = getRatingValue(product);
 
   const specs = useMemo(
     () =>
@@ -22,7 +23,7 @@ export default function ProductInfo({ product }) {
         },
         { label: "Color", value: variation?.product_color },
         { label: "Size / Variant", value: variation?.product_size },
-        { label: "Stock", value: variation?.stock },
+        { label: "Stock", value: getStockText(variation) },
       ].filter((entry) => entry.value),
     [brand, product, variation]
   );
@@ -38,7 +39,7 @@ export default function ProductInfo({ product }) {
     if (product?.best_seller) {
       lines.push("Top rated in its category with consistent best-seller status.");
     }
-    if (variation?.get_discounted_price && product?.free_delivery) {
+    if (getDiscountedPrice(variation) && product?.free_delivery) {
       lines.push("Eligible for FREE delivery on qualified orders.");
     }
     return lines;
@@ -72,7 +73,7 @@ export default function ProductInfo({ product }) {
 
       <PriceTag
         list={Number(variation?.product_price)}
-        sale={Number(variation?.get_discounted_price || variation?.product_price)}
+        sale={Number(getDiscountedPrice(variation))}
         currency="INR"
       />
 

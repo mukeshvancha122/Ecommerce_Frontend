@@ -3,6 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import "./SideNavDrawer.css";
 import { getAllCategories } from "../../api/products/CategoryService";
 import { getCategorySubcategories } from "../../api/products/CategorySubCategoryService";
+import { getTopSellingProducts } from "../../api/products/TopSellingService";
+import { getFeaturedProducts } from "../../api/products/FeaturedProductService";
+import { searchProducts } from "../../api/products/searchProduct/SearchProductService";
 import { setCountry, selectCountry, COUNTRIES } from "../../features/country/countrySlice";
 
 export default function SideNavDrawer({
@@ -16,12 +19,13 @@ export default function SideNavDrawer({
   const dispatch = useDispatch();
   const selectedCountry = useSelector(selectCountry);
   const [deptOpen, setDeptOpen] = useState(false);
-  const [programsOpen, setProgramsOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [trendingOpen, setTrendingOpen] = useState(false);
   const [openCats, setOpenCats] = useState({});
   const [showCountryMenu, setShowCountryMenu] = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState({ bestSellers: [], newReleases: [] });
+  const [departmentProducts, setDepartmentProducts] = useState({ clothing: [], shoes: [], jewelryWatches: [] });
 
   // Lock scroll + close on ESC
   useEffect(() => {
@@ -42,52 +46,137 @@ export default function SideNavDrawer({
   };
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const cats = await getAllCategories();
-        setCategories(Array.isArray(cats) ? cats : []);
+        if (isMounted) {
+          setCategories(Array.isArray(cats) ? cats : []);
+        }
       } catch {
-        setCategories([]);
+        if (isMounted) {
+          setCategories([]);
+        }
       }
       try {
         const subs = await getCategorySubcategories();
-        setSubcategories(Array.isArray(subs) ? subs : []);
+        if (isMounted) {
+          setSubcategories(Array.isArray(subs) ? subs : []);
+        }
       } catch {
-        setSubcategories([]);
+        if (isMounted) {
+          setSubcategories([]);
+        }
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
+  // Fetch trending products (best sellers and new releases)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        // Best sellers from top selling products
+        const topSelling = await getTopSellingProducts(1);
+        const topSellingArray = Array.isArray(topSelling) 
+          ? topSelling 
+          : (Array.isArray(topSelling?.results) ? topSelling.results : []);
+        const bestSellers = topSellingArray.slice(0, 4).map(p => ({
+          title: p.product_name || `Product ${p.id}`,
+          slug: p.slug || p.id,
+        }));
+
+        // New releases from featured products
+        const featured = await getFeaturedProducts(1);
+        const featuredArray = Array.isArray(featured) 
+          ? featured 
+          : (Array.isArray(featured?.results) ? featured.results : []);
+        const newReleases = featuredArray.slice(0, 4).map(p => ({
+          title: p.product_name || `Product ${p.id}`,
+          slug: p.slug || p.id,
+        }));
+
+        if (isMounted) {
+          setTrendingProducts({ bestSellers, newReleases });
+        }
+      } catch (error) {
+        console.error("Error fetching trending products:", error);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch department products
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        // Fetch products for different departments
+        const [clothingRes, shoesRes, jewelryRes] = await Promise.all([
+          searchProducts({ category: "fashion", page_size: 2 }).catch(() => ({ results: [] })),
+          searchProducts({ category: "footwear", page_size: 2 }).catch(() => ({ results: [] })),
+          searchProducts({ category: "jewelry", page_size: 2 }).catch(() => ({ results: [] })),
+        ]);
+
+        if (isMounted) {
+          const clothingArray = Array.isArray(clothingRes) 
+            ? clothingRes 
+            : (Array.isArray(clothingRes?.results) ? clothingRes.results : []);
+          const shoesArray = Array.isArray(shoesRes) 
+            ? shoesRes 
+            : (Array.isArray(shoesRes?.results) ? shoesRes.results : []);
+          const jewelryArray = Array.isArray(jewelryRes) 
+            ? jewelryRes 
+            : (Array.isArray(jewelryRes?.results) ? jewelryRes.results : []);
+          
+          setDepartmentProducts({
+            clothing: clothingArray.map(p => ({
+              title: p.product_name || `Product ${p.id}`,
+              slug: p.slug || p.id,
+            })),
+            shoes: shoesArray.map(p => ({
+              title: p.product_name || `Product ${p.id}`,
+              slug: p.slug || p.id,
+            })),
+            jewelryWatches: jewelryArray.map(p => ({
+              title: p.product_name || `Product ${p.id}`,
+              slug: p.slug || p.id,
+            })),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching department products:", error);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Helper to get string value from category_name (handles both string and object)
+  const getCategoryNameString = (categoryName) => {
+    if (typeof categoryName === 'string') return categoryName;
+    if (typeof categoryName === 'object' && categoryName !== null) {
+      return categoryName.en || categoryName[Object.keys(categoryName)[0]] || '';
+    }
+    return '';
+  };
+
+  // Helper to get string value from sub_category (handles both string and object)
+  const getSubCategoryString = (subCategory) => {
+    if (typeof subCategory === 'string') return subCategory;
+    if (typeof subCategory === 'object' && subCategory !== null) {
+      return subCategory.en || subCategory[Object.keys(subCategory)[0]] || '';
+    }
+    return '';
+  };
+
   const subsByCategory = subcategories.reduce((acc, sc) => {
-    const key = sc.category_name;
+    const key = getCategoryNameString(sc.category_name);
     if (!acc[key]) acc[key] = [];
     acc[key].push(sc);
     return acc;
   }, {});
 
-  // Dummy data for Trending and Departments
-  const dummyTrending = {
-    bestSellers: [
-      { title: "Ultra Comfort Gaming Chair", slug: "ultra-comfort-gaming-chair" },
-      { title: "Noise Cancelling Earbuds", slug: "noise-cancelling-earbuds" },
-    ],
-    newReleases: [
-      { title: "5G Android Smartphone", slug: "5g-android-smartphone" },
-      { title: "14-inch Thin Laptop", slug: "14-inch-thin-laptop" },
-    ],
-  };
-
-  const dummyDepartment = {
-    clothing: [
-      { title: "Slim Fit Casual Shirt", slug: "slim-fit-casual-shirt" },
-    ],
-    shoes: [
-      { title: "Classic Formal Shoes", slug: "classic-formal-shoes" },
-    ],
-    jewelryWatches: [
-      { title: "Leather Handbag", slug: "leather-handbag" },
-    ],
-  };
 
   const HelpSettings = () => (
     <div className="snd-section snd-section--help">
@@ -191,13 +280,13 @@ export default function SideNavDrawer({
               </li>
               {trendingOpen && (
                 <>
-                  {dummyTrending.bestSellers.map((it, idx) => (
-                    <li key={`bs-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                  {trendingProducts.bestSellers.map((it, idx) => (
+                    <li key={`bs-${it.slug || idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
                       <span className="snd-rowLabel">{it.title}</span>
                     </li>
                   ))}
-                  {dummyTrending.newReleases.map((it, idx) => (
-                    <li key={`nr-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                  {trendingProducts.newReleases.map((it, idx) => (
+                    <li key={`nr-${it.slug || idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
                       <span className="snd-rowLabel">{it.title}</span>
                     </li>
                   ))}
@@ -239,14 +328,15 @@ export default function SideNavDrawer({
               </li>
               {/* Dynamic Categories with nested subcategories */}
               {categories.map((cat) => {
-                const href = `/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(cat.category_name)}`;
-                const subs = subsByCategory[cat.category_name] || [];
+                const categoryNameStr = getCategoryNameString(cat.category_name);
+                const href = `/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(categoryNameStr)}`;
+                const subs = subsByCategory[categoryNameStr] || [];
                 const isOpen = !!openCats[cat.id];
                 return (
                   <React.Fragment key={cat.id}>
                     {subs.length === 0 ? (
                       <li className="snd-row snd-row--chev" onClick={() => goto(href)}>
-                        <span className="snd-rowLabel">{cat.category_name}</span>
+                        <span className="snd-rowLabel">{categoryNameStr}</span>
                         <span className="snd-chev">›</span>
                       </li>
                     ) : (
@@ -255,19 +345,20 @@ export default function SideNavDrawer({
                           className="snd-row snd-row--chev"
                           onClick={() => setOpenCats((s) => ({ ...s, [cat.id]: !s[cat.id] }))}
                         >
-                          <span className="snd-rowLabel">{cat.category_name}</span>
+                          <span className="snd-rowLabel">{categoryNameStr}</span>
                           <span className={`snd-caret ${isOpen ? "snd-caret--up" : ""}`}>▾</span>
                         </li>
                         {(deptOpen || isOpen) && (
                           <li className="snd-row" onClick={() => goto(href)}>
-                            <span className="snd-rowLabel" style={{ paddingLeft: '20px', fontStyle: 'italic', color: 'var(--snd-accent)' }}>View all in {cat.category_name}</span>
+                            <span className="snd-rowLabel" style={{ paddingLeft: '20px', fontStyle: 'italic', color: 'var(--snd-accent)' }}>View all in {categoryNameStr}</span>
                           </li>
                         )}
                         {(deptOpen || isOpen) && subs.map((sc) => {
-                          const shref = `/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`;
+                          const subCategoryStr = getSubCategoryString(sc.sub_category);
+                          const shref = `/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(subCategoryStr)}`;
                           return (
                             <li key={`${cat.id}-${sc.id}`} className="snd-row" onClick={() => goto(shref)}>
-                              <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{sc.sub_category}</span>
+                              <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{subCategoryStr}</span>
                             </li>
                           );
                         })}
@@ -278,28 +369,28 @@ export default function SideNavDrawer({
               })}
               {deptOpen && (
                 <>
-                  {/* Featured items per department (dummy) */}
-                  {dummyDepartment.clothing.map((it, idx) => (
-                    <li key={`clo-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                  {/* Featured items per department */}
+                  {departmentProducts.clothing.map((it, idx) => (
+                    <li key={`clo-${it.slug || idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
                       <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
-                  {dummyDepartment.shoes.map((it, idx) => (
-                    <li key={`sho-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                  {departmentProducts.shoes.map((it, idx) => (
+                    <li key={`sho-${it.slug || idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
                       <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
-                  {dummyDepartment.jewelryWatches.map((it, idx) => (
-                    <li key={`jew-${idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
+                  {departmentProducts.jewelryWatches.map((it, idx) => (
+                    <li key={`jew-${it.slug || idx}`} className="snd-row" onClick={() => goto(`/product/${it.slug}`)}>
                       <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-fresh")}>
-                    <span className="snd-rowLabel">Amazon Fresh</span>
+                  <li className="snd-row snd-row--chev" onClick={() => goto("/hydernexa-fresh")}>
+                    <span className="snd-rowLabel">HyderNexa Fresh</span>
                     <span className="snd-chev">›</span>
                   </li>
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/whole-foods-market")}>
-                    <span className="snd-rowLabel">Whole Foods Market</span>
+                  <li className="snd-row snd-row--chev" onClick={() => goto("/hydernexa-market")}>
+                    <span className="snd-rowLabel">HyderNexa Market</span>
                     <span className="snd-chev">›</span>
                   </li>
                   <li className="snd-row snd-row--chev" onClick={() => goto("/books")}>
@@ -333,12 +424,6 @@ export default function SideNavDrawer({
                 <span className="snd-rowLabel">Medical Care &amp; Pharmacy</span>
                 <span className="snd-chev">›</span>
               </li>
-              {programsOpen && (
-                <>
-                 
-                </>
-              )}
-             
             </ul>
           </div>
 

@@ -12,6 +12,9 @@ import { getSaleCategories } from "../../api/products/SaleCategoryService";
 import { getAllProducts } from "../../api/products/CategoryProductsService";
 import { searchProducts } from "../../api/products/searchProduct/SearchProductService";
 import { selectUser } from "../../features/auth/AuthSlice";
+import { getProductImageUrl, getCategoryImageUrl, formatImageUrl } from "../../utils/imageUtils";
+import { getDiscountedPrice } from "../../utils/productNormalization";
+import { LoadingSpinner, ProductCardSkeleton } from "../Loading/LoadingSpinner";
 
 const GIFT_PANEL_DATA = [
   {
@@ -20,10 +23,10 @@ const GIFT_PANEL_DATA = [
     footerLabel: "Discover more for Holiday ›",
     footerParams: { product_name: "holiday gifts" },
     tiles: [
-      { label: "For her", image: "https://via.placeholder.com/200x140?text=For+Her", params: { product_name: "women fashion" } },
-      { label: "For him", image: "https://via.placeholder.com/200x140?text=For+Him", params: { product_name: "mens fashion" } },
-      { label: "For kids", image: "https://via.placeholder.com/200x140?text=For+Kids", params: { product_name: "kids gifts" } },
-      { label: "For teens", image: "https://via.placeholder.com/200x140?text=For+Teens", params: { product_name: "teen gifts" } },
+      { label: "For her", image: "/images/NO_IMG.png", params: { product_name: "women fashion" } },
+      { label: "For him", image: "/images/NO_IMG.png", params: { product_name: "mens fashion" } },
+      { label: "For kids", image: "/images/NO_IMG.png", params: { product_name: "kids gifts" } },
+      { label: "For teens", image: "/images/NO_IMG.png", params: { product_name: "teen gifts" } },
     ],
   },
   {
@@ -32,10 +35,10 @@ const GIFT_PANEL_DATA = [
     footerLabel: "Find Holiday Gifts for all",
     footerParams: { product_name: "holiday collections" },
     tiles: [
-      { label: "New arrivals", image: "https://via.placeholder.com/200x140?text=Arrivals", params: { product_name: "new arrivals" } },
-      { label: "White elephant", image: "https://via.placeholder.com/200x140?text=White+Elephant", params: { product_name: "white elephant" } },
-      { label: "Premium picks", image: "https://via.placeholder.com/200x140?text=Premium", params: { product_name: "premium gifts" } },
-      { label: "Trending gifts", image: "https://via.placeholder.com/200x140?text=Trending", params: { product_name: "trending gifts" } },
+      { label: "New arrivals", image: "/images/NO_IMG.png", params: { product_name: "new arrivals" } },
+      { label: "White elephant", image: "/images/NO_IMG.png", params: { product_name: "white elephant" } },
+      { label: "Premium picks", image: "/images/NO_IMG.png", params: { product_name: "premium gifts" } },
+      { label: "Trending gifts", image: "/images/NO_IMG.png", params: { product_name: "trending gifts" } },
     ],
   },
   {
@@ -44,10 +47,10 @@ const GIFT_PANEL_DATA = [
     footerLabel: "Discover more for Holiday",
     footerParams: { product_name: "deals" },
     tiles: [
-      { label: "Under ₹1,000", image: "https://via.placeholder.com/200x140?text=Under+1000", params: { product_name: "budget gifts", max_price: 1000 } },
-      { label: "Under ₹2,000", image: "https://via.placeholder.com/200x140?text=Under+2000", params: { max_price: 2000 } },
-      { label: "Under ₹5,000", image: "https://via.placeholder.com/200x140?text=Under+5000", params: { max_price: 5000 } },
-      { label: "Deals", image: "https://via.placeholder.com/200x140?text=Deals", params: { product_name: "deals" } },
+      { label: "Under ₹1,000", image: "/images/NO_IMG.png", params: { product_name: "budget gifts", max_price: 1000 } },
+      { label: "Under ₹2,000", image: "/images/NO_IMG.png", params: { max_price: 2000 } },
+      { label: "Under ₹5,000", image: "/images/NO_IMG.png", params: { max_price: 5000 } },
+      { label: "Deals", image: "/images/NO_IMG.png", params: { product_name: "deals" } },
     ],
   },
 ];
@@ -64,6 +67,8 @@ function Home() {
   const [historyProducts, setHistoryProducts] = useState([]);
   const [ctaLoading, setCtaLoading] = useState("");
   const [ctaError, setCtaError] = useState("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [loadedCount, setLoadedCount] = useState(0);
 
   const heroSlides = [
     {
@@ -89,60 +94,95 @@ function Home() {
   const [heroIndex, setHeroIndex] = useState(0);
   const goPrevHero = () =>
     setHeroIndex((i) => (i - 1 + heroSlides.length) % heroSlides.length);
-  const goNextHero = () => setHeroIndex((i) => (i + 1) % heroSlides.length);
+  const goNextHero = useCallback(() => setHeroIndex((i) => (i + 1) % heroSlides.length), []);
 
   useEffect(() => {
     const id = setInterval(goNextHero, 6000);
     return () => clearInterval(id);
-  }, []);
+  }, [goNextHero]);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const fp = await getFeaturedProducts(1);
-        setFeaturedProducts(Array.isArray(fp?.results) ? fp.results : []);
+        if (isMounted) {
+          setFeaturedProducts(Array.isArray(fp?.results) ? fp.results : []);
+          setLoadedCount(prev => prev + 1);
+        }
       } catch (err) {
         console.error("featured load", err);
+        if (isMounted) setLoadedCount(prev => prev + 1);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const products = await getMostSoldProducts();
-        setMostSoldProducts(products || []);
-        const imgs = (products || [])
-          .map((p) => p?.product_variations?.[0]?.product_images?.[0]?.product_image)
-          .filter(Boolean);
-        setBestSellerImages(imgs);
+        if (isMounted) {
+          // Handle both array and paginated object responses
+          const productsArray = Array.isArray(products) 
+            ? products 
+            : (products?.results || []);
+          setMostSoldProducts(productsArray);
+          const imgs = productsArray
+            .map((p) => p?.product_variations?.[0]?.product_images?.[0]?.product_image)
+            .filter(Boolean);
+          setBestSellerImages(imgs);
+          setLoadedCount(prev => prev + 1);
+        }
       } catch (err) {
         console.error("most sold load", err);
+        if (isMounted) setLoadedCount(prev => prev + 1);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const sc = await getSaleCategories();
-        setSaleCategories(Array.isArray(sc) ? sc : []);
+        if (isMounted) {
+          setSaleCategories(Array.isArray(sc) ? sc : []);
+          setLoadedCount(prev => prev + 1);
+        }
       } catch (err) {
         console.error("sale categories load", err);
+        if (isMounted) setLoadedCount(prev => prev + 1);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const all = await getAllProducts(1);
-        setHistoryProducts(Array.isArray(all?.results) ? all.results : []);
+        if (isMounted) {
+          setHistoryProducts(Array.isArray(all?.results) ? all.results : []);
+          setLoadedCount(prev => prev + 1);
+        }
       } catch (err) {
         console.error("history products load", err);
+        if (isMounted) setLoadedCount(prev => prev + 1);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
+
+  // Set initial load to false once at least 2 API calls complete
+  useEffect(() => {
+    if (loadedCount >= 2) {
+      setIsInitialLoad(false);
+    }
+  }, [loadedCount]);
 
   const navigateToSearch = useCallback(
     async ({ id, title, params = {}, fallbackItems = [] }) => {
@@ -206,10 +246,10 @@ function Home() {
         items: [],
         ctaLabel: "Discover more for Holiday ›",
         tiles: [
-          { label: "Toys", img: "https://via.placeholder.com/200x140?text=Toys", params: { category: "toys" } },
-          { label: "Home & kitchen", img: "https://via.placeholder.com/200x140?text=Home+%26+Kitchen", params: { category: "home-kitchen" } },
-          { label: "Electronics", img: "https://via.placeholder.com/200x140?text=Electronics", params: { category: "electronics" } },
-          { label: "Sports & outdoors", img: "https://via.placeholder.com/200x140?text=Sports+%26+Outdoors", params: { category: "sports-fitness" } },
+          { label: "Toys", img: "/images/NO_IMG.png", params: { category: "toys" } },
+          { label: "Home & kitchen", img: "/images/NO_IMG.png", params: { category: "home-kitchen" } },
+          { label: "Electronics", img: "/images/NO_IMG.png", params: { category: "electronics" } },
+          { label: "Sports & outdoors", img: "/images/NO_IMG.png", params: { category: "sports-fitness" } },
         ],
       },
     ],
@@ -220,10 +260,10 @@ function Home() {
     () =>
       saleCategories.map((cat, idx) => ({
         id: cat.id || idx,
-        title: cat.category_name,
+        title: typeof cat.category_name === 'object' ? cat.category_name.en || cat.category_name : cat.category_name,
         description: cat.description,
-        image: cat.category_image,
-        params: { product_name: cat.category_name },
+        image: getCategoryImageUrl(cat),
+        params: { product_name: typeof cat.category_name === 'object' ? cat.category_name.en || cat.category_name : cat.category_name },
       })),
     [saleCategories]
   );
@@ -232,6 +272,11 @@ function Home() {
     () => (historyProducts || []).slice(0, 8),
     [historyProducts]
   );
+
+  // Show loading spinner during initial data load
+  if (isInitialLoad) {
+    return <LoadingSpinner size="large" message="Loading HyderNexa..." fullScreen />;
+  }
 
   return (
     <div className="homePage" id="pageTop">
@@ -339,7 +384,7 @@ function Home() {
             <p>Must-play games included with Prime.</p>
             <div className="homeAdCard-image">
               <img
-                src="https://via.placeholder.com/320x200?text=Luna+Gaming"
+                src="/images/NO_IMG.png"
                 alt="Luna Gaming"
               />
             </div>
@@ -391,17 +436,22 @@ function Home() {
                 {(panel.items.length ? panel.items : new Array(4).fill(null)).map(
                   (p, idx) => {
                     const variation = p?.product_variations?.[0];
-                    const img =
-                      variation?.product_images?.[0]?.product_image ||
-                      "https://via.placeholder.com/200x140?text=Loading";
+                    const img = getProductImageUrl(p, "/images/NO_IMG.png");
                     const name = p?.product_name || "Loading…";
                     const price =
-                      variation?.get_discounted_price || variation?.product_price || "";
+                      getDiscountedPrice(variation) || variation?.product_price || "";
                     const slug = p?.slug || "#";
 
                     return (
                       <div className="merchTile" key={p?.id || idx}>
-                        <a className="merchTile-imgWrap" href={`/product/${p?.id ?? slug}`}>
+                        <a 
+                          className="merchTile-imgWrap" 
+                          href={`/product/${p?.id ?? slug}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            history.push(`/product/${p?.id ?? slug}`);
+                          }}
+                        >
                           <img src={img} alt={name} className="merchTile-img" />
                         </a>
                         <div className="merchTile-label" title={name}>
@@ -475,7 +525,7 @@ function Home() {
                 <button
                   type="button"
                   className="saleCategoryCard"
-                  key={cat.id}
+                  key={cat.id || cat.slug || `sale-${idx}`}
                   onClick={() =>
                     navigateToSearch({
                       id: `sale-${cat.id}`,
@@ -502,8 +552,8 @@ function Home() {
         title="Best sellers in computers & accessories"
         items={
           bestSellerImages.length
-            ? bestSellerImages
-            : ["https://via.placeholder.com/240x180?text=Loading"]
+            ? bestSellerImages.map(img => formatImageUrl(img, "/images/NO_IMG.png"))
+            : ["/images/NO_IMG.png"]
         }
       />
 
@@ -516,16 +566,21 @@ function Home() {
           {(historyCards.length ? historyCards : new Array(8).fill(null)).map(
             (product, idx) => {
               const variation = product?.product_variations?.[0];
-              const img =
-                variation?.product_images?.[0]?.product_image ||
-                "https://via.placeholder.com/200x140?text=Loading";
-              const price =
-                variation?.get_discounted_price || variation?.product_price || "";
+              const img = product ? getProductImageUrl(product, "/images/NO_IMG.png") : "/images/NO_IMG.png";
+              const price = product ? getDiscountedPrice(variation) || variation?.product_price || "" : "";
               const name = product?.product_name || "Loading…";
               const slug = product?.slug || `history-${idx}`;
 
               return (
-                <a className="historyCard" key={slug} href={`/product/${slug}`}>
+                <a 
+                  className="historyCard" 
+                  key={slug} 
+                  href={`/product/${slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    history.push(`/product/${slug}`);
+                  }}
+                >
                   <div className="historyCard-image">
                     <img src={img} alt={name} />
                   </div>
@@ -544,44 +599,68 @@ function Home() {
             title: "Support Movember",
             sponsored: false,
             children: (
-              <img
-                src="/img/movember-card.png"
-                alt="Movember"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
+              <div style={{ 
+                width: "100%", 
+                height: "120px", 
+                backgroundColor: "#f0f0f0", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                borderRadius: "4px"
+              }}>
+                <span style={{ color: "#666" }}>Movember Campaign</span>
+              </div>
             ),
           },
           {
             title: "Save 5% with Subscribe & Save",
             sponsored: true,
             children: (
-              <img
-                src="/img/subscribe-save.png"
-                alt="Subscribe & Save"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
+              <div style={{ 
+                width: "100%", 
+                height: "120px", 
+                backgroundColor: "#f0f0f0", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                borderRadius: "4px"
+              }}>
+                <span style={{ color: "#666" }}>Subscribe & Save</span>
+              </div>
             ),
           },
           {
             title: "Shop holiday activities",
             sponsored: false,
             children: (
-              <img
-                src="/img/holiday-activities.png"
-                alt="Holiday activities"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
+              <div style={{ 
+                width: "100%", 
+                height: "120px", 
+                backgroundColor: "#f0f0f0", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                borderRadius: "4px"
+              }}>
+                <span style={{ color: "#666" }}>Holiday Activities</span>
+              </div>
             ),
           },
           {
             title: "Save more on deals",
             sponsored: false,
             children: (
-              <img
-                src="/img/save-more-deals.png"
-                alt="Deals"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
+              <div style={{ 
+                width: "100%", 
+                height: "120px", 
+                backgroundColor: "#f0f0f0", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                borderRadius: "4px"
+              }}>
+                <span style={{ color: "#666" }}>Save More Deals</span>
+              </div>
             ),
           },
         ]}

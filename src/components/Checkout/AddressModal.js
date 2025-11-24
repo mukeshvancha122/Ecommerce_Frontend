@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./AddressModal.css";
 import { useDispatch, useSelector } from "react-redux";
-import { createAddress, editAddress } from "../../features/checkout/CheckoutSlice";
+import { createAddress, editAddress, fetchAddresses } from "../../features/checkout/CheckoutSlice";
 import { selectCountry, COUNTRIES } from "../../features/country/countrySlice";
 
 export default function AddressModal({ open, onClose, initial }) {
@@ -27,16 +27,67 @@ export default function AddressModal({ open, onClose, initial }) {
     }
   }, [selectedCountry, open, initial]);
 
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      setForm(
+        initial || {
+          country: selectedCountry.name,
+          fullName: "",
+          phone: "",
+          address1: "",
+          address2: "",
+          city: "",
+          state: "",
+          zip: "",
+        }
+      );
+    }
+  }, [open, initial, selectedCountry]);
+
   if (!open) return null;
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (initial?.id) {
-      await dispatch(editAddress({ id: initial.id, payload: form }));
-    } else {
-      await dispatch(createAddress(form));
+    try {
+      if (initial?.id) {
+        const result = await dispatch(editAddress({ id: initial.id, payload: form }));
+        if (editAddress.fulfilled.match(result)) {
+          // Refetch addresses to ensure we have the latest data
+          await dispatch(fetchAddresses());
+          onClose();
+        } else {
+          console.error("Failed to update address:", result.error);
+        }
+      } else {
+        const result = await dispatch(createAddress(form));
+        // If address creation succeeded, close modal immediately
+        // Don't refetch if address was created locally (backend unavailable)
+        if (createAddress.fulfilled.match(result)) {
+          console.log("✅ Address created successfully:", result.payload);
+          const createdAddress = result.payload;
+          
+          // Only refetch if the address has a backend ID (not a timestamp ID)
+          // Timestamp IDs (Date.now()) are > 1e12, backend IDs are typically smaller
+          const isLocalAddress = typeof createdAddress.id === 'number' && createdAddress.id > 1e12;
+          
+          if (!isLocalAddress) {
+            // Address was saved to backend, refetch to get latest data
+            const refetchResult = await dispatch(fetchAddresses());
+            console.log("✅ Addresses refetched from backend:", refetchResult.payload);
+          } else {
+            console.log("✅ Address saved locally, skipping refetch to preserve local address");
+          }
+          
+          onClose();
+        } else {
+          console.error("❌ Failed to create address:", result.error);
+          // Don't close modal on error so user can try again
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting address form:", error);
     }
-    onClose();
   };
 
   const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));

@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import "./SearchResultsPage.css";
+import { getProductImageUrl } from "../../utils/imageUtils";
+import { LoadingSpinner } from "../../components/Loading/LoadingSpinner";
 
 const PRICE_FILTERS = [
   { id: "under-1000", label: "Under ₹1,000", test: (price) => price != null && price < 1000 },
@@ -61,9 +63,7 @@ const buildDepartmentFacets = (items) => {
   return Array.from(map.values()).sort((a, b) => b.count - a.count);
 };
 
-const getProductImage = (product) =>
-  product?.product_variations?.[0]?.product_images?.[0]?.product_image ||
-  "https://via.placeholder.com/300x300?text=Product";
+const getProductImage = (product) => getProductImageUrl(product, "/images/NO_IMG.png");
 
 const getStockValue = (product) => {
   const variation = getPrimaryVariation(product);
@@ -391,14 +391,25 @@ export const ProductResultsExperience = ({
             </div>
           )}
 
-          {loading && <div className="resultsLoading">Loading products…</div>}
+          {loading && (
+            <div style={{ padding: "3rem" }}>
+              <LoadingSpinner size="medium" message="Loading products…" />
+            </div>
+          )}
           {emptyMessage && <div className="resultsEmpty">{emptyMessage}</div>}
 
           {!loading && (
             <div className="resultsGrid">
-              {sortedItems.map((product, idx) => (
-                <ProductCard key={getProductIdentifier(product, idx)} product={product} onClick={onProductClick} />
-              ))}
+              {sortedItems.length > 0 ? (
+                sortedItems.map((product, idx) => (
+                  <ProductCard key={getProductIdentifier(product, idx)} product={product} onClick={onProductClick} />
+                ))
+              ) : (
+                <div className="resultsEmpty" style={{ padding: "3rem", textAlign: "center" }}>
+                  <p style={{ fontSize: "1.25rem", color: "#64748b" }}>No products found</p>
+                  <p style={{ color: "#94a3b8" }}>Try adjusting your filters or search again</p>
+                </div>
+              )}
             </div>
           )}
         </section>

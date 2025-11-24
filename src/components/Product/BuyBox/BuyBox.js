@@ -4,18 +4,19 @@ import { useDispatch } from "react-redux";
 import { addItem } from "../../../features/cart/CartSlice";
 import { formatCurrency } from "../../../utils/format";
 import QuantitySelect from "../QuantitySelect";
+import { getDiscountedPrice, getStockValue } from "../../../utils/productNormalization";
 
 export default function BuyBox({ product }) {
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
-  const variation = product?.product_variations?.[0] || {};
+  const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
 
   const price = useMemo(
-    () => Number(variation?.get_discounted_price || variation?.product_price || 0),
+    () => Number(getDiscountedPrice(variation)),
     [variation]
   );
   const listPrice = Number(variation?.product_price);
-  const inStock = Number(variation?.stock || 0) > 0;
+  const inStock = Number(getStockValue(variation)) > 0;
   const heroImage = variation?.product_images?.[0]?.product_image;
 
   const onAdd = () => {

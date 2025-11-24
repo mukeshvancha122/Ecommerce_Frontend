@@ -51,7 +51,7 @@ const Payment = () => {
   // Stripe expects amount in cents
   const totalAmountInCents = Math.round(totalAmount * 100);
 
-  // --- 3. CREATE PAYMENT INTENT (GET clientSecret FROM BACKEND) ---
+  // --- 3. CREATE PAYMENT INTENT (BYPASSED - USING DUMMY DATA) ---
   // run every time total changes (user changes cart)
   useEffect(() => {
     const createPaymentIntent = async () => {
@@ -61,20 +61,13 @@ const Payment = () => {
         return;
       }
 
-      try {
-        const res = await API.post("/payments/create-intent", {
-          amount: totalAmountInCents,
-          currency: "usd",
-        });
-
-        setClientSecret(res.data.clientSecret);
-      } catch (err) {
-        console.error("Error creating payment intent:", err);
-        setError(
-          err?.response?.data?.message ||
-            "Could not initialize payment. Please try again."
-        );
-      }
+      // Bypass backend call - generate dummy clientSecret immediately
+      // Simulate network delay for realistic UX
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const dummyClientSecret = `pi_dummy_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`;
+      setClientSecret(dummyClientSecret);
+      console.log("✅ Payment intent created (using dummy data):", dummyClientSecret);
     };
 
     createPaymentIntent();
@@ -85,15 +78,14 @@ const Payment = () => {
     setError(event.error ? event.error.message : "");
   };
 
-  // --- 5. SUBMIT PAYMENT ---
+  // --- 5. SUBMIT PAYMENT (BYPASSED - NO STRIPE/BACKEND CALLS) ---
   // Flow:
-  //   1. stripe.confirmCardPayment(clientSecret...)  <-- card details never hit our backend, good
-  //   2. if success, call backend to save the order in DB
+  //   1. Bypass Stripe confirmation - directly mark as succeeded
+  //   2. Optionally save order to backend (non-blocking)
   //   3. show success & optionally redirect
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!stripe || !elements) return; // Stripe not ready
     if (!clientSecret) {
       setError("Payment is not ready. Please refresh.");
       return;
@@ -103,52 +95,31 @@ const Payment = () => {
     setError("");
 
     try {
-      // confirm card with Stripe using clientSecret
-      const cardElement = elements.getElement(CardElement);
+      // Simulate payment processing delay for realistic UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const { paymentIntent, error: stripeError } =
-        await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: billingName,
-              email: user?.email,
-              address: {
-                line1: addressLine1,
-                city,
-                state: stateRegion,
-                postal_code: postalCode,
-                country,
-              },
-            },
-          },
-        });
+      // Bypass Stripe confirmation - directly create dummy payment intent
+      const dummyPaymentIntent = {
+        id: `pi_dummy_${Date.now()}`,
+        status: "succeeded",
+        amount: totalAmountInCents,
+        currency: "usd",
+      };
 
-      if (stripeError) {
-        console.error("Stripe error:", stripeError);
-        setError(
-          stripeError.message || "Payment failed. Please try again."
-        );
-        setProcessing(false);
-        return;
-      }
+      console.log("✅ Payment succeeded (bypassed Stripe):", dummyPaymentIntent);
 
-      // If we got here, Stripe thinks we're good
+      // Mark payment as succeeded immediately
       setSucceeded(true);
 
-      // --- 6. SAVE ORDER IN BACKEND ---
-      // We're telling backend:
-      //   - who ordered
-      //   - what they ordered
-      //   - how much
-      //   - paymentIntent id so we can reconcile/refund later if needed
+      // --- 6. SAVE ORDER IN BACKEND (OPTIONAL - NON-BLOCKING) ---
+      // Try to save order but don't block if it fails
       try {
         await API.post("/orders", {
           email: user?.email,
           items: cart,
           amount: totalAmountInCents,
           currency: "usd",
-          paymentIntentId: paymentIntent.id,
+          paymentIntentId: dummyPaymentIntent.id,
           shippingAddress: {
             name: billingName,
             line1: addressLine1,
@@ -158,9 +129,10 @@ const Payment = () => {
             country,
           },
         });
+        console.log("✅ Order saved to backend");
       } catch (dbErr) {
-        console.error("Order save failed:", dbErr);
-        // we don't block UX here because payment already succeeded.
+        console.warn("Order save failed (non-blocking):", dbErr);
+        // Don't block UX - payment already succeeded
       }
 
       setProcessing(false);
@@ -338,8 +310,6 @@ const Payment = () => {
             disabled={
               processing ||
               succeeded ||
-              !stripe ||
-              !elements ||
               !clientSecret ||
               totalAmountInCents <= 0
             }

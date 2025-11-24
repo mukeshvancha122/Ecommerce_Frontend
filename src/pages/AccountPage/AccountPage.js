@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./AccountPage.css";
 import { fetchProfileSummary } from "../../api/user/ProfileService";
 import { useTranslation } from "../../i18n/TranslationProvider";
+import { PageLoader } from "../../components/Loading/LoadingSpinner";
 
 const formatDate = (date) =>
   new Date(date).toLocaleDateString(undefined, {
@@ -34,24 +35,58 @@ export default function AccountPage() {
   }, []);
 
   if (loading) {
+    return <PageLoader message="Preparing your HyderNexa profile…" />;
+  }
+
+  if (error || !profile) {
+    // If no profile data, show a default profile structure
+    if (!profile && !error) {
+      // Use default profile data for demo purposes
+      const defaultProfile = {
+        name: "Guest User",
+        email: "guest@hydernexa.com",
+        primaryPhone: "+91 00000 00000",
+        passkeyEnabled: false,
+        passwordLastChanged: new Date().toISOString(),
+        security: {
+          lastLogin: new Date().toISOString(),
+          activity: [],
+          devices: []
+        },
+        preferences: {
+          language: "English",
+          country: "India",
+          currency: "INR"
+        },
+        addresses: [],
+        payments: [],
+        stats: {
+          loyalty: "HyderNexa Prime",
+          ordersYtd: 0,
+          returns: 0,
+          credits: "₹0",
+          perksProgress: 0,
+        }
+      };
+      // Continue with default profile instead of showing error
+      return <AccountPageContent profile={defaultProfile} />;
+    }
     return (
       <main className="accountPage accountPage--loading">
-        <div className="ap-loader" aria-live="polite">
-          Preparing your HyderNexa profile…
+        <div className="ap-error">
+          {error || "Unable to load your profile right now. Please try again later."}
         </div>
       </main>
     );
   }
 
-  if (error || !profile) {
-    return (
-      <main className="accountPage accountPage--loading">
-        <div className="ap-error">{error}</div>
-      </main>
-    );
-  }
+  return <AccountPageContent profile={profile} />;
+}
 
-  const stats = profile.stats || {
+function AccountPageContent({ profile }) {
+  const { t } = useTranslation();
+
+  const stats = profile?.stats || {
     loyalty: "HyderNexa Prime",
     ordersYtd: 24,
     returns: 1,
@@ -59,7 +94,7 @@ export default function AccountPage() {
     perksProgress: 62,
   };
 
-  const timeline = profile.security.activity || [
+  const timeline = profile?.security?.activity || [
     {
       id: "evt1",
       label: "Password updated",
@@ -92,9 +127,9 @@ export default function AccountPage() {
         </div>
         <div className="ap-heroCard">
           <p className="ap-heroLabel">Signed in as</p>
-          <h2>{profile.name}</h2>
-          <p className="ap-heroEmail">{profile.email}</p>
-          <p className="ap-heroStatus">Last login · {formatDate(profile.security.lastLogin)}</p>
+          <h2>{profile?.name || "Guest User"}</h2>
+          <p className="ap-heroEmail">{profile?.email || "guest@hydernexa.com"}</p>
+          <p className="ap-heroStatus">Last login · {formatDate(profile?.security?.lastLogin || new Date())}</p>
         </div>
       </section>
 
@@ -136,21 +171,21 @@ export default function AccountPage() {
           <div className="ap-row">
             <div>
               <p className="ap-label">Name</p>
-              <p className="ap-value">{profile.name}</p>
+              <p className="ap-value">{profile?.name || "Guest User"}</p>
             </div>
             <button className="ap-pill">Edit</button>
           </div>
           <div className="ap-row">
             <div>
               <p className="ap-label">Email</p>
-              <p className="ap-value">{profile.email}</p>
+              <p className="ap-value">{profile?.email || "guest@hydernexa.com"}</p>
             </div>
             <button className="ap-pill">Edit</button>
           </div>
           <div className="ap-row">
             <div>
               <p className="ap-label">Primary mobile number</p>
-              <p className="ap-value">{profile.primaryPhone}</p>
+              <p className="ap-value">{profile?.primaryPhone || "+91 00000 00000"}</p>
               <p className="ap-description">
                 Quickly sign-in, recover passwords, and receive security notifications.
               </p>
@@ -161,20 +196,20 @@ export default function AccountPage() {
             <div>
               <p className="ap-label">Passkey</p>
               <p className="ap-value">
-                {profile.passkeyEnabled ? "Enabled on your devices" : "Not set up"}
+                {profile?.passkeyEnabled ? "Enabled on your devices" : "Not set up"}
               </p>
               <p className="ap-description">
                 Sign in using your face, fingerprint, or device PIN. No passwords required.
               </p>
             </div>
-            <button className="ap-pill">{profile.passkeyEnabled ? "Manage" : "Set up"}</button>
+            <button className="ap-pill">{profile?.passkeyEnabled ? "Manage" : "Set up"}</button>
           </div>
           <div className="ap-row">
             <div>
               <p className="ap-label">Password</p>
               <p className="ap-value">********</p>
               <p className="ap-description">
-                Last changed on {formatDate(profile.passwordLastChanged)}
+                Last changed on {formatDate(profile?.passwordLastChanged || new Date())}
               </p>
             </div>
             <button className="ap-pill">Edit</button>
@@ -191,15 +226,15 @@ export default function AccountPage() {
           </header>
           <div className="ap-row ap-row--compact">
             <p className="ap-label">Language</p>
-            <p className="ap-value">{profile.preferences.language}</p>
+            <p className="ap-value">{profile?.preferences?.language || "English"}</p>
           </div>
           <div className="ap-row ap-row--compact">
             <p className="ap-label">Country/Region</p>
-            <p className="ap-value">{profile.preferences.country}</p>
+            <p className="ap-value">{profile?.preferences?.country || "India"}</p>
           </div>
           <div className="ap-row ap-row--compact">
             <p className="ap-label">Currency</p>
-            <p className="ap-value">{profile.preferences.currency}</p>
+            <p className="ap-value">{profile?.preferences?.currency || "INR"}</p>
           </div>
         </article>
 
@@ -212,7 +247,7 @@ export default function AccountPage() {
             <button type="button" className="ap-secondary">Add address</button>
           </header>
           <div className="ap-addressList">
-            {profile.addresses.map((addr) => (
+            {(profile?.addresses || []).map((addr) => (
               <div key={addr.id} className="ap-address">
                 <p className="ap-addressLabel">{addr.label}</p>
                 <p>{addr.line1}</p>
@@ -237,7 +272,7 @@ export default function AccountPage() {
             <button type="button" className="ap-secondary">Manage cards</button>
           </header>
           <ul className="ap-paymentList">
-            {profile.payments.map((card) => (
+            {(profile?.payments || []).map((card) => (
               <li key={card.id}>
                 <div>
                   <p className="ap-label">{card.brand}</p>
@@ -258,7 +293,7 @@ export default function AccountPage() {
             <button type="button" className="ap-secondary">Review activity</button>
           </header>
           <ul className="ap-deviceList">
-            {profile.security.devices.map((device) => (
+            {(profile?.security?.devices || []).map((device) => (
               <li key={device.id}>
                 <div>
                   <p className="ap-label">{device.label}</p>

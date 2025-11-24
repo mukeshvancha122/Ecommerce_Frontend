@@ -184,7 +184,14 @@ export default function CheckoutPage() {
         </section>
       </main>
 
-      <AddressModal open={showAddressModal} onClose={() => setShowAddressModal(false)} />
+      <AddressModal 
+        open={showAddressModal} 
+        onClose={() => {
+          setShowAddressModal(false);
+          // Don't refetch on close - AddressModal handles refetching after successful creation
+          // This prevents overwriting locally created addresses
+        }} 
+      />
 
       <CountryErrorModal
         isOpen={showCountryError}
