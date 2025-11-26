@@ -3,8 +3,22 @@ import { store } from "./store";
 import { logout } from "./features/auth/AuthSlice";
 import { getSupportedLanguage } from "./i18n/translations";
 
+// In development, use relative URL so proxy can intercept
+// In production, use the full API URL
+const getBaseURL = () => {
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  // In development, use relative path (proxy will handle it)
+  // In production, use full URL
+  if (process.env.NODE_ENV === 'development') {
+    return '/api';
+  }
+  return "http://54.145.239.205:8000/api";
+};
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: getBaseURL(),
   withCredentials: true,
   timeout: 15000,
 });

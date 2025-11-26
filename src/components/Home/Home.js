@@ -11,6 +11,7 @@ import { getMostSoldProducts } from "../../api/products/MostSoldProductService";
 import { getSaleCategories } from "../../api/products/SaleCategoryService";
 import { getAllProducts } from "../../api/products/CategoryProductsService";
 import { searchProducts } from "../../api/products/searchProduct/SearchProductService";
+import { getAllCategories } from "../../api/products/CategoryService";
 import { selectUser } from "../../features/auth/AuthSlice";
 
 const GIFT_PANEL_DATA = [
@@ -19,36 +20,21 @@ const GIFT_PANEL_DATA = [
     title: "Find gifts for everyone",
     footerLabel: "Discover more for Holiday ›",
     footerParams: { product_name: "holiday gifts" },
-    tiles: [
-      { label: "For her", image: "https://via.placeholder.com/200x140?text=For+Her", params: { product_name: "women fashion" } },
-      { label: "For him", image: "https://via.placeholder.com/200x140?text=For+Him", params: { product_name: "mens fashion" } },
-      { label: "For kids", image: "https://via.placeholder.com/200x140?text=For+Kids", params: { product_name: "kids gifts" } },
-      { label: "For teens", image: "https://via.placeholder.com/200x140?text=For+Teens", params: { product_name: "teen gifts" } },
-    ],
+    tiles: [],
   },
   {
     id: "holiday-collections",
     title: "Shop holiday collections",
     footerLabel: "Find Holiday Gifts for all",
     footerParams: { product_name: "holiday collections" },
-    tiles: [
-      { label: "New arrivals", image: "https://via.placeholder.com/200x140?text=Arrivals", params: { product_name: "new arrivals" } },
-      { label: "White elephant", image: "https://via.placeholder.com/200x140?text=White+Elephant", params: { product_name: "white elephant" } },
-      { label: "Premium picks", image: "https://via.placeholder.com/200x140?text=Premium", params: { product_name: "premium gifts" } },
-      { label: "Trending gifts", image: "https://via.placeholder.com/200x140?text=Trending", params: { product_name: "trending gifts" } },
-    ],
+    tiles: [],
   },
   {
     id: "gift-price",
     title: "Shop gifts by price",
     footerLabel: "Discover more for Holiday",
     footerParams: { product_name: "deals" },
-    tiles: [
-      { label: "Under ₹1,000", image: "https://via.placeholder.com/200x140?text=Under+1000", params: { product_name: "budget gifts", max_price: 1000 } },
-      { label: "Under ₹2,000", image: "https://via.placeholder.com/200x140?text=Under+2000", params: { max_price: 2000 } },
-      { label: "Under ₹5,000", image: "https://via.placeholder.com/200x140?text=Under+5000", params: { max_price: 5000 } },
-      { label: "Deals", image: "https://via.placeholder.com/200x140?text=Deals", params: { product_name: "deals" } },
-    ],
+    tiles: [],
   },
 ];
 
@@ -62,6 +48,7 @@ function Home() {
   const [bestSellerImages, setBestSellerImages] = useState([]);
   const [saleCategories, setSaleCategories] = useState([]);
   const [historyProducts, setHistoryProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [ctaLoading, setCtaLoading] = useState("");
   const [ctaError, setCtaError] = useState("");
 
@@ -144,6 +131,40 @@ function Home() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        console.log("Home.js - Fetching categories...");
+        const cats = await getAllCategories();
+        console.log("Home.js - Raw categories response:", cats);
+        console.log("Home.js - Categories type:", typeof cats);
+        console.log("Home.js - Is Array?", Array.isArray(cats));
+        
+        // Handle different response structures
+        let categoriesArray = [];
+        if (Array.isArray(cats)) {
+          categoriesArray = cats;
+        } else if (cats?.data && Array.isArray(cats.data)) {
+          categoriesArray = cats.data;
+        } else if (cats?.results && Array.isArray(cats.results)) {
+          categoriesArray = cats.results;
+        }
+        
+        console.log("Home.js - Processed categories array:", categoriesArray);
+        // Fetch 16 categories to distribute across 4 sections (4 each):
+        // - First 4: "Find gifts for everyone"
+        // - Next 4: "Shop holiday collections"
+        // - Next 4: "Shop gifts by price"
+        // - Last 4: "Shop gifts by category"
+        const allCategories = categoriesArray.slice(0, 16);
+        console.log("Home.js - All categories for panels:", allCategories);
+        setCategories(allCategories);
+      } catch (err) {
+        console.error("categories load", err);
+      }
+    })();
+  }, []);
+
   const navigateToSearch = useCallback(
     async ({ id, title, params = {}, fallbackItems = [] }) => {
       if (!title) return;
@@ -187,33 +208,42 @@ function Home() {
   }, []);
 
   const productPanels = useMemo(
-    () => [
-      {
-        id: "featured",
-        title: "Featured products",
-        items: featuredProducts,
-        ctaLabel: "Browse featured ›",
-      },
-      {
-        id: "top-sellers",
-        title: "Most sold products",
-        items: mostSoldProducts,
-        ctaLabel: "See more top sellers ›",
-      },
-      {
-        id: "shop-by-category",
-        title: "Shop gifts by category",
-        items: [],
-        ctaLabel: "Discover more for Holiday ›",
-        tiles: [
-          { label: "Toys", img: "https://via.placeholder.com/200x140?text=Toys", params: { category: "toys" } },
-          { label: "Home & kitchen", img: "https://via.placeholder.com/200x140?text=Home+%26+Kitchen", params: { category: "home-kitchen" } },
-          { label: "Electronics", img: "https://via.placeholder.com/200x140?text=Electronics", params: { category: "electronics" } },
-          { label: "Sports & outdoors", img: "https://via.placeholder.com/200x140?text=Sports+%26+Outdoors", params: { category: "sports-fitness" } },
-        ],
-      },
-    ],
-    [featuredProducts, mostSoldProducts]
+    () => {
+      // Use the last 4 categories (13-16) for shop-by-category panel
+      const categoryTiles = categories.slice(12, 16).map((cat) => ({
+        label: cat.category_name,
+        img: cat.category_image,
+        params: { category: cat.slug },
+      }));
+
+      return [
+        {
+          id: "featured",
+          title: "Featured products",
+          items: featuredProducts,
+          ctaLabel: "Browse featured ›",
+        },
+        {
+          id: "top-sellers",
+          title: "Most sold products",
+          items: mostSoldProducts,
+          ctaLabel: "See more top sellers ›",
+        },
+        {
+          id: "shop-by-category",
+          title: "Shop gifts by category",
+          items: [],
+          ctaLabel: "Discover more for Holiday ›",
+          tiles: categoryTiles.length > 0 ? categoryTiles : [
+            { label: "Toys", img: "https://via.placeholder.com/200x140?text=Toys", params: { category: "toys" } },
+            { label: "Home & kitchen", img: "https://via.placeholder.com/200x140?text=Home+%26+Kitchen", params: { category: "home-kitchen" } },
+            { label: "Electronics", img: "https://via.placeholder.com/200x140?text=Electronics", params: { category: "electronics" } },
+            { label: "Sports & outdoors", img: "https://via.placeholder.com/200x140?text=Sports+%26+Outdoors", params: { category: "sports-fitness" } },
+          ],
+        },
+      ];
+    },
+    [featuredProducts, mostSoldProducts, categories]
   );
 
   const saleCards = useMemo(
@@ -232,6 +262,42 @@ function Home() {
     () => (historyProducts || []).slice(0, 8),
     [historyProducts]
   );
+
+  const giftPanelData = useMemo(() => {
+    // Convert all categories to tiles format
+    const allCategoryTiles = categories.map((cat) => ({
+      label: cat.category_name,
+      image: cat.category_image,
+      params: { category: cat.slug },
+    }));
+
+    // Split categories into 3 groups of 4 for gift panels
+    const firstFour = allCategoryTiles.slice(0, 4);
+    const nextFour = allCategoryTiles.slice(4, 8);
+    const lastFour = allCategoryTiles.slice(8, 12);
+
+    return GIFT_PANEL_DATA.map((panel) => {
+      if (panel.id === "gifts-everyone") {
+        return {
+          ...panel,
+          tiles: firstFour.length > 0 ? firstFour : panel.tiles,
+        };
+      }
+      if (panel.id === "holiday-collections") {
+        return {
+          ...panel,
+          tiles: nextFour.length > 0 ? nextFour : panel.tiles,
+        };
+      }
+      if (panel.id === "gift-price") {
+        return {
+          ...panel,
+          tiles: lastFour.length > 0 ? lastFour : panel.tiles,
+        };
+      }
+      return panel;
+    });
+  }, [categories]);
 
   return (
     <div className="homePage" id="pageTop">
@@ -273,7 +339,7 @@ function Home() {
 
       <section className="homeGiftLayout">
         <div className="homeGiftGrid">
-          {GIFT_PANEL_DATA.map((panel) => (
+          {giftPanelData.map((panel) => (
             <article className="giftPanel" key={panel.id}>
               <div className="giftPanel-header">{panel.title}</div>
               <div className="giftPanel-grid">
