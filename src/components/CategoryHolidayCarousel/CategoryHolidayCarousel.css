@@ -1,0 +1,176 @@
+.categoryHolidaySection {
+  max-width: 1500px;
+  margin: 24px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.categoryHolidayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.categoryHolidayHeader h3 {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.categoryHolidayLink {
+  background: none;
+  border: none;
+  color: #007185;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+}
+
+.categoryHolidayLink:hover {
+  color: #c7511f;
+}
+
+.categoryHolidayButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.categoryHolidayArrow {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  font-size: 20px;
+  color: #111;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.categoryHolidayArrow:hover {
+  background: #e0e0e0;
+}
+
+.categoryHolidayTrackWrapper {
+  overflow: hidden;
+  width: 100%;
+}
+
+.categoryHolidayTrack {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 4px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.categoryHolidayTrack::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.categoryHolidayItem {
+  min-width: 160px;
+  max-width: 160px;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.categoryHolidayItem:hover {
+  transform: translateY(-2px);
+}
+
+.categoryHolidayImage {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: #0C4A3A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 4px solid #e5f2ea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.categoryHolidayImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.categoryHolidayName {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: #111;
+  line-height: 1.3;
+  word-wrap: break-word;
+  max-width: 160px;
+}
+
+@media (max-width: 768px) {
+  .categoryHolidaySection {
+    padding: 16px;
+    margin: 16px auto;
+  }
+
+  .categoryHolidayHeader h3 {
+    font-size: 20px;
+  }
+
+  .categoryHolidayTrack {
+    gap: 12px;
+  }
+
+  .categoryHolidayItem {
+    min-width: 140px;
+    max-width: 140px;
+  }
+
+  .categoryHolidayImage {
+    width: 120px;
+    height: 120px;
+  }
+
+  .categoryHolidayName {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .categoryHolidayItem {
+    min-width: 120px;
+    max-width: 120px;
+  }
+
+  .categoryHolidayImage {
+    width: 100px;
+    height: 100px;
+  }
+
+  .categoryHolidayName {
+    font-size: 12px;
+  }
+}
+

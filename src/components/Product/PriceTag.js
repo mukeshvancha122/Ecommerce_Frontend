@@ -1,6 +1,7 @@
 import React from "react";
 import "./PriceTag.css";
-import { formatCurrency, percentOff } from "../../utils/format";
+import { formatCurrency } from "../../utils/currency";
+import { percentOff } from "../../utils/format";
 
 export default function PriceTag({ list, sale, currency }) {
   const off = percentOff(list, sale);

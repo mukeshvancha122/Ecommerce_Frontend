@@ -1,11 +1,7 @@
 import "./OrdersContent.css";
 import OrdersEmptyState from "./OrdersEmptyState";
 import SponsoredAdCard from "../../components/Adcard/SponsoredAdCard";
-
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatCurrency } from "../../utils/currency";
 
 const formatDate = (date) =>
   new Date(date).toLocaleDateString(undefined, {
@@ -21,6 +17,8 @@ export default function OrdersContent({
   emptyLinkText,
   emptyLinkHref,
   tab,
+  pagination,
+  onPageChange,
 }) {
   if (loading) {
     return <div className="orders-loading">Loading your orders…</div>;
@@ -50,7 +48,7 @@ export default function OrdersContent({
             </div>
             <div>
               <div className="ordersCard-label">Total</div>
-              <div className="ordersCard-value">{currency.format(order.total || 0)}</div>
+              <div className="ordersCard-value">{formatCurrency(order.total || 0)}</div>
             </div>
             <div>
               <div className="ordersCard-label">Ship to</div>
@@ -94,7 +92,7 @@ export default function OrdersContent({
                 <div className="ordersItem-body">
                   <div className="ordersItem-title">{item.title}</div>
                   <div className="ordersItem-meta">
-                    Qty: {item.qty} · {currency.format(item.price * item.qty)}
+                    Qty: {item.qty} · {formatCurrency(item.price * item.qty)}
                   </div>
                   <div className="ordersItem-actions">
                     <button className="ordersItem-btn">Buy it again</button>
@@ -113,6 +111,27 @@ export default function OrdersContent({
           </div>
         </article>
       ))}
+      {pagination && (pagination.next || pagination.previous) && (
+        <div className="ordersContent-pagination">
+          <button
+            className="ordersContent-paginationBtn"
+            onClick={() => onPageChange && onPageChange(pagination.currentPage - 1)}
+            disabled={!pagination.previous}
+          >
+            Previous
+          </button>
+          <span className="ordersContent-paginationInfo">
+            Page {pagination.currentPage || 1}
+          </span>
+          <button
+            className="ordersContent-paginationBtn"
+            onClick={() => onPageChange && onPageChange(pagination.currentPage + 1)}
+            disabled={!pagination.next}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

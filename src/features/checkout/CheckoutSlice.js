@@ -3,6 +3,7 @@ import {
   getAddresses, addAddress, updateAddress, setDefaultAddress,
   getShippingQuote, createPaymentIntent, placeOrder
 } from "../../api/CheckoutService";
+import { updateCheckout } from "../../api/payment/PaymentService";
 
 export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async () => {
   const { data } = await getAddresses();
@@ -39,7 +40,20 @@ export const startPayment = createAsyncThunk(
 
 export const confirmOrderThunk = createAsyncThunk(
   "checkout/confirmOrder",
-  async ({ addressId, items, paymentIntentId, paymentMethod, total }) => {
+  async ({ addressId, items, paymentIntentId, paymentMethod, total, shipping }) => {
+    // Update checkout with shipping info if available
+    if (addressId && shipping) {
+      try {
+        await updateCheckout({
+          drop_location_id: addressId,
+          shipping: JSON.stringify(shipping),
+        });
+      } catch (error) {
+        console.warn("Failed to update checkout:", error);
+        // Continue with order placement even if update fails
+      }
+    }
+
     const { data } = await placeOrder({
       addressId,
       items,
@@ -51,10 +65,32 @@ export const confirmOrderThunk = createAsyncThunk(
   }
 );
 
+// Load selected address ID from localStorage
+const loadSelectedAddressId = () => {
+  try {
+    const saved = localStorage.getItem("selectedAddressId_v1");
+    return saved || null;
+  } catch {
+    return null;
+  }
+};
+
+const saveSelectedAddressId = (id) => {
+  try {
+    if (id) {
+      localStorage.setItem("selectedAddressId_v1", id);
+    } else {
+      localStorage.removeItem("selectedAddressId_v1");
+    }
+  } catch (err) {
+    console.error("Error saving selected address ID:", err);
+  }
+};
+
 const initialState = {
   step: "address", // 'address' | 'payment' | 'done'
   addresses: [],
-  selectedAddressId: null,
+  selectedAddressId: loadSelectedAddressId(),
   shipping: { itemsTotal: 0, shipping: 0, tax: 0, importCharges: 0 },
   payment: { clientSecret: null, orderId: null, status: "idle", lastError: null },
   status: "idle",
@@ -65,9 +101,15 @@ const slice = createSlice({
   name: "checkout",
   initialState,
   reducers: {
-    selectAddress(state, action) { state.selectedAddressId = action.payload; },
+    selectAddress(state, action) { 
+      state.selectedAddressId = action.payload;
+      saveSelectedAddressId(action.payload);
+    },
     goToPayment(state) { state.step = "payment"; },
-    resetCheckout() { return initialState; },
+    resetCheckout() { 
+      saveSelectedAddressId(null);
+      return initialState; 
+    },
   },
   extraReducers: (b) => {
     b.addCase(fetchAddresses.pending, (s) => { s.status = "loading"; })
@@ -77,6 +119,7 @@ const slice = createSlice({
         if (!s.selectedAddressId && s.addresses.length) {
           const def = s.addresses.find(x => x.isDefault) || s.addresses[0];
           s.selectedAddressId = def?.id || null;
+          saveSelectedAddressId(s.selectedAddressId);
         }
      })
      .addCase(fetchAddresses.rejected, (s, a) => { s.status = "failed"; s.error = a.error?.message; })
@@ -84,6 +127,7 @@ const slice = createSlice({
      .addCase(createAddress.fulfilled, (s, a) => {
         s.addresses.push(a.payload);
         s.selectedAddressId = a.payload.id;
+        saveSelectedAddressId(a.payload.id);
      })
      .addCase(editAddress.fulfilled, (s, a) => {
         const idx = s.addresses.findIndex(x => x.id === a.payload.id);
@@ -93,6 +137,7 @@ const slice = createSlice({
         const id = a.payload;
         s.addresses = s.addresses.map(x => ({ ...x, isDefault: x.id === id }));
         s.selectedAddressId = id;
+        saveSelectedAddressId(id);
      })
 
      .addCase(fetchShippingQuote.fulfilled, (s, a) => {

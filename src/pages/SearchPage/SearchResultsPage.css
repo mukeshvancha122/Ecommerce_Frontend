@@ -316,11 +316,12 @@
 .resultsCard-price {
   font-size: 20px;
   font-weight: 700;
+  color: #0C4A3A; /* Dark green for current price */
 }
 
 .resultsCard-oldPrice {
   font-size: 13px;
-  color: #565959;
+  color: #B12704; /* Dark red for original price (before discount) */
   text-decoration: line-through;
 }
 

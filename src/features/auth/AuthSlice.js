@@ -3,10 +3,30 @@ import { createSlice } from "@reduxjs/toolkit";
 const STORAGE_KEY = "auth_v1";
 
 const load = () => {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { user:null, token:null }; }
-  catch { return { user:null, token:null }; }
+  try { 
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return { user: null, token: null };
+    const parsed = JSON.parse(stored);
+    return { 
+      user: parsed.user || null, 
+      token: parsed.token || null 
+    };
+  }
+  catch (err) { 
+    console.error("Error loading auth from storage:", err);
+    return { user: null, token: null }; 
+  }
 };
-const save = (state) => localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: state.user, token: state.token }));
+const save = (state) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+      user: state.user, 
+      token: state.token 
+    }));
+  } catch (err) {
+    console.error("Error saving auth to storage:", err);
+  }
+};
 const clear = () => localStorage.removeItem(STORAGE_KEY);
 
 const initialState = { user: null, token: null, status: "idle" };
@@ -17,14 +37,34 @@ const authSlice = createSlice({
   reducers: {
     hydrateFromStorage(state) {
       const s = load();
+      console.log("Hydrating auth from storage:", { 
+        hasUser: !!s.user, 
+        userEmail: s.user?.email,
+        hasToken: !!s.token 
+      });
       state.user = s.user || null;
       state.token = s.token || null;
+      console.log("Auth state after hydration:", { 
+        hasUser: !!state.user, 
+        userEmail: state.user?.email,
+        hasToken: !!state.token 
+      });
     },
     setCredentials(state, action) {
       const { user, token } = action.payload || {};
+      console.log("Setting credentials:", { 
+        hasUser: !!user, 
+        userEmail: user?.email,
+        hasToken: !!token 
+      });
       state.user = user || null;
       state.token = token || null;
       save(state);
+      console.log("Auth state after setCredentials:", { 
+        hasUser: !!state.user, 
+        userEmail: state.user?.email,
+        hasToken: !!state.token 
+      });
     },
     logout(state) {
       state.user = null;

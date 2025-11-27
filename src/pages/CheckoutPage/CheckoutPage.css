@@ -97,13 +97,82 @@
   object-fit:cover;
   border-radius:10px;
 }
+.co-review-content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
 .co-review-title{
   font-weight:600;
   margin-bottom:4px;
+  font-size:14px;
+  line-height:1.4;
 }
 .co-review-meta{
   font-size:13px;
   color:#6b7280;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.co-review-qty{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:13px;
+}
+.co-review-qty select{
+  padding:4px 8px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  font-size:13px;
+  background:#fff;
+  cursor:pointer;
+  min-width:60px;
+}
+.co-review-qty select:hover{
+  border-color:#9ca3af;
+}
+.co-review-qty select:focus{
+  outline:2px solid #3b82f6;
+  outline-offset:2px;
+  border-color:#3b82f6;
+}
+.co-review-price{
+  font-weight:600;
+  color:#0f1111;
+  font-size:14px;
+}
+.co-review-remove{
+  background:none;
+  border:none;
+  color:#dc2626;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  padding:4px 0;
+  text-align:left;
+  width:fit-content;
+  transition:color 0.2s ease;
+}
+.co-review-remove:hover{
+  color:#b91c1c;
+  text-decoration:underline;
+}
+.co-review-empty{
+  text-align:center;
+  padding:40px 20px;
+  color:#6b7280;
+  font-size:14px;
+}
+.co-review-empty a{
+  color:#3b82f6;
+  text-decoration:underline;
+}
+.co-review-empty a:hover{
+  color:#2563eb;
 }
 .co-summary{
   background:#fff;

@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import "./SearchResultsPage.css";
+import { formatCurrency } from "../../utils/currency";
+import { getImageUrl } from "../../utils/imageUtils";
 
 const PRICE_FILTERS = [
   { id: "under-1000", label: "Under ₹1,000", test: (price) => price != null && price < 1000 },
@@ -26,15 +28,32 @@ const SORT_OPTIONS = [
 
 const getPrimaryVariation = (product) => product?.product_variations?.[0];
 
+// Parse price value (handles objects with final_price, numbers, strings)
+const parsePrice = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isNaN(value) ? null : value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === "object") {
+    if ("final_price" in value) return parsePrice(value.final_price);
+    if ("amount" in value) return parsePrice(value.amount);
+    if ("price" in value) return parsePrice(value.price);
+  }
+  return null;
+};
+
 const getPriceValue = (product) => {
   const variation = getPrimaryVariation(product);
-  const value = parseFloat(variation?.get_discounted_price || variation?.product_price);
-  return Number.isFinite(value) ? value : null;
+  const discounted = parsePrice(variation?.get_discounted_price);
+  const regular = parsePrice(variation?.product_price);
+  return discounted ?? regular ?? null;
 };
 
 const getFormattedPrice = (value) => {
-  if (!Number.isFinite(value)) return "";
-  return `₹${value.toLocaleString("en-IN")}`;
+  if (value === null || value === undefined) return "";
+  return formatCurrency(value);
 };
 
 const getRatingValue = (product) => {
@@ -61,9 +80,10 @@ const buildDepartmentFacets = (items) => {
   return Array.from(map.values()).sort((a, b) => b.count - a.count);
 };
 
-const getProductImage = (product) =>
-  product?.product_variations?.[0]?.product_images?.[0]?.product_image ||
-  "https://via.placeholder.com/300x300?text=Product";
+const getProductImage = (product) => {
+  const image = product?.product_variations?.[0]?.product_images?.[0]?.product_image;
+  return image ? getImageUrl(image) : "/images/NO_IMG.png";
+};
 
 const getStockValue = (product) => {
   const variation = getPrimaryVariation(product);
@@ -76,8 +96,8 @@ const getProductIdentifier = (product, idx) =>
 
 const ProductCard = ({ product, onClick }) => {
   const variation = getPrimaryVariation(product);
-  const discounted = parseFloat(variation?.get_discounted_price);
-  const price = parseFloat(variation?.product_price);
+  const discounted = parsePrice(variation?.get_discounted_price);
+  const price = parsePrice(variation?.product_price);
   const rating = getRatingValue(product);
   const mainImage = getProductImage(product);
 

@@ -1,0 +1,363 @@
+.nikeOffersSection {
+  width: 100%;
+  max-width: 1500px;
+  margin: 24px auto;
+  padding: 0 12px;
+}
+
+.nikeOffersContainer {
+  position: relative;
+  background: #FF9945;
+  border-radius: 16px;
+  padding: 18px 60px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(255, 153, 69, 0.3);
+  border: 1px solid #ff8c2e;
+  min-height: 220px;
+}
+
+.nikeOffersContent {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1.5fr;
+  gap: 20px;
+  align-items: center;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.nikeOffersImage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  height: 260px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  justify-self: end;
+}
+
+.nikeOffersImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nikeOffersBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #e40045;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nikeOffersInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nikeOffersBrandRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.nikeOffersCenterLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0.85;
+  padding: 0 10px;
+}
+
+.nikeOffersBrand {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  margin: 0;
+}
+
+.nikeOffersTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nikeOffersPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.nikeOffersPrice {
+  font-size: 32px;
+  font-weight: 700;
+  color: #166534;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.nikeOffersOriginal {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: line-through;
+  position: relative;
+}
+
+.nikeOffersOriginal::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-50%);
+}
+
+.nikeOffersSavings {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(228, 0, 69, 0.9);
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(228, 0, 69, 0.4);
+}
+
+.nikeOffersDeal {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.nikeOffersCTA {
+  width: fit-content;
+  background: #ffffff;
+  color: #FF9945;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nikeOffersCTA:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.nikeOffersArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #FF9945;
+  z-index: 3;
+  transition: all 0.2s ease;
+}
+
+.nikeOffersArrow:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.nikeOffersArrow--left {
+  left: 16px;
+}
+
+.nikeOffersArrow--right {
+  right: 16px;
+}
+
+.nikeOffersDots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.nikeOffersDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: #d5d9d9;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.nikeOffersDot.active {
+  background: #0C4A3A;
+  width: 10px;
+  height: 10px;
+}
+
+@media (max-width: 1024px) {
+  .nikeOffersContainer {
+    padding: 16px 50px;
+    min-height: 220px;
+  }
+
+  .nikeOffersContent {
+    grid-template-columns: 1fr auto 1.3fr;
+    gap: 16px;
+  }
+
+  .nikeOffersCenterLogo {
+    padding: 0 8px;
+  }
+
+  .nikeOffersCenterLogo svg {
+    width: 60px;
+    height: 24px;
+  }
+
+  .nikeOffersImage {
+    max-width: 350px;
+    height: 240px;
+  }
+
+  .nikeOffersTitle {
+    font-size: 24px;
+  }
+
+  .nikeOffersPrice {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nikeOffersContainer {
+    padding: 16px 50px;
+    min-height: 200px;
+  }
+
+  .nikeOffersContent {
+    grid-template-columns: 1fr auto 1.2fr;
+    gap: 12px;
+  }
+
+  .nikeOffersCenterLogo {
+    padding: 0 6px;
+  }
+
+  .nikeOffersCenterLogo svg {
+    width: 50px;
+    height: 20px;
+  }
+
+  .nikeOffersImage {
+    max-width: 280px;
+    height: 200px;
+  }
+
+  .nikeOffersTitle {
+    font-size: 20px;
+  }
+
+  .nikeOffersPrice {
+    font-size: 24px;
+  }
+
+  .nikeOffersOriginal {
+    font-size: 16px;
+  }
+
+  .nikeOffersCTA {
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nikeOffersContainer {
+    padding: 12px 40px;
+    min-height: 180px;
+  }
+
+  .nikeOffersContent {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .nikeOffersCenterLogo {
+    display: none;
+  }
+
+  .nikeOffersImage {
+    max-width: 100%;
+    height: 180px;
+    justify-self: center;
+  }
+
+  .nikeOffersTitle {
+    font-size: 18px;
+  }
+
+  .nikeOffersPrice {
+    font-size: 20px;
+  }
+
+  .nikeOffersOriginal {
+    font-size: 14px;
+  }
+
+  .nikeOffersBrand {
+    font-size: 12px;
+  }
+
+  .nikeOffersCTA {
+    padding: 8px 20px;
+    font-size: 13px;
+  }
+}
+

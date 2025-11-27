@@ -1,0 +1,152 @@
+ .discountDealsSection{
+  max-width:1500px;
+  margin:32px auto;
+  padding:18px;
+  background:#0C4A3A;
+  border-radius:20px;
+  color:#fff;
+  border:1px solid #0a3d2f;
+}
+.discountDealsHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+}
+.discountDealsHeader h2{
+  margin:0;
+  font-size:24px;
+  font-weight:700;
+  color:#fff;
+}
+.discountDealsSeeMore{
+  background:none;
+  border:none;
+  color:#febd69;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:underline;
+}
+.discountDealsCarousel{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+ .discountDealsArrow{
+  width:46px;
+  height:46px;
+  border:none;
+  border-radius:50%;
+  background:#fff;
+  color:#0C4A3A;
+  font-size:22px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.25);
+  transition:transform 0.2s ease;
+}
+.discountDealsArrow:hover:not(:disabled){
+  transform:scale(1.05);
+}
+.discountDealsArrow:disabled{
+  opacity:0.35;
+  cursor:not-allowed;
+}
+.discountDealsTrack{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+}
+ .discountDealCard{
+  background:#fff;
+  border-radius:16px;
+  padding:12px;
+  color:#111;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:260px;
+  border:1px solid #f0f0f0;
+  transition:box-shadow 0.2s ease,transform 0.2s ease;
+}
+.discountDealCard:hover{
+  box-shadow:0 10px 20px rgba(0,0,0,0.08);
+  transform:translateY(-4px);
+}
+.discountDealImageWrapper{
+  position:relative;
+  width:100%;
+  height:160px;
+  background:#f7f7f7;
+  border-radius:10px;
+  overflow:hidden;
+}
+.discountDealImageWrapper img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+ .discountBadge{
+  position:absolute;
+  top:10px;
+  left:10px;
+  background:#e40045;
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  padding:4px 8px;
+  border-radius:999px;
+}
+ .discountTag{
+  position:absolute;
+  bottom:10px;
+  left:10px;
+  background:#ffffff;
+  color:#111;
+  font-size:12px;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:999px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+.discountDealPriceRow{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.discountDealPrice{
+  font-size:20px;
+  font-weight:700;
+  color:#0C4A3A; /* Dark green for current price */
+}
+.discountDealOriginal{
+  font-size:14px;
+  color:#B12704; /* Dark red for original price (before discount) */
+  text-decoration:line-through;
+}
+.discountDealName{
+  font-size:15px;
+  font-weight:600;
+  color:#111;
+  flex:1;
+}
+ .discountDealsEmpty{
+  color:#fff;
+  font-size:16px;
+  padding:40px;
+  text-align:center;
+}
+@media(max-width:1024px){
+  .discountDealsTrack{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+}
+@media(max-width:768px){
+  .discountDealsTrack{grid-template-columns:repeat(2,1fr);}
+  .discountDealsSection{padding:12px;}
+}
+@media(max-width:520px){
+  .discountDealsTrack{grid-template-columns:1fr;}
+  .discountDealsHeader h2{font-size:20px;}
+}
+

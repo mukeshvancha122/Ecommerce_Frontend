@@ -39,6 +39,7 @@ export default function App() {
       <Router>
         <div className="app">
           <Switch>
+            {/* Protected Routes - Require Login */}
             <ProtectedRoute path="/orders">
               <Header />
               <SubHeader />
@@ -50,10 +51,6 @@ export default function App() {
               <SubHeader />
               <AccountPage />
             </ProtectedRoute>
-
-            <Route path="/login">
-              <Login />
-            </Route>
 
             <ProtectedRoute path="/checkout">
               <Header />
@@ -68,6 +65,19 @@ export default function App() {
                 <Payment />
               </Elements>
             </ProtectedRoute>
+
+            <ProtectedRoute path="/proceed-to-checkout">
+              <Header />
+              <SubHeader />
+              <Elements stripe={stripePromise}>
+                <CheckoutPage />
+              </Elements>
+            </ProtectedRoute>
+
+            {/* Public Routes - No Login Required */}
+            <Route path="/login">
+              <Login />
+            </Route>
 
             <Route path="/search">
               <Header />
@@ -92,14 +102,6 @@ export default function App() {
               <SubHeader />
               <SearchResultPage />
             </Route>
-
-            <ProtectedRoute path="/proceed-to-checkout">
-              <Header />
-              <SubHeader />
-              <Elements stripe={stripePromise}>
-                <CheckoutPage />
-              </Elements>
-            </ProtectedRoute>
 
             <Route path="/help">
               <Header />

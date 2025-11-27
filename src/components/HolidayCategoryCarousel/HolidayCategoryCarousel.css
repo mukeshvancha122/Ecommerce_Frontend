@@ -1,0 +1,109 @@
+.holidayCarouselSection{
+  background:#fff;
+  border-radius:18px;
+  padding:20px;
+  margin:24px auto;
+  box-shadow:0 4px 16px rgba(0,0,0,0.08);
+}
+.holidayCarouselHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.holidayCarouselHeader h3{
+  margin:0;
+  font-size:22px;
+  font-weight:700;
+  color:#111;
+}
+.holidayCarouselLink{
+  background:none;
+  border:none;
+  color:#007185;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:underline;
+  margin-top:4px;
+}
+.holidayCarouselButtons{
+  display:flex;
+  gap:8px;
+}
+.holidayCarouselArrow{
+  width:36px;
+  height:36px;
+  border:none;
+  border-radius:50%;
+  background:#f2f2f2;
+  font-size:20px;
+  color:#111;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+.holidayCarouselArrow:hover{
+  background:#e0e0e0;
+}
+.holidayCarouselTrackWrapper{
+  overflow:hidden;
+}
+.holidayCarouselTrack{
+  display:flex;
+  gap:18px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  padding-bottom:4px;
+}
+.holidayCarouselTrack::-webkit-scrollbar{
+  height:6px;
+}
+.holidayCarouselTrack::-webkit-scrollbar-thumb{
+  background:#d0d0d0;
+  border-radius:999px;
+}
+.holidayCarouselItem{
+  min-width:160px;
+  max-width:160px;
+  border:none;
+  background:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+.holidayCarouselImage{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background:#f1f1f1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border:4px solid #e5f2ea;
+}
+.holidayCarouselImage img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.holidayCarouselName{
+  font-size:14px;
+  font-weight:600;
+  text-align:center;
+  color:#111;
+}
+.holidayCarouselPrice{
+  font-size:13px;
+  color:#007185;
+  font-weight:600;
+}
+@media(max-width:768px){
+  .holidayCarouselSection{padding:16px;}
+  .holidayCarouselTrack{gap:12px;}
+  .holidayCarouselItem{min-width:140px;max-width:140px;}
+  .holidayCarouselImage{width:120px;height:120px;}
+}
+
+

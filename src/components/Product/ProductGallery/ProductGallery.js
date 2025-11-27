@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ProductGallery.css";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 export default function ProductGallery({ images = [], alt = "" }) {
   const media = useMemo(() => {
-    const filtered = images.filter(Boolean);
+    const filtered = images.filter(Boolean).map(img => getImageUrl(img));
     return filtered.length ? filtered : ["/images/NO_IMG.png"];
   }, [images]);
   const [active, setActive] = useState(media[0]);
@@ -29,7 +30,13 @@ export default function ProductGallery({ images = [], alt = "" }) {
         onMouseLeave={() => setZoomActive(false)}
         onMouseMove={handleMove}
       >
-        <img className="gallery__hero" src={active} alt={alt} loading="eager" />
+        <img 
+          className="gallery__hero" 
+          src={active} 
+          alt={alt} 
+          loading="eager" 
+          onError={(e) => { e.target.src = "/images/NO_IMG.png"; }} 
+        />
         {zoomActive && (
           <div
             className="gallery__zoom"
@@ -50,7 +57,12 @@ export default function ProductGallery({ images = [], alt = "" }) {
             onClick={() => setActive(src)}
             aria-label={`Show image ${index + 1}`}
           >
-            <img src={src} alt="" loading="lazy" />
+            <img 
+              src={src} 
+              alt="" 
+              loading="lazy" 
+              onError={(e) => { e.target.src = "/images/NO_IMG.png"; }} 
+            />
           </button>
         ))}
       </div>

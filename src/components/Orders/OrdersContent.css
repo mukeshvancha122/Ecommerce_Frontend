@@ -123,6 +123,37 @@
   cursor:pointer;
   font-weight:600;
 }
+.ordersContent-pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  padding:24px;
+  margin-top:24px;
+  border-top:1px solid #e5e7eb;
+}
+.ordersContent-paginationBtn{
+  background:#fff;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  padding:8px 16px;
+  cursor:pointer;
+  font-weight:600;
+  color:#111;
+  transition:all 0.2s ease;
+}
+.ordersContent-paginationBtn:hover:not(:disabled){
+  background:#f3f4f6;
+  border-color:#9ca3af;
+}
+.ordersContent-paginationBtn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+.ordersContent-paginationInfo{
+  font-weight:600;
+  color:#6b7280;
+}
 @media (max-width:600px){
   .ordersCard-header{
     grid-template-columns:1fr 1fr;

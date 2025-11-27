@@ -1,18 +1,40 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { useSelector } from "react-redux";
 import "./Home.css";
-import BestSellersStrip from "../BestSellersStrip/BestSellersStrip";
-import PromoGridRow from "../PromoGridRow/PromoGridRow";
 import RecommendationPrompt from "../RecommendationPrompt/RecommendationPrompt";
 import Footer from "../Footer/Footer";
+import FeaturedProductsCarousel from "../FeaturedProductsCarousel/FeaturedProductsCarousel";
+import DiscountDealsCarousel from "../DiscountDealsCarousel/DiscountDealsCarousel";
+import HolidayCategoryCarousel from "../HolidayCategoryCarousel/HolidayCategoryCarousel";
+import CategoryHolidayCarousel from "../CategoryHolidayCarousel/CategoryHolidayCarousel";
+import NikeOffersCarousel from "../NikeOffersCarousel/NikeOffersCarousel";
+import RecentlyViewedCarousel from "../RecentlyViewedCarousel/RecentlyViewedCarousel";
 import { getFeaturedProducts } from "../../api/products/FeaturedProductService";
-import { getMostSoldProducts } from "../../api/products/MostSoldProductService";
+import { getTopSellingProducts } from "../../api/products/TopSellingService";
 import { getSaleCategories } from "../../api/products/SaleCategoryService";
-import { getAllProducts } from "../../api/products/CategoryProductsService";
+import { getAllProducts, getProductsByCategory } from "../../api/products/CategoryProductsService";
 import { searchProducts } from "../../api/products/searchProduct/SearchProductService";
 import { getAllCategories } from "../../api/products/CategoryService";
 import { selectUser } from "../../features/auth/AuthSlice";
+import { getImageUrl } from "../../utils/imageUtils";
+import { formatCurrency } from "../../utils/currency";
+
+const toNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isNaN(value) ? null : value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === "object") {
+    if ("final_price" in value) return toNumber(value.final_price);
+    if ("amount" in value) return toNumber(value.amount);
+    if ("price" in value) return toNumber(value.price);
+    if ("discounted_price" in value) return toNumber(value.discounted_price);
+  }
+  return null;
+};
 
 const GIFT_PANEL_DATA = [
   {
@@ -44,11 +66,13 @@ function Home() {
   const isLoggedIn = Boolean(user);
 
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [mostSoldProducts, setMostSoldProducts] = useState([]);
-  const [bestSellerImages, setBestSellerImages] = useState([]);
+  const [discountedProducts, setDiscountedProducts] = useState([]);
   const [saleCategories, setSaleCategories] = useState([]);
+  const [mensSpecials, setMensSpecials] = useState([]);
+  const [womensSpecials, setWomensSpecials] = useState([]);
   const [historyProducts, setHistoryProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [ctaLoading, setCtaLoading] = useState("");
   const [ctaError, setCtaError] = useState("");
 
@@ -86,27 +110,60 @@ function Home() {
   useEffect(() => {
     (async () => {
       try {
-        const fp = await getFeaturedProducts(1);
-        setFeaturedProducts(Array.isArray(fp?.results) ? fp.results : []);
+        const [pageOne, pageTwo] = await Promise.all([
+          getFeaturedProducts(1),
+          getFeaturedProducts(2),
+        ]);
+        const extractProducts = (payload) => {
+          if (Array.isArray(payload?.data)) return payload.data;
+          if (Array.isArray(payload?.results)) return payload.results;
+          if (Array.isArray(payload)) return payload;
+          return [];
+        };
+        const products = [
+          ...extractProducts(pageOne),
+          ...extractProducts(pageTwo),
+        ];
+        setFeaturedProducts(products);
       } catch (err) {
         console.error("featured load", err);
+        setFeaturedProducts([]);
       }
     })();
   }, []);
 
   useEffect(() => {
+    // Fetch top-selling products from API
     (async () => {
       try {
-        const products = await getMostSoldProducts();
-        setMostSoldProducts(products || []);
-        const imgs = (products || [])
-          .map((p) => p?.product_variations?.[0]?.product_images?.[0]?.product_image)
-          .filter(Boolean);
-        setBestSellerImages(imgs);
+        const topSelling = await getTopSellingProducts(1);
+        setDiscountedProducts(Array.isArray(topSelling) ? topSelling.slice(0, 10) : []);
       } catch (err) {
-        console.error("most sold load", err);
+        console.error("top-selling products load", err);
+        // Fallback: filter from featured products if API fails
+        const fallback = (featuredProducts || [])
+          .filter((p) => p?.is_top_selling === true)
+          .slice(0, 10);
+        setDiscountedProducts(fallback);
       }
     })();
+  }, [featuredProducts]);
+
+  useEffect(() => {
+    const loadCategorySpecials = async (slug, setter) => {
+      try {
+        const response = await getProductsByCategory(slug, 1);
+        const items = (Array.isArray(response?.results) ? response.results : []).slice(
+          0,
+          10
+        );
+        setter(items);
+      } catch (err) {
+        console.error(`category specials load ${slug}`, err);
+      }
+    };
+    loadCategorySpecials("mens-clothing", setMensSpecials);
+    loadCategorySpecials("womens-clothing", setWomensSpecials);
   }, []);
 
   useEffect(() => {
@@ -151,14 +208,19 @@ function Home() {
         }
         
         console.log("Home.js - Processed categories array:", categoriesArray);
-        // Fetch 16 categories to distribute across 4 sections (4 each):
-        // - First 4: "Find gifts for everyone"
-        // - Next 4: "Shop holiday collections"
-        // - Next 4: "Shop gifts by price"
-        // - Last 4: "Shop gifts by category"
-        const allCategories = categoriesArray.slice(0, 16);
-        console.log("Home.js - All categories for panels:", allCategories);
-        setCategories(allCategories);
+        
+        // Log first category to check structure
+        if (categoriesArray.length > 0) {
+          console.log("Home.js - First category structure:", categoriesArray[0]);
+          console.log("Home.js - First category image field:", categoriesArray[0]?.category_image);
+        }
+        
+        // Store all categories for the holiday carousel
+        setAllCategories(categoriesArray);
+      
+        const limitedCategories = categoriesArray.slice(0, 16);
+        console.log("Home.js - All categories for panels:", limitedCategories);
+        setCategories(limitedCategories);
       } catch (err) {
         console.error("categories load", err);
       }
@@ -207,67 +269,54 @@ function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const productPanels = useMemo(
-    () => {
-      // Use the last 4 categories (13-16) for shop-by-category panel
-      const categoryTiles = categories.slice(12, 16).map((cat) => ({
-        label: cat.category_name,
-        img: cat.category_image,
-        params: { category: cat.slug },
-      }));
-
-      return [
-        {
-          id: "featured",
-          title: "Featured products",
-          items: featuredProducts,
-          ctaLabel: "Browse featured ›",
-        },
-        {
-          id: "top-sellers",
-          title: "Most sold products",
-          items: mostSoldProducts,
-          ctaLabel: "See more top sellers ›",
-        },
-        {
-          id: "shop-by-category",
-          title: "Shop gifts by category",
-          items: [],
-          ctaLabel: "Discover more for Holiday ›",
-          tiles: categoryTiles.length > 0 ? categoryTiles : [
-            { label: "Toys", img: "https://via.placeholder.com/200x140?text=Toys", params: { category: "toys" } },
-            { label: "Home & kitchen", img: "https://via.placeholder.com/200x140?text=Home+%26+Kitchen", params: { category: "home-kitchen" } },
-            { label: "Electronics", img: "https://via.placeholder.com/200x140?text=Electronics", params: { category: "electronics" } },
-            { label: "Sports & outdoors", img: "https://via.placeholder.com/200x140?text=Sports+%26+Outdoors", params: { category: "sports-fitness" } },
-          ],
-        },
-      ];
-    },
-    [featuredProducts, mostSoldProducts, categories]
-  );
-
   const saleCards = useMemo(
     () =>
       saleCategories.map((cat, idx) => ({
         id: cat.id || idx,
         title: cat.category_name,
         description: cat.description,
-        image: cat.category_image,
+        image: getImageUrl(cat.category_image),
         params: { product_name: cat.category_name },
       })),
     [saleCategories]
   );
+
+  // Carousel state for sale categories
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselRef = useRef(null);
+  const itemsPerPage = 3; // 3 columns
+
+  const totalPages = Math.ceil(saleCards.length / itemsPerPage);
+  const currentPageCards = saleCards.slice(
+    carouselIndex * itemsPerPage,
+    (carouselIndex + 1) * itemsPerPage
+  );
+
+  const handleCarouselPrev = () => {
+    setCarouselIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleCarouselNext = () => {
+    setCarouselIndex((prev) => Math.min(totalPages - 1, prev + 1));
+  };
 
   const historyCards = useMemo(
     () => (historyProducts || []).slice(0, 8),
     [historyProducts]
   );
 
+  // Select 13 random categories for the holiday carousel
+  const randomCategories = useMemo(() => {
+    if (allCategories.length === 0) return [];
+    const shuffled = [...allCategories].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 13);
+  }, [allCategories]);
+
   const giftPanelData = useMemo(() => {
     // Convert all categories to tiles format
     const allCategoryTiles = categories.map((cat) => ({
       label: cat.category_name,
-      image: cat.category_image,
+      image: cat.category_image ? getImageUrl(cat.category_image) : "/images/NO_IMG.png",
       params: { category: cat.slug },
     }));
 
@@ -337,6 +386,11 @@ function Home() {
         </button>
       </section>
 
+      {/* All Categories Holiday Carousel - Positioned on top */}
+      {randomCategories.length > 0 && (
+        <CategoryHolidayCarousel categories={randomCategories} />
+      )}
+
       <section className="homeGiftLayout">
         <div className="homeGiftGrid">
           {giftPanelData.map((panel) => (
@@ -357,7 +411,18 @@ function Home() {
                     }
                   >
                     <div className="giftTile-thumb">
-                      <img src={tile.image} alt={tile.label} />
+                      <img 
+                        src={tile.image} 
+                        alt={tile.label} 
+                        loading="lazy"
+                        onError={(e) => {
+                          // Prevent infinite loop if fallback also fails
+                          if (e.target.src !== "/images/NO_IMG.png" && !e.target.src.includes("NO_IMG")) {
+                            e.target.src = "/images/NO_IMG.png";
+                            e.target.onerror = null; // Remove error handler to prevent loop
+                          }
+                        }}
+                      />
                     </div>
                     <span>{tile.label}</span>
                   </button>
@@ -404,10 +469,7 @@ function Home() {
             <h3>Here to play</h3>
             <p>Must-play games included with Prime.</p>
             <div className="homeAdCard-image">
-              <img
-                src="https://via.placeholder.com/320x200?text=Luna+Gaming"
-                alt="Luna Gaming"
-              />
+              <img src="/images/banner/Banner_3.webp" alt="Luna Gaming" />
             </div>
             <button
               type="button"
@@ -425,82 +487,38 @@ function Home() {
         </aside>
       </section>
 
-      <section className="homeProductPanels">
-        {productPanels.map((panel) => (
-          <article className="merchCard" key={panel.id}>
-            <div className="merchCard-header">{panel.title}</div>
+      {mensSpecials.length > 0 && (
+        <section className="holidayCategorySection">
+          <HolidayCategoryCarousel
+            title="Here come Holiday Specials"
+            subtitle="Explore now"
+            items={mensSpecials}
+            onSeeMore={() =>
+              history.push(
+                `/products?category=mens-clothing&label=${encodeURIComponent("Men's Clothing")}`
+              )
+            }
+          />
+        </section>
+      )}
 
-            {panel.tiles ? (
-              <div className="merchCard-grid">
-                {panel.tiles.map((tile, idx) => (
-                  <button
-                    type="button"
-                    className="merchTile"
-                    key={tile.label}
-                    onClick={() =>
-                      navigateToSearch({
-                        id: `${panel.id}-${idx}`,
-                        title: tile.label,
-                        params: tile.params,
-                      })
-                    }
-                  >
-                    <div className="merchTile-imgWrap">
-                      <img src={tile.img} alt={tile.label} className="merchTile-img" />
-                    </div>
-                    <div className="merchTile-label">{tile.label}</div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="merchCard-grid">
-                {(panel.items.length ? panel.items : new Array(4).fill(null)).map(
-                  (p, idx) => {
-                    const variation = p?.product_variations?.[0];
-                    const img =
-                      variation?.product_images?.[0]?.product_image ||
-                      "https://via.placeholder.com/200x140?text=Loading";
-                    const name = p?.product_name || "Loading…";
-                    const price =
-                      variation?.get_discounted_price || variation?.product_price || "";
-                    const slug = p?.slug || "#";
+      {womensSpecials.length > 0 && (
+        <section className="holidayCategorySection">
+          <HolidayCategoryCarousel
+            title="Trending in Women's Clothing"
+            subtitle="See more"
+            items={womensSpecials}
+            onSeeMore={() =>
+              history.push(
+                `/products?category=womens-clothing&label=${encodeURIComponent("Women's Clothing")}`
+              )
+            }
+          />
+        </section>
+      )}
 
-                    return (
-                      <div className="merchTile" key={p?.id || idx}>
-                        <a className="merchTile-imgWrap" href={`/product/${p?.id ?? slug}`}>
-                          <img src={img} alt={name} className="merchTile-img" />
-                        </a>
-                        <div className="merchTile-label" title={name}>
-                          {name.length > 26 ? name.slice(0, 24) + "…" : name}
-                        </div>
-                        {price !== "" && (
-                          <div className="merchTile-price">₹{price}</div>
-                        )}
-                      </div>
-                    );
-                  }
-                )}
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="merchCard-footerLink"
-              disabled={ctaLoading === panel.id}
-              onClick={() =>
-                navigateToSearch({
-                  id: panel.id,
-                  title: panel.title,
-                  params: panel.tiles ? { product_name: panel.title } : undefined,
-                  fallbackItems: panel.items,
-                })
-              }
-            >
-              {renderCtaLabel(panel.id, panel.ctaLabel)}
-            </button>
-          </article>
-        ))}
-      </section>
+      {/* Best deals section - Top selling products */}
+      <DiscountDealsCarousel products={discountedProducts} />
 
       <section className="saleCategoriesSection">
         <div className="saleCategoriesHeader">
@@ -508,36 +526,32 @@ function Home() {
             <p className="saleCategoriesEyebrow">Sponsored</p>
             <h2>Sale categories</h2>
           </div>
+        </div>
+        <div className="saleCategoriesCarousel">
           <button
             type="button"
-            className="saleCategoriesSeeAll"
-            onClick={() =>
-              navigateToSearch({
-                id: "sale-categories",
-                title: "Sale categories",
-                params: { product_name: "sale" },
-              })
-            }
+            className="saleCategoriesArrow saleCategoriesArrow--prev"
+            onClick={handleCarouselPrev}
+            disabled={carouselIndex === 0}
+            aria-label="Previous categories"
           >
-            See all deals
+            ‹
           </button>
-        </div>
-        <div className="saleCategoriesGrid">
-          {(saleCards.length ? saleCards : new Array(6).fill(null)).map(
-            (cat, idx) => {
-              if (!cat) {
-                return (
-                  <div className="saleCategoryCard" key={`placeholder-${idx}`}>
-                    <div className="saleCategoryThumb placeholder" />
-                    <div className="saleCategoryBody">
-                      <h3>Loading…</h3>
-                      <p>Fetching sale details</p>
-                    </div>
+          <div className="saleCategoriesGrid" ref={carouselRef}>
+            {saleCards.length === 0 ? (
+              // Loading state
+              new Array(3).fill(null).map((_, idx) => (
+                <div className="saleCategoryCard" key={`placeholder-${idx}`}>
+                  <div className="saleCategoryThumb placeholder" />
+                  <div className="saleCategoryBody">
+                    <h3>Loading…</h3>
+                    <p>Fetching sale details</p>
                   </div>
-                );
-              }
-
-              return (
+                </div>
+              ))
+            ) : (
+              // Display current page cards (3 at a time)
+              currentPageCards.map((cat) => (
                 <button
                   type="button"
                   className="saleCategoryCard"
@@ -551,107 +565,60 @@ function Home() {
                   }
                 >
                   <div className="saleCategoryThumb">
-                    <img src={cat.image} alt={cat.title} />
+                    <img 
+                      src={cat.image} 
+                      alt={cat.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        // Prevent infinite loop if fallback also fails
+                        if (e.target.src !== "/images/NO_IMG.png" && !e.target.src.includes("NO_IMG")) {
+                          e.target.src = "/images/NO_IMG.png";
+                          e.target.onerror = null; // Remove error handler to prevent loop
+                        }
+                      }}
+                    />
                   </div>
                   <div className="saleCategoryBody">
                     <h3>{cat.title}</h3>
                     <p>{cat.description}</p>
                   </div>
                 </button>
-              );
-            }
-          )}
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            className="saleCategoriesArrow saleCategoriesArrow--next"
+            onClick={handleCarouselNext}
+            disabled={carouselIndex >= totalPages - 1}
+            aria-label="Next categories"
+          >
+            ›
+          </button>
         </div>
+        {totalPages > 1 && (
+          <div className="saleCategoriesPagination">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`saleCategoriesDot ${i === carouselIndex ? "active" : ""}`}
+                onClick={() => setCarouselIndex(i)}
+                aria-label={`Go to page ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      <BestSellersStrip
-        title="Best sellers in computers & accessories"
-        items={
-          bestSellerImages.length
-            ? bestSellerImages
-            : ["https://via.placeholder.com/240x180?text=Loading"]
-        }
-      />
+      {/* Featured Products Carousel */}
+      <FeaturedProductsCarousel products={featuredProducts} />
 
-      <section className="historySection">
-        <header className="historySectionHeader">
-          <h2>Customers who viewed items in your browsing history also viewed</h2>
-        </header>
+      {/* Recently Viewed & Searched Products Carousel */}
+      <RecentlyViewedCarousel products={historyProducts} />
 
-        <div className="historyGrid">
-          {(historyCards.length ? historyCards : new Array(8).fill(null)).map(
-            (product, idx) => {
-              const variation = product?.product_variations?.[0];
-              const img =
-                variation?.product_images?.[0]?.product_image ||
-                "https://via.placeholder.com/200x140?text=Loading";
-              const price =
-                variation?.get_discounted_price || variation?.product_price || "";
-              const name = product?.product_name || "Loading…";
-              const slug = product?.slug || `history-${idx}`;
-
-              return (
-                <a className="historyCard" key={slug} href={`/product/${slug}`}>
-                  <div className="historyCard-image">
-                    <img src={img} alt={name} />
-                  </div>
-                  <div className="historyCard-name">{name}</div>
-                  {price && <div className="historyCard-price">₹{price}</div>}
-                </a>
-              );
-            }
-          )}
-        </div>
-      </section>
-
-      <PromoGridRow
-        cards={[
-          {
-            title: "Support Movember",
-            sponsored: false,
-            children: (
-              <img
-                src="/img/movember-card.png"
-                alt="Movember"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
-            ),
-          },
-          {
-            title: "Save 5% with Subscribe & Save",
-            sponsored: true,
-            children: (
-              <img
-                src="/img/subscribe-save.png"
-                alt="Subscribe & Save"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
-            ),
-          },
-          {
-            title: "Shop holiday activities",
-            sponsored: false,
-            children: (
-              <img
-                src="/img/holiday-activities.png"
-                alt="Holiday activities"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
-            ),
-          },
-          {
-            title: "Save more on deals",
-            sponsored: false,
-            children: (
-              <img
-                src="/img/save-more-deals.png"
-                alt="Deals"
-                style={{ maxWidth: "100%", maxHeight: "120px", objectFit: "contain" }}
-              />
-            ),
-          },
-        ]}
-      />
+      {/* Nike Offers Carousel Advertisement */}
+      <NikeOffersCarousel />
 
       {ctaError && <div className="ctaErrorBanner">{ctaError}</div>}
 

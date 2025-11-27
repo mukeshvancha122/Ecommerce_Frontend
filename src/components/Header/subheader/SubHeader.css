@@ -24,8 +24,14 @@
   list-style: none;
   justify-content: flex-start;
   overflow-x: auto;          /* allow horizontal scroll if needed */
-  scrollbar-width: thin;
+  scrollbar-width: none;     /* Hide scrollbar in Firefox */
+  -ms-overflow-style: none;  /* Hide scrollbar in IE and Edge */
   -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar in Chrome, Safari, and Opera */
+.subHeader-row::-webkit-scrollbar {
+  display: none;
 }
 
 /* ===== ALL MENU BUTTON ===== */
@@ -184,5 +190,12 @@
   .subHeader-row {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;     /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none;  /* Hide scrollbar in IE and Edge */
+  }
+  
+  /* Hide scrollbar in Chrome, Safari, and Opera on mobile */
+  .subHeader-row::-webkit-scrollbar {
+    display: none;
   }
 }
