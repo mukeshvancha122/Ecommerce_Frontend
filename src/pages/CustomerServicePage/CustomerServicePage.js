@@ -8,12 +8,8 @@ import { getAIResponse, clearConversationHistory } from "../../api/chatbot/Chatb
 export default function CustomerServicePage() {
   const { t } = useTranslation();
   const user = useSelector(selectUser);
-  const [messages, setMessages] = useState([
-    {
-      from: "bot",
-      text: "Hello! 👋 I'm your AI-powered HyderNexa assistant. I'm here to help you with orders, returns, shipping, payments, and anything else you need. How can I assist you today?",
-    },
-  ]);
+  // Start with empty messages - will get actual response from Rasa
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -149,7 +145,7 @@ export default function CustomerServicePage() {
       console.error("Error getting AI response:", error);
       const errorBubble = {
         from: "bot",
-        text: "I apologize, but I'm having trouble processing your request right now. Please try again or contact our support team at support@hydernexa.com.",
+        text: error.message || "Unable to connect to chatbot. Please try again.",
       };
       setMessages((prev) => [...prev, errorBubble]);
       if (voiceEnabled) {

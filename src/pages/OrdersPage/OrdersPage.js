@@ -14,7 +14,7 @@ const tabOptions = [
   { id: "buyAgain", label: "Buy again" },
   { id: "notShipped", label: "Not yet shipped" },
   { id: "digital", label: "Digital Orders" },
-  { id: "amazonPay", label: "Amazon Pay" },
+  { id: "amazonPay", label: "HyderNexa Pay" },
 ];
 
 export default function OrdersPage() {

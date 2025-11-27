@@ -8,18 +8,24 @@
   border-bottom: 1px solid rgba(0,0,0,0.35);
   box-shadow: 0 1px 2px rgba(0,0,0,0.4);
   width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* row container */
 .subHeader-row {
   width: 100%;
   margin: 0;
+  padding: 0.4rem 0.75rem;   /* minimal vertical padding, horizontal padding for edges */
   display: flex;
-  flex-wrap: wrap;           /* wrap if screen gets narrow */
+  flex-wrap: nowrap;         /* single row, no wrapping */
   align-items: center;
-  gap: 0.5rem 1rem;          /* row gap / col gap */
+  gap: 0;
   list-style: none;
-  justify-content: flex-start; /* align content to the left */
+  justify-content: flex-start;
+  overflow-x: auto;          /* allow horizontal scroll if needed */
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ===== ALL MENU BUTTON ===== */
@@ -29,7 +35,7 @@
 
 .subHeader-allBtn {
   background-color: rgba(0,0,0,0.15);
-  border: 2px solid #f0b849; /* warm gold border reminiscent of Amazon highlight */
+  border: 2px solid #f0b849; /* warm gold border reminiscent of HyderNexa highlight */
   border-radius: 4px;
   padding: 0.4rem 0.6rem;
   display: flex;
@@ -41,6 +47,8 @@
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  margin: 0;
+  white-space: nowrap;
 }
 
 .subHeader-allBtn:hover {
@@ -61,6 +69,9 @@
 .subHeader-item {
   display: flex;
   align-items: center;
+  flex-shrink: 0;            /* prevent shrinking */
+  margin: 0;
+  padding: 0;
 }
 
 .subHeader-link {
@@ -71,8 +82,11 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.4rem 0;
+  padding: 0.4rem 0.75rem;  /* consistent padding with All button */
   position: relative;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+  margin: 0;
 }
 
 /* caret after items that have dropdowns */
@@ -82,22 +96,14 @@
   color: #cbd5e1;
 }
 
-/* hover underline-ish effect but subtle */
+/* hover effect - Amazon style */
 .subHeader-link:hover {
   color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
-.subHeader-link:hover::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.15rem;
-  height: 2px;
-  background: linear-gradient(90deg,#fff 0%,rgba(255,255,255,0) 100%);
-  border-radius: 999px;
-  box-shadow: 0 0 4px rgba(255,255,255,0.8);
-}
+/* Remove the underline effect for cleaner Amazon-style look */
 
 /* dropdown */
 .hasDropdown { position: relative; }
@@ -132,15 +138,26 @@
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .subHeader-link {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+}
+
 @media (max-width: 900px) {
   .subHeader-row {
-    font-size: 0.8rem;
-    gap: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .subHeader-link {
+    padding: 0.5rem 0.55rem;
+    font-size: 0.85rem;
   }
 
   .subHeader-allBtn {
-    font-size: 0.8rem;
-    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.55rem;
   }
 
   .subHeader-allIcon {
@@ -149,18 +166,23 @@
 }
 
 @media (max-width: 600px) {
-  /* on very small screens we usually hide some less-critical nav links.
-     You can tweak which ones. Example: hide "Customer Service". */
-  .subHeader-item:nth-last-child(1) {
-    display: none;
-  }
-
   .subHeader-row {
-    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .subHeader-link {
+    padding: 0.5rem 0.5rem;
     font-size: 0.8rem;
   }
 
   .subHeader-allBtn {
     font-size: 0.8rem;
+    padding: 0.5rem 0.5rem;
+  }
+  
+  /* Allow horizontal scroll on mobile */
+  .subHeader-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

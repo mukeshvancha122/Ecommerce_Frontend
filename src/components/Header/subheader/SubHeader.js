@@ -56,6 +56,11 @@ function SubHeader() {
     history.push(`/products?subcategory=${encodeURIComponent(sc.slug)}&label=${encodeURIComponent(sc.sub_category)}`);
   };
 
+  const onCategoryClick = (e, cat) => {
+    e.preventDefault();
+    history.push(`/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(cat.category_name)}`);
+  };
+
   return (
     <>
       {/* ======= SUBHEADER NAV ======= */}
@@ -75,25 +80,8 @@ function SubHeader() {
           </li>
 
           {/* ======= MAIN NAV LINKS ======= */}
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/holiday-deals">
-              Holiday Deals
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/best-sellers">
-              Best Sellers
-            </a>
-          </li>
-
-          <li className="subHeader-item">
-            <a className="subHeader-link" href="/new-arrivals">
-              New Arrivals <span className="subHeader-caret">▾</span>
-            </a>
-          </li>
-
-          {categories.map((cat) => {
+          {/* Display first 12 categories - Amazon-style layout */}
+          {categories.slice(0, 12).map((cat) => {
             const subs = subsByCategory[cat.category_name] || [];
             const hasSubs = subs.length > 0;
             return (
@@ -101,6 +89,7 @@ function SubHeader() {
                 <a
                   className="subHeader-link"
                   href={`/products?category=${encodeURIComponent(cat.slug)}&label=${encodeURIComponent(cat.category_name)}`}
+                  onClick={(e) => onCategoryClick(e, cat)}
                 >
                   {cat.category_name}
                   {hasSubs && <span className="subHeader-caret">▾</span>}

@@ -1,6 +1,6 @@
 ## HyderNexa Commerce Frontend
 
-HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mirrors modern UX and handles millions of concurrent shoppers. The UI now mirrors the requested Amazon-like flows (sign-in → address selection → multi-tender payments → review → orders) with internationalization, accessibility, and resilience in mind.
+HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mirrors modern UX and handles millions of concurrent shoppers. The UI now mirrors the requested HyderNexa flows (sign-in → address selection → multi-tender payments → review → orders) with internationalization, accessibility, and resilience in mind.
 
 ---
 
@@ -18,14 +18,14 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
    REACT_APP_API_BASE_URL=http://localhost:5000/api
    
    # AI Chatbot Configuration (Optional)
-   # Option 1: Use backend proxy (recommended for production)
-   REACT_APP_CHATBOT_API_URL=/api/v1/chatbot
+   # Rasa Chatbot endpoint (default: http://54.145.239.205:5005/webhooks/rest/webhook/)
+   REACT_APP_CHATBOT_API_URL=http://54.145.239.205:5005/webhooks/rest/webhook/
    
-   # Option 2: Direct OpenAI API (for development/testing)
+   # Option 2: Direct OpenAI API (fallback, for development/testing)
    REACT_APP_OPENAI_API_KEY=sk-xxx
    ```
    
-   **Note:** The chatbot works with intelligent fallback responses even without API keys. For production, set up a backend proxy to handle OpenAI API calls securely.
+   **Note:** The chatbot uses Rasa AI by default. It works with intelligent fallback responses if the Rasa endpoint is unavailable. You can also configure OpenAI API as a fallback option.
 3. **Run the dev server**
    ```bash
    npm start
@@ -45,18 +45,19 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
 - **Auth-first workflow**: sign-in, register, email verification + forgot-password flows before cart access; `/checkout`, `/payment`, `/orders`, `/proceed-to-checkout` guarded via `ProtectedRoute`.
 - **Multi-screen checkout**: address management, payment method hub, and review screen render side-by-side on desktop & stack on mobile (multi-screen requirement).
 - **Stripe-powered payments**:
-  - Saved cards + “Add card” modal (Amazon-style) with mock backend persistence.
+  - Saved cards + "Add card" modal (HyderNexa-style) with mock backend persistence.
   - CardElement for Visa/Mastercard/RuPay/Amex.
   - Google Pay via Payment Request API (Stripe).
   - PhonePe/UPI simulation via backend mock to demonstrate flow + validation.
   - PayPal wallet via official SDK, ready for sandbox/live client IDs.
   - Post-payment overlay animation/redirect to orders in 3 seconds.
-- **Dynamic order placement**: places mock orders, stores them, surfaces in the redesigned Orders page (with filtering/search placeholders, Amazon UI).
+- **Dynamic order placement**: places mock orders, stores them, surfaces in the redesigned Orders page (with filtering/search placeholders, HyderNexa UI).
 - **AI-Powered Customer Service**:
-  - Intelligent chatbot with OpenAI GPT integration (via backend proxy or direct API).
+  - Intelligent chatbot with Rasa AI integration (default endpoint: http://54.145.239.205:5005/webhooks/rest/webhook/).
   - Natural, human-like conversational responses.
   - Voice capabilities: Text-to-Speech (TTS) and Speech-to-Text (STT).
-  - Intelligent fallback responses when API is unavailable.
+  - Intelligent fallback responses when Rasa endpoint is unavailable.
+  - OpenAI API fallback support (optional).
   - Conversation history and context awareness.
   - Comprehensive FAQ section with expandable categories.
 - **Translations / Localization**:
@@ -77,7 +78,7 @@ HyderNexa delivers a production-grade, Stripe-backed ecommerce checkout that mir
 | --- | --- |
 | UI & state | React 17, Redux Toolkit, React Router 5 |
 | Payments | `@stripe/react-stripe-js`, `@stripe/stripe-js`, `@paypal/react-paypal-js` |
-| AI Chatbot | OpenAI GPT API (via backend proxy or direct), Web Speech API |
+| AI Chatbot | Rasa AI (default), OpenAI GPT API (fallback), Web Speech API |
 | Data & APIs | Axios with auth + language interceptors |
 | Tooling | React Scripts, Testing Library, Moment (legacy) |
 
@@ -85,7 +86,7 @@ Internal util layers:
 - `src/api/CheckoutService.js` – addresses, shipping, PaymentIntent mocks, order placement.
 - `src/api/payment/PaymentMethodsService.js` – saved cards & PhonePe simulation.
 - `src/api/orders/OrdersService.js` – mock persistence feeding Orders page.
-- `src/api/chatbot/ChatbotService.js` – AI chatbot integration with OpenAI API and intelligent fallback.
+- `src/api/chatbot/ChatbotService.js` – AI chatbot integration with Rasa AI (default) and OpenAI API fallback.
 
 ---
 
@@ -126,7 +127,7 @@ Internal util layers:
 
 - **Scalability**: Stateless frontend + API-driven modules, ready for SSR/CDN if required; Stripe/PayPal handle PCI scale.
 - **Reliability**: Guards around auth/cart states, error surfacing, and timers to avoid stuck UX.
-- **User psychology & UX**: Familiar Amazon-like layout, clear CTAs, progress indicators, accessible colors/typography, responsive design.
+- **User psychology & UX**: Familiar HyderNexa layout, clear CTAs, progress indicators, accessible colors/typography, responsive design.
 - **Extensibility**: Swap mock services for real endpoints with minimal change (API layer already abstracted).
 
 Recommended follow-ups:

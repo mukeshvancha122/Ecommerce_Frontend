@@ -3,8 +3,8 @@
   background-color: #f7f8fa;
   border-radius: 0;
   box-sizing: border-box;
-  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
-    "Inter", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+    Roboto, "Segoe UI", sans-serif;
 
   padding: 24px 16px;
   margin-bottom: 40px;

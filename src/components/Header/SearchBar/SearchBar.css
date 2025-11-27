@@ -19,7 +19,7 @@
 
 /* ============================================
    OUTER SEARCH BAR CONTAINER
-   (Amazon uses a single rounded bar with subtle border/shadow)
+   (HyderNexa uses a single rounded bar with subtle border/shadow)
 ============================================ */
 .searchBarOuter {
   display: flex;
@@ -46,7 +46,7 @@
 
 /* ============================================
    LEFT CATEGORY DROPDOWN "All"
-   (Amazon: light gray pill on the left with caret)
+   (HyderNexa: light gray pill on the left with caret)
 ============================================ */
 .searchBarCategory {
   position: relative;
@@ -65,7 +65,7 @@
   border-right: 1px solid #cdcdcd;
   min-width: 3.2rem;
 
-  /* match Amazon radius on the far-left only */
+  /* match HyderNexa radius on the far-left only */
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
@@ -140,7 +140,7 @@
 
 /* ============================================
    TEXT INPUT FIELD
-   (Amazon: plain white middle region)
+   (HyderNexa: plain white middle region)
 ============================================ */
 .searchBarInput {
   flex: 1;
@@ -163,7 +163,7 @@
 
 /* ============================================
    IMAGE SEARCH BUTTON
-   (Amazon has camera icon inside the bar near the right)
+   (HyderNexa has camera icon inside the bar near the right)
 ============================================ */
 .searchBarImageBtn {
   background-color: #fff;
@@ -194,7 +194,7 @@
 
 /* ============================================
    SUBMIT BUTTON (MAGNIFIER)
-   (Amazon's yellow/orange gradient button with rounded right edge)
+   (HyderNexa's yellow/orange gradient button with rounded right edge)
 ============================================ */
 .searchBarSubmit {
   display: flex;
@@ -211,7 +211,7 @@
   font-weight: 600;
   color: #111;
 
-  /* Amazon-style yellow button */
+  /* HyderNexa-style yellow button */
   background: linear-gradient(#f7dfa5, #f0c14b);
   border-left: 1px solid rgba(0,0,0,0.2);
 
@@ -270,7 +270,7 @@
 
 /* ============================================
    RESPONSIVE BEHAVIOR
-   Amazon on mobile hides the "All" dropdown and compresses spacing.
+   HyderNexa on mobile hides the "All" dropdown and compresses spacing.
 ============================================ */
 @media (max-width: 600px) {
   /* hide the category dropdown entirely on small screens */

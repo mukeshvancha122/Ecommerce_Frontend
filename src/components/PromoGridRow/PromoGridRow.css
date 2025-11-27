@@ -1,7 +1,7 @@
 .promoGridRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0; /* Amazon uses borders instead of gaps */
+  gap: 0; /* HyderNexa uses borders instead of gaps */
   background-color: #fff;
   border: 1px solid #d5d9d9;
   box-shadow: 0 2px 4px rgb(15 17 17 / 8%);

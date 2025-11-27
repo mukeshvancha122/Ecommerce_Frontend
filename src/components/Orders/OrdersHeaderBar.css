@@ -11,8 +11,8 @@
   font-weight: 700;
   color: #0f1111;
   margin: 0;
-  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
-    "Inter", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+    Roboto, "Segoe UI", sans-serif;
 }
 
 .ordersHeaderBar-searchWrapper {

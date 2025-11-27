@@ -1,308 +1,226 @@
 import API from "../../axios";
-
 /**
  * AI Chatbot Service
- * Integrates with OpenAI API for natural, human-like conversations
- * Supports both direct API calls (via backend proxy) and fallback responses
+ * Integrates with Rasa AI Chatbot for natural, human-like conversations
+ * Only uses actual responses from Rasa - no static fallback messages
  */
 
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-const CHATBOT_API_URL = process.env.REACT_APP_CHATBOT_API_URL || "/api/v1/chatbot";
+// Rasa chatbot endpoint - use proxy path to avoid CORS issues
+// The proxy forwards to the production endpoint: http://54.145.239.205:5005/webhooks/rest/webhook/
+// Using relative path '/api/chatbot' so it goes through the proxy (no CORS)
+// Can be overridden via environment variable
+const CHATBOT_API_URL = process.env.REACT_APP_CHATBOT_API_URL || '/api/chatbot';
 
-// System prompt for the AI assistant
-const SYSTEM_PROMPT = `You are a friendly and helpful customer service assistant for HyderNexa, a modern e-commerce platform. 
-Your role is to assist customers with:
-- Order tracking and status
-- Returns and refunds
-- Shipping information
-- Payment methods and issues
-- Account management
-- Product inquiries
-- General customer support
-
-Be conversational, empathetic, and professional. Keep responses concise but helpful. 
-If you don't know something, guide them to contact support at support@hydernexa.com or call +91-1800-XXX-XXXX.`;
+// Contact information for support
+const SUPPORT_EMAIL = "support@hydernexa.com";
+const SUPPORT_PHONE = "+91-1800-XXX-XXXX"; // Update with actual phone number
 
 // Conversation history storage
 let conversationHistory = [];
 
 /**
- * Get AI response from OpenAI API (via backend proxy)
+ * Format Rasa response - handles both text messages and product data
+ */
+function formatRasaResponse(data) {
+  if (!data) return null;
+
+  // Handle array response (Rasa webhook format)
+  if (Array.isArray(data) && data.length > 0) {
+    const responses = [];
+    
+    for (const item of data) {
+      // Check for text response
+      if (item.text) {
+        responses.push(item.text);
+      }
+      
+      // Check for custom product data
+      if (item.custom && item.custom.results) {
+        const productResponse = formatProductData(item.custom.results);
+        if (productResponse) {
+          responses.push(productResponse);
+        }
+      }
+    }
+    
+    return responses.length > 0 ? responses.join("\n\n") : null;
+  }
+  
+  // Handle single object with text
+  if (data.text) {
+    return data.text;
+  }
+  
+  // Handle custom product data directly
+  if (data.custom && data.custom.results) {
+    return formatProductData(data.custom.results);
+  }
+  
+  return null;
+}
+
+/**
+ * Format product data into readable text response
+ */
+function formatProductData(results) {
+  if (!results || !results.data || !Array.isArray(results.data) || results.data.length === 0) {
+    return null;
+  }
+
+  const products = results.data;
+  const formattedProducts = products.map((product, index) => {
+    let productInfo = `🛍️ ${product.product_name || 'Product'}`;
+    
+    // Discount information
+    if (product.product_discount && product.product_discount > 0) {
+      productInfo += ` - ${product.product_discount}% OFF`;
+    }
+    
+    // Product description (truncated if too long)
+    if (product.product_description) {
+      const desc = product.product_description.length > 150 
+        ? product.product_description.substring(0, 150) + '...'
+        : product.product_description;
+      productInfo += `\n\n${desc}`;
+    }
+    
+    // Category information
+    if (product.product_category) {
+      productInfo += `\n\n📂 ${product.product_category.category_name || 'N/A'}`;
+    }
+    
+    // Product badges (concise)
+    const badges = [];
+    if (product.is_top_selling) badges.push("🔥 Top Selling");
+    if (product.weekly_drop) badges.push("⭐ Weekly Drop");
+    if (product.exciting_deals) badges.push("🎯 Deal");
+    if (product.best_seller) badges.push("🏆 Best Seller");
+    if (product.free_delivery) badges.push("🚚 Free Delivery");
+    
+    if (badges.length > 0) {
+      productInfo += `\n${badges.join(" • ")}`;
+    }
+    
+    // Rating information
+    if (product.get_rating_info && product.get_rating_info.average_rating) {
+      const rating = product.get_rating_info;
+      productInfo += `\n⭐ ${rating.average_rating.toFixed(1)} (${rating.total_ratings} reviews)`;
+    }
+    
+    // Delivery information (simplified)
+    if (product.delivery_by && Array.isArray(product.delivery_by) && product.delivery_by.length > 0) {
+      const deliveryTypes = [];
+      product.delivery_by.forEach((deliveryOption) => {
+        Object.keys(deliveryOption).forEach((type) => {
+          deliveryTypes.push(type);
+        });
+      });
+      if (deliveryTypes.length > 0) {
+        productInfo += `\n📦 Delivery: ${deliveryTypes.join(", ")} available`;
+      }
+    }
+    
+    return productInfo;
+  });
+
+  const header = products.length === 1 
+    ? "I found this product for you:\n" 
+    : `I found ${products.length} products:\n`;
+  
+  return header + formattedProducts.join("\n\n━━━━━━━━━━━━━━━━━━━━\n\n");
+}
+
+/**
+ * Get AI response from Rasa Chatbot
+ * Supports Rasa webhook endpoint format
+ * Only returns actual responses from Rasa - no static fallbacks
  */
 export const getAIResponse = async (userMessage, user = null) => {
+  // Prepare message for Rasa (just the user message, no context prefix needed)
+  const message = userMessage.trim();
+
+  if (!message) {
+    throw new Error("Message cannot be empty");
+  }
+
+  // Check if URL is absolute (starts with http) or relative
+  const isAbsoluteUrl = CHATBOT_API_URL.startsWith("http://") || CHATBOT_API_URL.startsWith("https://");
+  
+  let response;
+  let data;
+  
   try {
-    // Add user context if available
-    const userContext = user
-      ? `User: ${user.name || user.email || "Guest"}. `
-      : "";
+    if (isAbsoluteUrl) {
+      // Direct fetch for absolute URLs (bypasses axios baseURL)
+      // Note: This may have CORS issues unless the server allows cross-origin requests
+      response = await fetch(CHATBOT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+        }),
+      });
 
-    const fullMessage = `${userContext}${userMessage}`;
-
-    // Try to call backend API first
-    if (CHATBOT_API_URL.startsWith("/api")) {
-      try {
-        const response = await API.post(CHATBOT_API_URL, {
-          message: fullMessage,
-          conversation_history: conversationHistory.slice(-10), // Last 10 messages for context
-          system_prompt: SYSTEM_PROMPT,
-        });
-
-        if (response.data && response.data.response) {
-          // Add to conversation history
-          conversationHistory.push({ role: "user", content: fullMessage });
-          conversationHistory.push({ role: "assistant", content: response.data.response });
-          return response.data.response;
-        }
-      } catch (apiError) {
-        console.log("Backend API not available, using fallback:", apiError);
-        // Fall through to fallback
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
-    }
 
-    // Fallback: Direct OpenAI API call (if API key is available)
-    if (OPENAI_API_KEY && window.fetch) {
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              ...conversationHistory.slice(-10),
-              { role: "user", content: fullMessage },
-            ],
-            temperature: 0.7,
-            max_tokens: 300,
-          }),
-        });
+      data = await response.json();
+    } else {
+      // Use fetch for relative URLs (goes through proxy to production endpoint)
+      // Using fetch instead of axios to avoid baseURL conflicts
+      response = await fetch(CHATBOT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+        }),
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.choices && data.choices[0] && data.choices[0].message) {
-            const aiResponse = data.choices[0].message.content;
-            conversationHistory.push({ role: "user", content: fullMessage });
-            conversationHistory.push({ role: "assistant", content: aiResponse });
-            return aiResponse;
-          }
-        }
-      } catch (openaiError) {
-        console.log("OpenAI API error, using intelligent fallback:", openaiError);
-        // Fall through to intelligent fallback
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
-    }
 
-    // Intelligent fallback: Enhanced rule-based responses
-    return getIntelligentFallback(userMessage, user);
+      data = await response.json();
+      console.log("response from chatbot", data);
+    }
+    
+    // Handle Rasa response format
+    const formattedResponse = formatRasaResponse(data);
+    
+    if (!formattedResponse) {
+      console.error("Invalid response format from chatbot:", data);
+      // Return a user-friendly message with contact information
+      return `I apologize, but I'm unable to assist with that request at the moment. This is beyond my current capabilities.\n\nPlease contact our support team for assistance:\n📧 Email: ${SUPPORT_EMAIL}\n📞 Phone: ${SUPPORT_PHONE}\n\nOur support team will be happy to help you with your inquiry.`;
+    }
+    
+    // Add to conversation history
+    conversationHistory.push({ role: "user", content: message });
+    conversationHistory.push({ role: "assistant", content: formattedResponse });
+    
+    return formattedResponse;
   } catch (error) {
-    console.error("Chatbot service error:", error);
-    return getIntelligentFallback(userMessage, user);
+    console.error("Rasa chatbot API error:", error);
+    console.error("Chatbot URL:", CHATBOT_API_URL);
+    console.error("Error details:", error.message, error.stack);
+    
+    // Provide user-friendly error message with contact information
+    if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+      return `I apologize, but I'm having trouble connecting right now. Please try again in a moment.\n\nIf the problem persists, please contact our support team:\n📧 Email: ${SUPPORT_EMAIL}\n📞 Phone: ${SUPPORT_PHONE}`;
+    } else if (error.message.includes("HTTP error")) {
+      return `I apologize, but I'm unable to process your request at the moment. Please try again later.\n\nFor immediate assistance, please contact our support team:\n📧 Email: ${SUPPORT_EMAIL}\n📞 Phone: ${SUPPORT_PHONE}`;
+    } else {
+      return `I apologize, but I cannot assist with that request. This is beyond my current capabilities.\n\nPlease contact our support team for assistance:\n📧 Email: ${SUPPORT_EMAIL}\n📞 Phone: ${SUPPORT_PHONE}\n\nOur support team will be happy to help you.`;
+    }
   }
 };
 
-/**
- * Enhanced intelligent fallback with natural language responses
- */
-function getIntelligentFallback(userMessage, user) {
-  const msg = userMessage.toLowerCase().trim();
-  const userName = user?.name || user?.email?.split("@")[0] || "";
-
-  // Greeting responses
-  if (msg.match(/^(hi|hello|hey|good morning|good afternoon|good evening)/)) {
-    return userName
-      ? `Hello ${userName}! 👋 I'm here to help you with any questions about your orders, returns, shipping, or anything else related to HyderNexa. What can I assist you with today?`
-      : `Hello! 👋 Welcome to HyderNexa customer support. I'm here to help you with orders, returns, shipping, payments, and more. How can I assist you today?`;
-  }
-
-  // Order tracking
-  if (msg.match(/(where|track|status|location).*(order|package|delivery|shipment)/)) {
-    if (user) {
-      return `I'd be happy to help you track your order${userName ? `, ${userName}` : ""}! 📦 
-
-To view your order status:
-1. Go to "Your Orders" in your account
-2. Find the order you're looking for
-3. Click "Track package" to see real-time updates
-
-Your orders typically arrive within 2-5 business days. If you need more specific information, I can help you find the exact tracking details. Would you like me to guide you through checking a specific order?`;
-    }
-    return `To track your order, please sign in to your account first. Once signed in, you can:
-- Go to "Your Orders" page
-- Click "Track package" on any order
-- See real-time delivery updates
-
-Would you like help signing in, or do you have an order number I can help you with?`;
-  }
-
-  // Returns and refunds
-  if (msg.match(/(return|refund|exchange|replace|send back)/)) {
-    return `I can help you with returns and refunds! 🔄
-
-**Our Return Policy:**
-- Most items can be returned within 30 days of delivery
-- Items must be in original condition with tags
-- Free return shipping for eligible items
-
-**To Start a Return:**
-1. Go to "Your Orders" page
-2. Select the item you want to return
-3. Click "Return or Replace Items"
-4. Follow the prompts to generate a prepaid return label
-
-**Refund Processing:**
-- Refunds are processed within 5-7 business days after we receive the item
-- Original payment method will be credited
-
-Is there a specific item you'd like to return? I can guide you through the process!`;
-  }
-
-  // Shipping information
-  if (msg.match(/(ship|shipping|delivery|deliver|how long|when will|arrive)/)) {
-    return `Here's our shipping information! 🚚
-
-**Shipping Options:**
-- **Standard Shipping:** 3-5 business days (Free on orders over ₹499)
-- **Express Shipping:** 1-2 business days (Additional charges apply)
-- **Same-Day Delivery:** Available in select cities (Check at checkout)
-
-**Delivery Times:**
-- Processing time: 1-2 business days
-- Transit time: Depends on shipping method selected
-- Some oversized or special items may take longer
-
-**Tracking:**
-You'll receive tracking information via email once your order ships. You can also track it in "Your Orders" section.
-
-Would you like to know about shipping to a specific location or have questions about a current order?`;
-  }
-
-  // Payment questions
-  if (msg.match(/(pay|payment|card|debit|credit|upi|phonepe|google pay|paypal|installment|emi)/)) {
-    return `I can help with payment questions! 💳
-
-**Accepted Payment Methods:**
-- Credit/Debit Cards (Visa, Mastercard, RuPay, Amex)
-- UPI (Google Pay, PhonePe, Paytm, etc.)
-- PayPal
-- Net Banking
-- Cash on Delivery (select areas)
-
-**Security:**
-All payments are processed securely with encryption. We never store your full card details.
-
-**EMI Options:**
-Yes! We offer EMI (Easy Monthly Installments) on select items. You'll see EMI options at checkout if available.
-
-**Payment Issues:**
-If you're experiencing payment problems:
-- Check your card/bank account balance
-- Verify card details are correct
-- Try a different payment method
-- Contact your bank if the issue persists
-
-Is there a specific payment issue I can help you resolve?`;
-  }
-
-  // Account help
-  if (msg.match(/(account|profile|settings|password|login|sign in|sign up|register)/)) {
-    return `I can help with account-related questions! 👤
-
-**Account Management:**
-- Update profile information in "Your Account"
-- Change password in Account Settings
-- Manage addresses and payment methods
-- View order history
-
-**Sign In Issues:**
-If you're having trouble signing in:
-- Make sure you're using the correct email
-- Try resetting your password
-- Check if your account is verified
-
-**Need to Create an Account?**
-You can register by clicking "Sign In" and then "Create Account". It only takes a minute!
-
-Would you like help with a specific account issue?`;
-  }
-
-  // Product inquiries
-  if (msg.match(/(product|item|buy|purchase|available|stock|price)/)) {
-    return `I'd be happy to help you find products! 🛍️
-
-**Finding Products:**
-- Use the search bar at the top to find specific items
-- Browse categories in the menu
-- Check product pages for detailed information, reviews, and specifications
-
-**Product Information:**
-- Prices, descriptions, and specifications are on each product page
-- Stock availability is shown in real-time
-- Customer reviews help you make informed decisions
-
-**Need Help Finding Something Specific?**
-Just let me know what you're looking for, and I can guide you to the right category or help you search!
-
-Is there a particular product or category you're interested in?`;
-  }
-
-  // Contact support
-  if (msg.match(/(contact|speak|talk|human|agent|support|help|phone|email|call)/)) {
-    return `I'm here to help, but if you need to speak with a human agent, here are your options: 📞
-
-**Contact Options:**
-- **Email:** support@hydernexa.com (Response within 24 hours)
-- **Phone:** +91-1800-XXX-XXXX (Mon-Sat, 9am-6pm IST)
-- **Live Chat:** Available 24/7 (Click the chat icon)
-
-**What I Can Help With:**
-- Order tracking and status
-- Returns and refunds
-- Shipping information
-- Payment questions
-- Account issues
-- Product inquiries
-
-Is there something specific I can help you with right now, or would you prefer to contact our support team directly?`;
-  }
-
-  // Cancel order
-  if (msg.match(/(cancel|cancellation)/)) {
-    return `I can help you cancel an order! ❌
-
-**Cancellation Policy:**
-- Orders can be cancelled within 30 minutes of placement
-- After 30 minutes, you'll need to wait for delivery and then return the item
-
-**To Cancel:**
-1. Go to "Your Orders"
-2. Find the order you want to cancel
-3. Click "Cancel Order" (if within 30 minutes)
-4. Confirm cancellation
-
-**Refund:**
-- Cancelled orders are refunded within 5-7 business days
-- Refund goes to original payment method
-
-Would you like me to guide you through cancelling a specific order?`;
-  }
-
-  // Default helpful response
-  return `I'm here to help you with HyderNexa! 🤖
-
-I can assist with:
-- 📦 Order tracking and status
-- 🔄 Returns and refunds
-- 🚚 Shipping information
-- 💳 Payment methods and issues
-- 👤 Account management
-- 🛍️ Product inquiries
-- ❌ Order cancellations
-
-Could you tell me more about what you need help with? I'm here to make your shopping experience smooth and enjoyable!`;
-}
 
 /**
  * Clear conversation history

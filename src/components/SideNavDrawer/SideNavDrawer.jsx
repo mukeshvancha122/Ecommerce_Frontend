@@ -294,8 +294,8 @@ export default function SideNavDrawer({
                       <span className="snd-rowLabel" style={{ paddingLeft: '20px' }}>{it.title}</span>
                     </li>
                   ))}
-                  <li className="snd-row snd-row--chev" onClick={() => goto("/amazon-fresh")}>
-                    <span className="snd-rowLabel">Amazon Fresh</span>
+                  <li className="snd-row snd-row--chev" onClick={() => goto("/hydernexa-fresh")}>
+                    <span className="snd-rowLabel">HyderNexa Fresh</span>
                     <span className="snd-chev">›</span>
                   </li>
                   <li className="snd-row snd-row--chev" onClick={() => goto("/whole-foods-market")}>

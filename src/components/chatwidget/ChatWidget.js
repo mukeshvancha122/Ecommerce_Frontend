@@ -1,83 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./ChatWidget.css";
-
-function getBotReply(userText, user) {
-  const msg = userText.toLowerCase().trim();
-
-  // simple intent-ish matching
-  if (
-    msg.includes("where") &&
-    msg.includes("order")
-  ) {
-    // Example: If user is logged in, we can personalize a bit
-    if (user) {
-      return [
-        `I can help with your order, ${user.name || user.email || "there"}!`,
-        "Your recent orders usually arrive within 2-5 business days.",
-        "For detailed tracking, go to Orders > Track Order.",
-      ];
-    }
-    return [
-      "To track an order, please sign in first.",
-      "After signing in, go to Orders > Track Order to see live delivery updates.",
-    ];
-  }
-
-  if (msg.includes("return")) {
-    return [
-      "Our return window is 30 days from delivery for most items.",
-      "To start a return: Go to Orders, select the item, and choose 'Return / Replace'.",
-      "We’ll generate a prepaid label if the item qualifies.",
-    ];
-  }
-
-  if (
-    msg.includes("ship") ||
-    msg.includes("shipping") ||
-    msg.includes("deliver") ||
-    msg.includes("delivery")
-  ) {
-    return [
-      "Standard shipping: 3–5 business days.",
-      "Express shipping: 1–2 business days.",
-      "Some oversized items or hazmat items may need extra time.",
-    ];
-  }
-
-  if (msg.includes("help") || msg.includes("hi") || msg.includes("hello")) {
-    return [
-      "Hi there 👋",
-      "You can ask things like:",
-      "• Where is my order?",
-      "• How do I start a return?",
-      "• What are shipping times?",
-    ];
-  }
-
-  if (msg.includes("contact") || msg.includes("agent") || msg.includes("human")) {
-    return [
-      "You can contact support at support@hydernexa.com.",
-      "Live chat with a human is available 9am–6pm IST.",
-    ];
-  }
-
-  // default fallback
-  return [
-    "I'm here to help with orders, returns, shipping and account questions.",
-    "Try asking something like: 'Where is my order?' or 'How do I return an item?'",
-  ];
-}
+import { getAIResponse } from "../../api/chatbot/ChatbotService";
 
 function ChatWidget({ user }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // conversation
-  const [messages, setMessages] = useState([
-    {
-      from: "bot",
-      text: "Hi! 👋 I'm here to help. Ask about orders, returns, shipping times, etc.",
-    },
-  ]);
+  // conversation - start empty, will get initial message from Rasa if needed
+  const [messages, setMessages] = useState([]);
 
   // user input
   const [draft, setDraft] = useState("");
@@ -107,8 +36,8 @@ function ChatWidget({ user }) {
     return sid;
   }
 
-  // send message (frontend-only)
-  const sendMessage = () => {
+  // send message (using Rasa chatbot service)
+  const sendMessage = async () => {
     const trimmed = draft.trim();
     if (!trimmed || sending) return;
 
@@ -119,17 +48,47 @@ function ChatWidget({ user }) {
     setDraft("");
     setSending(true);
 
-    // generate "bot" reply fully on the client
-    const replies = getBotReply(trimmed, user, getSessionId());
-
-    // fake delay for realism (feel free to remove setTimeout if you want instant)
-    setTimeout(() => {
+    try {
+      // Call Rasa chatbot service
+      const botResponse = await getAIResponse(trimmed, user);
+      
+      // Check if response contains product information (indicated by emojis like 🛍️)
+      const isProductResponse = botResponse.includes('🛍️') || botResponse.includes('I found');
+      
+      if (isProductResponse) {
+        // For product responses, keep as single message for better readability
+        setMessages((prev) => [
+          ...prev,
+          { from: "bot", text: botResponse },
+        ]);
+      } else {
+        // For regular text responses, split by double newlines to create paragraphs
+        const paragraphs = botResponse.split('\n\n').filter(p => p.trim());
+        
+        if (paragraphs.length > 1) {
+          // Multiple paragraphs - display each as separate message
+          setMessages((prev) => [
+            ...prev,
+            ...paragraphs.map((text) => ({ from: "bot", text: text.trim() })),
+          ]);
+        } else {
+          // Single paragraph or short response - display as is
+          setMessages((prev) => [
+            ...prev,
+            { from: "bot", text: botResponse.trim() },
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error("Error getting bot response:", error);
+      // Show error message - user can retry
       setMessages((prev) => [
         ...prev,
-        ...replies.map((text) => ({ from: "bot", text })),
+        { from: "bot", text: error.message || "Unable to connect to chatbot. Please try again." },
       ]);
+    } finally {
       setSending(false);
-    }, 400);
+    }
   };
 
   const handleKeyDown = (e) => {

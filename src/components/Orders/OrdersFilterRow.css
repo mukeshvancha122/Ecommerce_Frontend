@@ -3,8 +3,8 @@
   font-size: 16px;
   line-height: 1.4;
   color: #0f1111;
-  font-family: "Amazon Ember", system-ui, -apple-system, BlinkMacSystemFont,
-    "Inter", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+    Roboto, "Segoe UI", sans-serif;
 }
 
 .ordersFilterRow-left {

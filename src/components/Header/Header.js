@@ -55,8 +55,10 @@ function Header() {
     <>
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="header-logoLink">
-            <div className="header-logo">{t("brand")}</div>
+          <Link to="/" className="header-logoLink" aria-label="HyderNexa Home">
+            <span className="header-logo-brand">
+              <span className="header-logo-brand-highlight">Hy</span>Na
+            </span>
           </Link>
 
           <div className="header-location" onClick={() => setShowLocationModal(true)}>
@@ -137,13 +139,17 @@ function Header() {
             className="header-cart"
             aria-label={`${t("header.cart")}, ${cartCount || 0} items`}
           >
-            <div className="header-cart-icon" role="img" aria-label="cart">
-              🛒
+            <div className="header-cart-icon-wrapper">
+              <div className="header-cart-icon" role="img" aria-label="cart">
+                🛒
+              </div>
+              {cartCount > 0 && (
+                <span className="header-cart-count" aria-live="polite" aria-atomic="true">
+                  {cartCount}
+                </span>
+              )}
             </div>
             <div className="header-cart-info">
-              <span className="header-cart-count" aria-live="polite" aria-atomic="true">
-                {cartCount || 0}
-              </span>
               <span className="header-cart-label">{t("header.cart")}</span>
             </div>
           </Link>

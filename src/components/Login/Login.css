@@ -3,8 +3,8 @@
   min-height: 100vh;
   background-color: #fff;
   color: #0f1111;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Amazon Ember",
-    "Inter", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+    Roboto, "Segoe UI", sans-serif;
 
   display: flex;
   flex-direction: column;
