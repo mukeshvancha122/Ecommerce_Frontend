@@ -1,5 +1,5 @@
 // src/components/LocationModal/LocationModal.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./LocationModal.css";
 import API from "../../../axios";
 
@@ -8,13 +8,25 @@ function LocationModal({
   onClose,
   onLocationSaved,
   defaultAddressLabel,
+  defaultAddress,
 }) {
-  const [postalCode, setPostalCode] = useState("");
-  const [city, setCity] = useState("");
-  const [stateRegion, setStateRegion] = useState("");
-  const [countryCode, setCountryCode] = useState("US");
+  // Initialize from defaultAddress if provided (from checkout)
+  const [postalCode, setPostalCode] = useState(defaultAddress?.zip || defaultAddress?.postalCode || "");
+  const [city, setCity] = useState(defaultAddress?.city || "");
+  const [stateRegion, setStateRegion] = useState(defaultAddress?.state || "");
+  const [countryCode, setCountryCode] = useState(defaultAddress?.countryCode || defaultAddress?.country || "US");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+
+  // Update form when defaultAddress changes
+  useEffect(() => {
+    if (defaultAddress) {
+      setPostalCode(defaultAddress.zip || defaultAddress.postalCode || "");
+      setCity(defaultAddress.city || "");
+      setStateRegion(defaultAddress.state || "");
+      setCountryCode(defaultAddress.countryCode || defaultAddress.country || "US");
+    }
+  }, [defaultAddress]);
 
   // Turn browser geolocation error codes into readable text
   const mapGeoError = (err) => {
@@ -196,7 +208,13 @@ function LocationModal({
       setErrMsg("");
 
       // Build display label that will show in the header pill
-      const label = buildLocationLabel({
+      // Format: city, state, zipcode, country (matching checkout address format)
+      const parts = [];
+      if (city) parts.push(city);
+      if (stateRegion) parts.push(stateRegion);
+      if (postalCode) parts.push(postalCode);
+      if (countryCode) parts.push(countryCode);
+      const label = parts.length > 0 ? parts.join(", ") : buildLocationLabel({
         cityLike: city,
         stateLike: stateRegion,
         zipLike: postalCode,
@@ -209,6 +227,8 @@ function LocationModal({
         city,
         state: stateRegion,
         countryCode,
+        zipcode: postalCode,
+        country: countryCode,
       };
 
       // OPTIONAL: Persist on backend.

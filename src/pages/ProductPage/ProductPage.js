@@ -14,7 +14,26 @@ import ProductInfo from "../../components/Product/ProductInfo/ProductInfo";
 import BuyBox from "../../components/Product/BuyBox/BuyBox";
 import FeatureList from "../../components/Product/FeatureList/FeatureList";
 import RatingStars from "../../components/Product/RatingStars";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency } from "../../utils/currency";
+import { getImageUrl } from "../../utils/imageUtils";
+import { Link } from "react-router-dom";
+
+// Helper to parse price values from various formats
+const parsePrice = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isNaN(value) ? null : value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === "object") {
+    if ("final_price" in value) return parsePrice(value.final_price);
+    if ("amount" in value) return parsePrice(value.amount);
+    if ("price" in value) return parsePrice(value.price);
+    if ("discounted_price" in value) return parsePrice(value.discounted_price);
+  }
+  return null;
+};
 
 const SpecsTable = ({ title, rows }) => {
   if (!rows.length) return null;
@@ -57,7 +76,12 @@ const ProductCarousel = ({ title, products }) => {
     el.scrollBy({ left: direction * 240, behavior: "smooth" });
   };
 
-  if (!products.length) return null;
+  // Filter out invalid products
+  const validProducts = products.filter(item => 
+    item && (item.slug || item.id) && item.product_name
+  );
+
+  if (!validProducts || validProducts.length === 0) return null;
 
   return (
     <section className="pdp-carousel card">
@@ -87,27 +111,54 @@ const ProductCarousel = ({ title, products }) => {
         ref={trackRef}
         onScroll={syncButtons}
       >
-        {products.map((item) => {
+        {validProducts.map((item) => {
           const variation = item?.product_variations?.[0] || {};
-          const priceValue = Number(
-            variation?.get_discounted_price || variation?.product_price || 0
-          );
-          const image = variation?.product_images?.[0]?.product_image;
+          
+          // Parse price properly - handle object structure
+          const discountedPrice = parsePrice(variation?.get_discounted_price);
+          const originalPrice = parsePrice(variation?.product_price);
+          const minPrice = parsePrice(item?.min_price);
+          
+          // Use discounted price if available, otherwise original price, otherwise min price
+          const priceValue = discountedPrice ?? originalPrice ?? minPrice ?? 0;
+          
+          // Get image from variation or product
+          const rawImage = variation?.product_images?.[0]?.product_image || 
+                          item?.product_category?.category_image || 
+                          null;
+          const image = rawImage ? getImageUrl(rawImage) : "/images/NO_IMG.png";
+          
           const rating = parseFloat(item?.get_rating_info || "0");
+          const reviewsCount = item?.reviews_count || item?.get_rating_info_count || "100+";
+          
+          // Use slug if available, otherwise use ID
+          const productSlug = item.slug || item.id;
+          
           return (
-            <a key={item.slug} className="pdp-carousel__card" href={`/product/${item.slug}`}>
+            <Link 
+              key={item.slug || item.id} 
+              to={`/product/${productSlug}`}
+              className="pdp-carousel__card"
+            >
               <div className="pdp-carousel__image">
-                <img src={image} alt={item.product_name} loading="lazy" />
+                <img 
+                  src={image} 
+                  alt={item.product_name || "Product"} 
+                  loading="lazy" 
+                  onError={(e) => { 
+                    e.target.src = "/images/NO_IMG.png"; 
+                  }} 
+                />
               </div>
-              <div className="pdp-carousel__name">{item.product_name}</div>
+              <div className="pdp-carousel__name">{item.product_name || "Unnamed Product"}</div>
               <div className="pdp-carousel__rating">
                 <RatingStars value={rating} />
-                <span>{item?.reviews_count || "100+"}</span>
+                <span>{reviewsCount}</span>
               </div>
               <div className="pdp-carousel__price">
-                {priceValue ? formatCurrency(priceValue, "INR", "en-IN") : "—"}
+                {priceValue > 0 ? formatCurrency(priceValue) : "—"}
               </div>
-            </a>
+            </Link>
           );
         })}
       </div>
@@ -164,10 +215,10 @@ export default function ProductPage() {
     })();
   }, [product]);
 
-  const variation = product?.product_variations?.[0] || {};
+  const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
 
   const galleryImages = useMemo(() => {
-    const imgs = variation?.product_images?.map((img) => img.product_image) || [];
+    const imgs = variation?.product_images?.map((img) => getImageUrl(img.product_image)) || [];
     return imgs.length ? imgs : ["/images/NO_IMG.png"];
   }, [variation]);
 

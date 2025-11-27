@@ -23,23 +23,34 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState("orders");
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
   const [summary, setSummary] = useState({ totalOrders: 0, delivered: 0, processing: 0 });
   const { t } = useTranslation();
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchOrders({ timeRange, query: searchQuery, tab })
+    fetchOrders({ timeRange, query: searchQuery, tab, page })
       .then(({ data }) => {
         if (!mounted) return;
         setOrders(data.orders || []);
-        setSummary(data.summary || summary);
+        setSummary({
+          ...(data.summary || summary),
+          pagination: data.pagination,
+        });
+      })
+      .catch((err) => {
+        console.error("Error loading orders:", err);
+        if (mounted) {
+          setOrders([]);
+          setSummary({ totalOrders: 0, delivered: 0, processing: 0 });
+        }
       })
       .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
-  }, [timeRange, searchQuery, tab]);
+  }, [timeRange, searchQuery, tab, page]);
 
   const metrics = useMemo(
     () => [
@@ -80,6 +91,8 @@ export default function OrdersPage() {
           emptyMessage={t("orders.empty")}
           emptyLinkText={t("orders.viewYear")}
           emptyLinkHref="#"
+          pagination={summary.pagination}
+          onPageChange={setPage}
         />
 
         <OrdersBottomHistoryBar />

@@ -1,6 +1,23 @@
 import React from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import "./SearchResultPage.css";
+import { formatCurrency } from "../../utils/currency";
+
+// Parse price value (handles objects with final_price, numbers, strings)
+const parsePrice = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isNaN(value) ? null : value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === "object") {
+    if ("final_price" in value) return parsePrice(value.final_price);
+    if ("amount" in value) return parsePrice(value.amount);
+    if ("price" in value) return parsePrice(value.price);
+  }
+  return null;
+};
 
 const SearchResultsPage = () => {
   const location = useLocation();
@@ -9,8 +26,6 @@ const SearchResultsPage = () => {
   const {
     mode = "text",
     query = "",
-    category = "all",
-    subCategory = "all",
     results = [],
     total = 0,
     previewImageUrl,
@@ -57,8 +72,8 @@ const SearchResultsPage = () => {
           const mainVariation = p.product_variations?.[0];
           const mainImage =
             mainVariation?.product_images?.[0]?.product_image || "";
-          const price = mainVariation?.product_price;
-          const discounted = mainVariation?.get_discounted_price;
+          const price = parsePrice(mainVariation?.product_price);
+          const discounted = parsePrice(mainVariation?.get_discounted_price);
           const rating = p.get_rating_info;
 
           return (
@@ -98,13 +113,13 @@ const SearchResultsPage = () => {
                 <div className="srpPriceRow">
                   {discounted ? (
                     <>
-                      <span className="srpPrice">₹{discounted}</span>
+                      <span className="srpPrice">{formatCurrency(discounted)}</span>
                       {price && (
-                        <span className="srpMRP">₹{price}</span>
+                        <span className="srpMRP">{formatCurrency(price)}</span>
                       )}
                     </>
                   ) : (
-                    price && <span className="srpPrice">₹{price}</span>
+                    price && <span className="srpPrice">{formatCurrency(price)}</span>
                   )}
                 </div>
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useHistory } from "react-router-dom";
 import "./PaymentSection.css";
 import {
   CardElement,
@@ -15,6 +16,11 @@ import {
   simulatePhonePeCharge,
 } from "../../api/payment/PaymentMethodsService";
 import { useTranslation } from "../../i18n/TranslationProvider";
+import { useSelector } from "react-redux";
+import { selectCountry } from "../../features/country/countrySlice";
+import { selectShipping } from "../../features/checkout/CheckoutSlice";
+import { formatCurrency } from "../../utils/currency";
+import { processStripePayment, processOrderPayment } from "../../api/payment/PaymentService";
 
 const paymentOptionsConfig = (t) => [
   {
@@ -49,7 +55,9 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   const stripe = useStripe();
   const elements = useElements();
   const dispatch = useDispatch();
+  const history = useHistory();
   const { t } = useTranslation();
+  const selectedCountry = useSelector(selectCountry);
 
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [cards, setCards] = useState([]);
@@ -73,8 +81,13 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   useEffect(() => {
     async function loadCards() {
       try {
-        const { data } = await fetchSavedCards();
-        setCards(data.cards);
+        // Don't auto-fetch saved cards - user must add manually
+        // const { data } = await fetchSavedCards();
+        const data = { cards: [] }; // Empty array - no pre-filled cards
+        setCards(data.cards || []);
+      } catch (err) {
+        console.error("Error loading cards:", err);
+        setCards([]);
       } finally {
         setCardsLoading(false);
       }
@@ -84,9 +97,10 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
 
   useEffect(() => {
     if (!stripe || !clientSecret) return;
+    const currency = selectedCountry?.currency?.toLowerCase() || "usd";
     const pr = stripe.paymentRequest({
-      country: "IN",
-      currency: "usd",
+      country: selectedCountry?.code || "IN",
+      currency: currency,
       total: { label: "HyderNexa", amount: Math.round(orderTotal * 100) },
       requestPayerName: true,
       requestPayerEmail: true,
@@ -96,7 +110,9 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         setPaymentRequest(pr);
       }
     });
-  }, [stripe, clientSecret, orderTotal]);
+  }, [stripe, clientSecret, orderTotal, selectedCountry]);
+
+  const shipping = useSelector(selectShipping);
 
   const finalizeOrder = useCallback(
     async (paymentIntentId, method) => {
@@ -107,6 +123,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           paymentIntentId,
           paymentMethod: method,
           total: orderTotal,
+          shipping,
         })
       );
       if (confirmOrderThunk.rejected.match(action)) {
@@ -114,7 +131,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
       }
       return action.payload?.orderId;
     },
-    [dispatch, addressId, items, orderTotal]
+    [dispatch, addressId, items, orderTotal, shipping]
   );
 
   useEffect(() => {
@@ -145,28 +162,9 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   }, [paymentRequest, stripe, clientSecret, finalizeOrder]);
 
   const handleConfirmCard = useCallback(async () => {
-    if (!stripe || !elements || !clientSecret) return;
-    setProcessing(true);
-    setError("");
-
-    const cardElement = elements.getElement(CardElement);
-    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement },
-    });
-    if (stripeError) {
-      setError(stripeError.message || "Payment failed");
-      setProcessing(false);
-      return;
-    }
-
-    try {
-      await finalizeOrder(paymentIntent.id, "card");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setProcessing(false);
-    }
-  }, [stripe, elements, clientSecret, finalizeOrder]);
+    // Redirect to order confirmation page instead of processing payment directly
+    history.push("/order-confirmation");
+  }, [history]);
 
   const handlePhonePe = async (e) => {
     e.preventDefault();
@@ -217,7 +215,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
       </div>
       {cardsLoading ? (
         <div className="ps-muted">Loading cards…</div>
-      ) : cards.length === 0 ? (
+      ) : !cards || cards.length === 0 ? (
         <div className="ps-muted">{t("payment.noSavedCards")}</div>
       ) : (
         cards.map((card) => (
@@ -246,8 +244,8 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           }}
         />
       </div>
-      <button className="ps-pay" onClick={handleConfirmCard} disabled={processing || !stripe}>
-        {processing ? "Processing…" : `${t("checkout.usePaymentMethod")} ($${orderTotal.toFixed(2)})`}
+      <button className="ps-pay" onClick={handleConfirmCard} disabled={processing}>
+        {processing ? "Processing…" : `${t("checkout.usePaymentMethod")} (${formatCurrency(orderTotal)})`}
       </button>
     </div>
   );
@@ -266,7 +264,10 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   );
 
   const renderPhonePe = () => (
-    <form className="ps-phonepe" onSubmit={handlePhonePe}>
+    <form className="ps-phonepe" onSubmit={(e) => {
+      e.preventDefault();
+      history.push("/order-confirmation");
+    }}>
       <label>
         UPI ID
         <input
@@ -285,7 +286,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
 
   const renderPayPal = () => (
     <div className="ps-paypal">
-      <PayPalScriptProvider options={{ "client-id": defaultPayPalClientId, currency: "USD" }}>
+      <PayPalScriptProvider options={{ "client-id": defaultPayPalClientId, currency: selectedCountry?.currency || "USD" }}>
         <PayPalButtons
           disabled={processing}
           style={{ layout: "horizontal" }}
@@ -299,16 +300,8 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             })
           }
           onApprove={async (data, actions) => {
-            setProcessing(true);
-            setError("");
-            const details = await actions.order.capture();
-            try {
-              await finalizeOrder(details.id, "paypal");
-            } catch (err) {
-              setError(err.message);
-            } finally {
-              setProcessing(false);
-            }
+            // Redirect to order confirmation page instead of processing directly
+            history.push("/order-confirmation");
           }}
           onError={(err) => {
             setError(err.message || "PayPal payment failed");

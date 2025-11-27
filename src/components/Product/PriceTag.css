@@ -8,11 +8,11 @@
 .priceTag__sale {
   font-size: 2rem;
   font-weight: 700;
-  color: #b12704;
+  color: #0C4A3A; /* Dark green for current price */
 }
 
 .priceTag__list {
-  color: #565959;
+  color: #B12704; /* Dark red for original price (before discount) */
   text-decoration: line-through;
   font-size: 0.95rem;
 }

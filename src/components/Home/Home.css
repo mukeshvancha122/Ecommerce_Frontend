@@ -189,6 +189,15 @@
   gap: 16px;
 }
 
+.holidayCategorySection{
+  max-width:1500px;
+  margin:24px auto;
+  padding:0 12px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
 .signInSummaryCard {
   background: #fff;
   border-radius: 12px;
@@ -403,29 +412,89 @@
   cursor: pointer;
 }
 
+/* Carousel Container */
+.saleCategoriesCarousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Carousel Arrows */
+.saleCategoriesArrow {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d5d9d9;
+  border-radius: 50%;
+  background: #fff;
+  color: #0f1111;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.saleCategoriesArrow:hover:not(:disabled) {
+  background: #f7f7f7;
+  border-color: #007185;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.saleCategoriesArrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f7f7f7;
+}
+
+.saleCategoriesArrow--prev {
+  left: 0;
+}
+
+.saleCategoriesArrow--next {
+  right: 0;
+}
+
+/* Grid - Fixed 3 columns */
 .saleCategoriesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .saleCategoryCard {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid #d5d9d9;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(15, 17, 17, 0.1);
+  box-shadow: 0 2px 6px rgba(15, 17, 17, 0.08);
   cursor: pointer;
   text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.saleCategoryCard:hover {
+  border-color: #007185;
+  box-shadow: 0 4px 12px rgba(15, 17, 17, 0.12);
+  transform: translateY(-2px);
 }
 
 .saleCategoryThumb {
-  width: 90px;
-  height: 90px;
-  border-radius: 8px;
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
   background: #f8f8f8;
@@ -438,6 +507,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.saleCategoryCard:hover .saleCategoryThumb img {
+  transform: scale(1.05);
 }
 
 .saleCategoryThumb.placeholder {
@@ -450,15 +524,59 @@
   );
 }
 
+.saleCategoryBody {
+  flex: 1;
+  min-width: 0;
+}
+
 .saleCategoryBody h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #0f1111;
+  line-height: 1.3;
 }
 
 .saleCategoryBody p {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 13px;
   color: #565959;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pagination Dots */
+.saleCategoriesPagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.saleCategoriesDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: #d5d9d9;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.saleCategoriesDot:hover {
+  background: #007185;
+  transform: scale(1.2);
+}
+
+.saleCategoriesDot.active {
+  background: #007185;
+  width: 24px;
+  border-radius: 4px;
 }
 
 .historySection {
@@ -544,5 +662,116 @@
 
   .homeGiftGrid {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  /* Carousel responsive */
+  .saleCategoriesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .saleCategoriesArrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .saleCategoriesGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .saleCategoryCard {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .saleCategoryThumb {
+    width: 80px;
+    height: 80px;
+  }
+
+  .saleCategoryBody h3 {
+    font-size: 16px;
+  }
+
+  .saleCategoryBody p {
+    font-size: 12px;
+  }
+
+  .saleCategoriesArrow {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+}
+
+/* Promotional Video Advertisement Section */
+.promoVideoSection {
+  width: 100%;
+  max-width: 1500px;
+  margin: 32px auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.promoVideoContainer {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.promoVideo {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+@media (max-width: 1024px) {
+  .promoVideoSection {
+    padding: 20px;
+    margin: 24px auto;
+  }
+  
+  .promoVideo {
+    max-height: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .promoVideoSection {
+    padding: 16px;
+    margin: 20px auto;
+    border-radius: 12px;
+  }
+  
+  .promoVideoContainer {
+    border-radius: 8px;
+  }
+  
+  .promoVideo {
+    max-height: 280px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .promoVideoSection {
+    padding: 12px;
+    margin: 16px auto;
+  }
+  
+  .promoVideo {
+    max-height: 220px;
   }
 }

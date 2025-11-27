@@ -1,4 +1,17 @@
-.am-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:flex-start; justify-content:center; padding-top:40px; z-index:50; }
+.am-backdrop{ 
+  position:fixed; 
+  inset:0; 
+  background:rgba(0,0,0,.5); 
+  display:flex; 
+  align-items:flex-start; 
+  justify-content:center; 
+  padding-top:40px; 
+  z-index:9999; 
+  pointer-events:auto;
+}
+.am-backdrop:not([style*="pointer-events: none"]) {
+  pointer-events: auto;
+}
 .am{ width:720px; background:#fff; border-radius:8px; border:1px solid #e5e7eb; }
 .am-title{ font-weight:800; font-size:18px; padding:16px 20px; border-bottom:1px solid #eee; }
 .am-form{ padding:16px 20px; display:grid; gap:12px; }

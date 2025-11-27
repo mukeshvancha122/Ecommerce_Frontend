@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Login.css";
 import { useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
+import { store } from "../../store";
 
 import { setCredentials } from "../../features/auth/AuthSlice";
 import { useTranslation } from "../../i18n/TranslationProvider";
@@ -49,20 +50,41 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 
-  // ----------------------------------------------------
-  // Helper: after successful login (from sign-in or auto-login after register)
-  // ----------------------------------------------------
   const handleAuthSuccess = (data) => {
     // Flexible: works with dummy + real API
     const accessToken = data.access || data.token;
     const refreshToken = data.refresh || null;
 
-    const user =
-      data.user ||
-      {
-        email: data.email || email,
-        name: fullName || undefined,
-      };
+    if (!accessToken) {
+      console.error("No access token received:", data);
+      setErrorMsg("Authentication failed: No token received.");
+      return;
+    }
+
+    // Ensure we have a valid user object with at least an email
+    const userEmail = data.email || data.user?.email || email;
+    if (!userEmail) {
+      console.error("No email found in login response:", data);
+      setErrorMsg("Authentication failed: No user email received.");
+      return;
+    }
+
+    const user = data.user || {
+      email: userEmail,
+      name: data.user?.name || data.name || fullName || undefined,
+      id: data.user?.id || data.id || null,
+    };
+
+    // Ensure user object has email (required for recognition)
+    if (!user.email) {
+      user.email = userEmail;
+    }
+
+    console.log("Storing auth data:", { 
+      token: accessToken ? "present" : "missing", 
+      user: { email: user.email, name: user.name, id: user.id },
+      hasUser: !!user 
+    });
 
     // This matches your axios interceptor (auth_v1.token / auth_v1.refresh)
     localStorage.setItem(
@@ -74,6 +96,14 @@ export default function Login() {
       })
     );
 
+    // Verify what was stored
+    const stored = JSON.parse(localStorage.getItem("auth_v1"));
+    console.log("Verified stored auth:", { 
+      hasToken: !!stored?.token, 
+      hasUser: !!stored?.user,
+      userEmail: stored?.user?.email 
+    });
+
     dispatch(
       setCredentials({
         token: accessToken,
@@ -81,6 +111,16 @@ export default function Login() {
         user,
       })
     );
+
+    // Verify Redux state after dispatch
+    setTimeout(() => {
+      const state = store.getState();
+      console.log("Redux auth state after login:", {
+        hasUser: !!state.auth.user,
+        userEmail: state.auth.user?.email,
+        hasToken: !!state.auth.token
+      });
+    }, 100);
 
     history.push("/"); // send to home / dashboard
   };
@@ -90,35 +130,71 @@ export default function Login() {
     setInfoMsg("");
   };
 
-  // ----------------------------------------------------
-  // SIGN IN
-  // ----------------------------------------------------
   const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
     resetMessages();
 
+    // Validation
+    if (!email || !password) {
+      setErrorMsg("Please enter both email and password.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await getUserToken(email, password);
+      
+      console.log("Login response from getUserToken:", data);
+      console.log("Token check:", {
+        hasAccess: !!data.access,
+        hasToken: !!data.token,
+        accessValue: data.access ? data.access.substring(0, 20) + "..." : "MISSING"
+      });
+      
+      // Ensure we have a valid token
+      if (!data.access && !data.token) {
+        console.error("Token validation failed:", data);
+        throw new Error("No authentication token received. Please try again.");
+      }
+      
       handleAuthSuccess(data);
     } catch (err) {
-      setErrorMsg(
-        err?.response?.data?.detail ||
-          err?.response?.data?.message ||
-          "Incorrect email or password."
-      );
+      console.error("Login error:", err);
+      
+      // Handle different error response formats
+      const errorData = err?.response?.data;
+      let errorMessage = "";
+      
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData?.detail) {
+        errorMessage = errorData.detail;
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (Array.isArray(errorData) && errorData.length > 0) {
+        errorMessage = errorData[0];
+      } else {
+        errorMessage = err?.message || "Incorrect email or password. Please try again.";
+      }
+      
+      setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // ----------------------------------------------------
-  // REGISTER
-  // ----------------------------------------------------
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     resetMessages();
+
+    // Validation
+    if (!email || !password || !confirmPassword) {
+      setErrorMsg("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match.");
@@ -126,26 +202,84 @@ export default function Login() {
       return;
     }
 
+    if (password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters long.");
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1) create account
-      await registerUser({
+      const response = await registerUser({
         email,
         password,
         re_password: confirmPassword,
-        dob,
+        dob: dob || null, // Make dob optional
       });
 
-      setInfoMsg("Account created. Logging you in…");
+      console.log("Registration successful:", response);
 
-      // 2) auto-login to get tokens
-      const tokenData = await getUserToken(email, password);
-      handleAuthSuccess(tokenData);
+      // 2) Show success message and redirect to login
+      setInfoMsg("Account created successfully! Redirecting to login...");
+      
+      // Clear all form fields for security
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setFullName("");
+      setDob("");
+      
+      // Switch to sign-in mode after a short delay
+      setTimeout(() => {
+        setMode("signin");
+        setInfoMsg("Please log in with your email and password.");
+      }, 2000);
     } catch (err) {
-      setErrorMsg(
-        err?.response?.data?.detail ||
-          err?.response?.data?.message ||
-          "Could not create account. Please try again."
-      );
+      console.error("Registration error:", err);
+      
+      // Check if email is already registered
+      const errorData = err?.response?.data;
+      let errorMessage = "";
+      
+      // Handle different error response formats
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData?.detail) {
+        errorMessage = errorData.detail;
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.email && Array.isArray(errorData.email)) {
+        errorMessage = errorData.email[0];
+      } else if (errorData?.non_field_errors && Array.isArray(errorData.non_field_errors)) {
+        errorMessage = errorData.non_field_errors[0];
+      } else {
+        errorMessage = err?.message || "Could not create account. Please try again.";
+      }
+      
+      const isEmailExists = 
+        errorMessage.toLowerCase().includes("already") ||
+        errorMessage.toLowerCase().includes("exists") ||
+        errorMessage.toLowerCase().includes("registered") ||
+        errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("taken") ||
+        err?.response?.status === 400 && (
+          errorMessage.toLowerCase().includes("email") || 
+          errorData?.email
+        );
+
+      if (isEmailExists) {
+        setErrorMsg("This email is already registered. Please log in instead.");
+        // Clear password fields
+        setPassword("");
+        setConfirmPassword("");
+        // Switch to login mode after a short delay
+        setTimeout(() => {
+          setMode("signin");
+          setErrorMsg("");
+          setInfoMsg("Please log in with your email and password.");
+        }, 2000);
+      } else {
+        setErrorMsg(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -235,9 +369,7 @@ export default function Login() {
     }
   };
 
-  // ----------------------------------------------------
-  // Mode switch helpers
-  // ----------------------------------------------------
+
   const switchToSignIn = () => {
     resetMessages();
     setMode("signin");
@@ -256,10 +388,7 @@ export default function Login() {
     setNewPassword("");
     setNewPasswordAgain("");
   };
-
-  // ----------------------------------------------------
-  // UI
-  // ----------------------------------------------------
+  
   return (
     <main className="authPage">
       <section className="authCardWrapper">
@@ -362,7 +491,7 @@ export default function Login() {
             </div>
 
             <label className="authLabel" htmlFor="reg_dob">
-              {t("auth.dob")}
+              {t("auth.dob")} <span style={{ color: "#666", fontSize: "0.9em" }}>(Optional)</span>
             </label>
             <div className="authInputWrapper">
               <input
@@ -371,7 +500,6 @@ export default function Login() {
                 type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
-                required
               />
             </div>
 

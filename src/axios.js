@@ -3,24 +3,33 @@ import { store } from "./store";
 import { logout } from "./features/auth/AuthSlice";
 import { getSupportedLanguage } from "./i18n/translations";
 
-// In development, use relative URL so proxy can intercept
-// In production, use the full API URL
+// Use proxy in development to avoid CORS issues, direct URL in production
 const getBaseURL = () => {
-  if (process.env.REACT_APP_API_BASE_URL) {
-    return process.env.REACT_APP_API_BASE_URL;
+  // Check for environment variable first
+  if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) {
+    const envUrl = process.env.REACT_APP_API_BASE_URL;
+    // Ensure it includes /api if not already present
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
   }
-  // In development, use relative path (proxy will handle it)
-  // In production, use full URL
-  if (process.env.NODE_ENV === 'development') {
+  
+  // In development, use relative path so proxy can intercept and handle CORS
+  // The proxy forwards /api/* to http://54.145.239.205:8000/api/*
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
     return '/api';
   }
+  
+  // In production, use the backend server URL directly
   return "http://54.145.239.205:8000/api";
 };
 
 const API = axios.create({
   baseURL: getBaseURL(),
   withCredentials: true,
-  timeout: 15000,
+  timeout: 30000, // Increased to 30 seconds
+  // Performance optimizations for high traffic
+  maxRedirects: 3,
+  maxContentLength: 50 * 1024 * 1024, // 50MB
+  validateStatus: (status) => status < 500, // Don't throw on 4xx errors
 });
 
 // attach token

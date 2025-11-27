@@ -15,7 +15,8 @@ import {
   selectPaymentState,
   resetCheckout,
 } from "../../features/checkout/CheckoutSlice";
-import { selectCartItems, selectCartTotal, clearCart } from "../../features/cart/CartSlice";
+import { selectCartItems, selectCartTotal, clearCart, removeItem, setQty } from "../../features/cart/CartSlice";
+import { selectUser } from "../../features/auth/AuthSlice";
 import AddressBook from "../../components/Checkout/AddressBook";
 import AddressModal from "../../components/Checkout/AddressModal";
 import PaymentSection from "../../components/Checkout/PaymentSection";
@@ -24,12 +25,14 @@ import CountryErrorModal from "../../components/Checkout/CountryErrorModal";
 import { useTranslation } from "../../i18n/TranslationProvider";
 import { selectCountry } from "../../features/country/countrySlice";
 import { formatCurrency } from "../../utils/currency";
+import { getImageUrl } from "../../utils/imageUtils";
 
 export default function CheckoutPage() {
   const dispatch = useDispatch();
   const history = useHistory();
   const { t } = useTranslation();
 
+  const user = useSelector(selectUser);
   const addresses = useSelector(selectAddresses);
   const selectedAddressId = useSelector(selectSelectedAddressId);
   const shipping = useSelector(selectShipping);
@@ -44,10 +47,22 @@ export default function CheckoutPage() {
   const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
   const selectedCountry = useSelector(selectCountry);
 
+  // Load addresses when user is logged in and component mounts
   useEffect(() => {
-    dispatch(fetchAddresses());
-    dispatch(fetchShippingQuote());
-  }, [dispatch]);
+    if (user?.email) {
+      dispatch(fetchAddresses());
+    }
+  }, [dispatch, user?.email]);
+
+  useEffect(() => {
+    // Recalculate shipping when items or address change
+    if (items.length > 0 && selectedAddressId) {
+      // Get address data to pass to shipping quote
+      const address = addresses.find(addr => addr.id === selectedAddressId);
+      const addressData = address?.backendFormat || null;
+      dispatch(fetchShippingQuote(addressData));
+    }
+  }, [dispatch, items, selectedAddressId, addresses]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -55,11 +70,11 @@ export default function CheckoutPage() {
     }
   }, [items.length, history]);
 
+  // Only show success overlay if payment succeeded AND order was confirmed
+  // Don't clear cart here - let OrderConfirmationPage handle it after order is confirmed
   useEffect(() => {
-    if (payment.status === "succeeded" && payment.orderId) {
-      setShowSuccessOverlay(true);
-      dispatch(clearCart());
-    }
+    // This effect is kept for backward compatibility but cart clearing is handled in OrderConfirmationPage
+    // Only redirect happens here if needed
   }, [payment.status, payment.orderId, dispatch]);
 
   const orderTotal = useMemo(
@@ -138,15 +153,50 @@ export default function CheckoutPage() {
               <div className="co-review-list">
                 {items.map((item) => (
                   <div className="co-review-row" key={item.sku}>
-                    <img src={item.image} alt={item.title} loading="lazy" />
-                    <div>
+                    <img 
+                      src={getImageUrl(item.image)} 
+                      alt={item.title} 
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = "/images/NO_IMG.png";
+                      }}
+                    />
+                    <div className="co-review-content">
                       <div className="co-review-title">{item.title}</div>
                       <div className="co-review-meta">
-                        Qty: {item.qty} · ${(item.price * item.qty).toFixed(2)}
+                        <label className="co-review-qty">
+                          Qty:{" "}
+                          <select 
+                            value={item.qty} 
+                            onChange={(e) => dispatch(setQty({ sku: item.sku, qty: Number(e.target.value) }))}
+                            aria-label="Quantity"
+                          >
+                            {Array.from({ length: 99 }, (_, i) => i + 1).map((n) => (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <span className="co-review-price">
+                          {formatCurrency(item.price * item.qty)}
+                        </span>
                       </div>
+                      <button 
+                        className="co-review-remove"
+                        onClick={() => dispatch(removeItem({ sku: item.sku }))}
+                        aria-label="Remove item"
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
                 ))}
+                {items.length === 0 && (
+                  <div className="co-review-empty">
+                    No items in cart. <a href="/">Continue shopping</a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

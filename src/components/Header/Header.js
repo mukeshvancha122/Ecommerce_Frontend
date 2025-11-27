@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectCartCount } from "../../features/cart/CartSlice";
 import { selectUser } from "../../features/auth/AuthSlice";
 import { selectLanguage, setLanguage } from "../../features/locale/localeSlice";
+import { selectAddresses, selectSelectedAddressId } from "../../features/checkout/CheckoutSlice";
 import { supportedLanguages } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
@@ -30,13 +31,81 @@ function Header() {
   const cartCount = useSelector(selectCartCount);
   const user = useSelector(selectUser);
   const language = useSelector(selectLanguage);
+  const addresses = useSelector(selectAddresses);
+  const selectedAddressId = useSelector(selectSelectedAddressId);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const langButtonRef = useRef(null);
   const { t } = useTranslation();
 
-  const handleLocationSaved = (locObj) => setUserLocation(locObj);
+  // Format address to show only: city, state, zipcode, country
+  const formatAddressDisplay = (address) => {
+    if (!address) return null;
+    const parts = [];
+    if (address.city) parts.push(address.city);
+    if (address.state) parts.push(address.state);
+    if (address.zip || address.postalCode) parts.push(address.zip || address.postalCode);
+    if (address.country) parts.push(address.country);
+    return parts.length > 0 ? parts.join(", ") : null;
+  };
+
+  // Get selected address from checkout or saved location
+  const selectedAddress = selectedAddressId 
+    ? addresses.find(addr => addr.id === selectedAddressId)
+    : null;
+
+  // Load saved location from localStorage on mount
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("userLocation_v1");
+    if (savedLocation) {
+      try {
+        const parsed = JSON.parse(savedLocation);
+        setUserLocation(parsed);
+      } catch (err) {
+        console.error("Error loading saved location:", err);
+      }
+    }
+  }, []);
+
+  // Update location display when checkout address changes (priority: selectedAddress > saved location)
+  useEffect(() => {
+    if (selectedAddress) {
+      const formatted = formatAddressDisplay(selectedAddress);
+      if (formatted) {
+        const locationObj = {
+          label: formatted,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          zipcode: selectedAddress.zip || selectedAddress.postalCode,
+          country: selectedAddress.country,
+          postalCode: selectedAddress.zip || selectedAddress.postalCode,
+          countryCode: selectedAddress.countryCode || selectedAddress.country,
+        };
+        setUserLocation(locationObj);
+        // Save to localStorage
+        localStorage.setItem("userLocation_v1", JSON.stringify(locationObj));
+      }
+    } else {
+      // If no selected address, try to load from localStorage
+      const savedLocation = localStorage.getItem("userLocation_v1");
+      if (savedLocation && !userLocation) {
+        try {
+          const parsed = JSON.parse(savedLocation);
+          setUserLocation(parsed);
+        } catch (err) {
+          console.error("Error loading saved location:", err);
+        }
+      }
+    }
+  }, [selectedAddress, selectedAddressId]);
+
+  const handleLocationSaved = (locObj) => {
+    setUserLocation(locObj);
+    // Save to localStorage
+    localStorage.setItem("userLocation_v1", JSON.stringify(locObj));
+  };
+
   const rawName = (user?.name && user.name.trim()) || deriveNameFromEmail(user?.email);
   const shortName = rawName ? truncate(rawName) : null;
   const currentLanguage = supportedLanguages.find((l) => l.code === language) || supportedLanguages[0];
@@ -68,7 +137,7 @@ function Header() {
                 📍
               </span>
               <span className="header-location-text">
-                {userLocation?.label || t("header.updateLocation")}
+                {userLocation?.label || formatAddressDisplay(selectedAddress) || t("header.updateLocation")}
               </span>
             </div>
           </div>
@@ -161,6 +230,7 @@ function Header() {
         onClose={() => setShowLocationModal(false)}
         onLocationSaved={handleLocationSaved}
         defaultAddressLabel={userLocation?.label}
+        defaultAddress={selectedAddress}
       />
     </>
   );

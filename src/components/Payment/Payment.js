@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useHistory } from "react-router-dom";
-import { useStateValue } from "../../StateProvider";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../features/auth/AuthSlice";
+import { selectCartItems } from "../../features/cart/CartSlice";
 import API from "../../axios"; 
 import "./Payment.css";
 
 const Payment = () => {
   const history = useHistory();
-  const [{ cart, user }] = useStateValue();
+  const user = useSelector(selectUser);
+  const cart = useSelector(selectCartItems);
 
   // stripe hooks
   const stripe = useStripe();
@@ -20,7 +23,7 @@ const Payment = () => {
   const [error, setError] = useState("");
 
   // billing/shipping fields
-  const [billingName, setBillingName] = useState(user?.name || "");
+  const [billingName, setBillingName] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [city, setCity] = useState("");
   const [stateRegion, setStateRegion] = useState("");
@@ -40,6 +43,13 @@ const Payment = () => {
       return;
     }
   }, [user, cart, history]);
+
+  // Initialize billing name from user when available
+  useEffect(() => {
+    if (user?.name || user?.email) {
+      setBillingName(user.name || user.email || "");
+    }
+  }, [user]);
 
   // --- 2. TOTAL CALC ---
   // total = sum(item.price * item.qty)

@@ -1,5 +1,5 @@
-export const formatCurrency = (value, currency="USD", locale) =>
-  new Intl.NumberFormat(locale || undefined, { style: "currency", currency }).format(value);
+// Re-export from currency.js for backward compatibility
+export { formatCurrency } from "./currency";
 
 export const percentOff = (list, sale) => {
   if (!list || !sale || sale >= list) return null;

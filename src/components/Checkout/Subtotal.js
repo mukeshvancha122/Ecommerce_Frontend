@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { selectCartItems, selectCartTotal } from "../../features/cart/CartSlice";
 import { selectUser } from "../../features/auth/AuthSlice";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency } from "../../utils/currency";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
 export default function Subtotal() {
@@ -24,7 +24,7 @@ export default function Subtotal() {
     <div className="subtotal">
       <p>
         {t("cart.subtotal")} ({itemCount} {itemCount === 1 ? t("cart.items").slice(0, -1) : t("cart.items")}):{" "}
-        <strong>{formatCurrency(total, "USD")}</strong>
+        <strong>{formatCurrency(total)}</strong>
       </p>
 
       <small className="subtotal-gift">
