@@ -145,10 +145,16 @@ export default function Login() {
     try {
       const data = await getUserToken(email, password);
       
-      console.log("Login response:", data);
+      console.log("Login response from getUserToken:", data);
+      console.log("Token check:", {
+        hasAccess: !!data.access,
+        hasToken: !!data.token,
+        accessValue: data.access ? data.access.substring(0, 20) + "..." : "MISSING"
+      });
       
       // Ensure we have a valid token
       if (!data.access && !data.token) {
+        console.error("Token validation failed:", data);
         throw new Error("No authentication token received. Please try again.");
       }
       
@@ -363,9 +369,7 @@ export default function Login() {
     }
   };
 
-  // ----------------------------------------------------
-  // Mode switch helpers
-  // ----------------------------------------------------
+
   const switchToSignIn = () => {
     resetMessages();
     setMode("signin");

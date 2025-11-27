@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useHistory } from "react-router-dom";
 import "./PaymentSection.css";
 import {
   CardElement,
@@ -54,6 +55,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   const stripe = useStripe();
   const elements = useElements();
   const dispatch = useDispatch();
+  const history = useHistory();
   const { t } = useTranslation();
   const selectedCountry = useSelector(selectCountry);
 
@@ -81,8 +83,11 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
       try {
         // Don't auto-fetch saved cards - user must add manually
         // const { data } = await fetchSavedCards();
-        const data = []; // Empty array - no pre-filled cards
-        setCards(data.cards);
+        const data = { cards: [] }; // Empty array - no pre-filled cards
+        setCards(data.cards || []);
+      } catch (err) {
+        console.error("Error loading cards:", err);
+        setCards([]);
       } finally {
         setCardsLoading(false);
       }
@@ -157,79 +162,9 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   }, [paymentRequest, stripe, clientSecret, finalizeOrder]);
 
   const handleConfirmCard = useCallback(async () => {
-    if (!stripe || !elements) return;
-    setProcessing(true);
-    setError("");
-
-    try {
-      const cardElement = elements.getElement(CardElement);
-      
-      // Validate card element
-      const { error: cardError } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardElement,
-      });
-
-      if (cardError) {
-        setError(cardError.message || "Invalid card details");
-        setProcessing(false);
-        return;
-      }
-
-      // For test payments, use test card numbers
-      // Test card: 4242 4242 4242 4242 (Visa)
-      const testCardNumber = "4242424242424242";
-      const testExpiryMonth = "12";
-      const testExpiryYear = "2028";
-      const testCvc = "123";
-
-      let stripeResponse = null;
-      let orderCode = `order_${Date.now()}`;
-      let paymentIntentId = orderCode;
-
-      // Try to call Stripe payment API, but bypass on 500 error
-      try {
-        stripeResponse = await processStripePayment({
-          card_number: testCardNumber,
-          expiry_month: testExpiryMonth,
-          expiry_year: testExpiryYear,
-          cvc: testCvc,
-        });
-        paymentIntentId = stripeResponse?.payment_intent_id || stripeResponse?.id || orderCode;
-      } catch (stripeErr) {
-        console.warn("Stripe API error (bypassing):", stripeErr);
-        // Bypass: Use dummy payment ID for test flow
-        paymentIntentId = `pi_test_${Date.now()}`;
-        stripeResponse = {
-          payment_intent_id: paymentIntentId,
-          id: paymentIntentId,
-          status: "succeeded",
-        };
-      }
-
-      // Process order payment (this should still work to reflect in backend)
-      try {
-        await processOrderPayment({
-          payment_method: "stripe",
-          amount: String(orderTotal),
-          order_code: orderCode,
-          ref_code: paymentIntentId,
-          pidx: paymentIntentId,
-        });
-      } catch (orderPaymentErr) {
-        console.warn("Order payment API error (continuing):", orderPaymentErr);
-        // Continue even if this fails - we'll still create the order
-      }
-
-      // Finalize order - this creates the order record in backend
-      await finalizeOrder(paymentIntentId, "card");
-    } catch (err) {
-      console.error("Payment error:", err);
-      const errorMessage = err.response?.data?.detail || err.message || "Payment failed. Please try again.";
-      setError(errorMessage);
-      setProcessing(false);
-    }
-  }, [stripe, elements, orderTotal, finalizeOrder]);
+    // Redirect to order confirmation page instead of processing payment directly
+    history.push("/order-confirmation");
+  }, [history]);
 
   const handlePhonePe = async (e) => {
     e.preventDefault();
@@ -280,7 +215,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
       </div>
       {cardsLoading ? (
         <div className="ps-muted">Loading cards…</div>
-      ) : cards.length === 0 ? (
+      ) : !cards || cards.length === 0 ? (
         <div className="ps-muted">{t("payment.noSavedCards")}</div>
       ) : (
         cards.map((card) => (
@@ -309,7 +244,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           }}
         />
       </div>
-      <button className="ps-pay" onClick={handleConfirmCard} disabled={processing || !stripe}>
+      <button className="ps-pay" onClick={handleConfirmCard} disabled={processing}>
         {processing ? "Processing…" : `${t("checkout.usePaymentMethod")} (${formatCurrency(orderTotal)})`}
       </button>
     </div>
@@ -329,7 +264,10 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   );
 
   const renderPhonePe = () => (
-    <form className="ps-phonepe" onSubmit={handlePhonePe}>
+    <form className="ps-phonepe" onSubmit={(e) => {
+      e.preventDefault();
+      history.push("/order-confirmation");
+    }}>
       <label>
         UPI ID
         <input
@@ -362,16 +300,8 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             })
           }
           onApprove={async (data, actions) => {
-            setProcessing(true);
-            setError("");
-            const details = await actions.order.capture();
-            try {
-              await finalizeOrder(details.id, "paypal");
-            } catch (err) {
-              setError(err.message);
-            } finally {
-              setProcessing(false);
-            }
+            // Redirect to order confirmation page instead of processing directly
+            history.push("/order-confirmation");
           }}
           onError={(err) => {
             setError(err.message || "PayPal payment failed");

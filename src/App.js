@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Header from "./components/Header/Header";
 import SubHeader from "./components/Header/subheader/SubHeader";
@@ -19,6 +20,7 @@ import CustomerServicePage from "./pages/CustomerServicePage/CustomerServicePage
 import ProtectedRoute from "./routing/ProtectedRoute";
 import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
 import SearchResults from "./pages/SearchPage/SearchResultsPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage/OrderConfirmationPage";
 import { TranslationProvider } from "./i18n/TranslationProvider";
 
 import { loadStripe } from "@stripe/stripe-js";
@@ -35,10 +37,11 @@ export default function App() {
   const user = useSelector(selectUser);
 
   return (
-    <TranslationProvider>
-      <Router>
-        <div className="app">
-          <Switch>
+    <ErrorBoundary>
+      <TranslationProvider>
+        <Router>
+          <div className="app">
+            <Switch>
             {/* Protected Routes - Require Login */}
             <ProtectedRoute path="/orders">
               <Header />
@@ -71,6 +74,14 @@ export default function App() {
               <SubHeader />
               <Elements stripe={stripePromise}>
                 <CheckoutPage />
+              </Elements>
+            </ProtectedRoute>
+
+            <ProtectedRoute path="/order-confirmation">
+              <Header />
+              <SubHeader />
+              <Elements stripe={stripePromise}>
+                <OrderConfirmationPage />
               </Elements>
             </ProtectedRoute>
 
@@ -116,9 +127,10 @@ export default function App() {
             </Route>
           </Switch>
 
-          <ChatWidget user={user} />
-        </div>
-      </Router>
-    </TranslationProvider>
+            <ChatWidget user={user} />
+          </div>
+        </Router>
+      </TranslationProvider>
+    </ErrorBoundary>
   );
 }

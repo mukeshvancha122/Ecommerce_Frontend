@@ -22,10 +22,14 @@ export default function ProductsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
-        setLoading(true);
-        setError("");
+        if (isMounted) {
+          setLoading(true);
+          setError("");
+        }
         let data;
         if (subcategory) {
           data = await getProductsBySubcategory(subcategory, 1);
@@ -34,13 +38,23 @@ export default function ProductsPage() {
         } else {
           data = await getAllProducts(1);
         }
-        setItems(Array.isArray(data?.results) ? data.results : []);
+        if (isMounted) {
+          setItems(Array.isArray(data?.results) ? data.results : []);
+        }
       } catch (e) {
-        setError(e?.message || "Failed to load products");
+        if (isMounted) {
+          setError(e?.message || "Failed to load products");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [category, subcategory]);
 
   const title = label || subcategory || category || "All products";

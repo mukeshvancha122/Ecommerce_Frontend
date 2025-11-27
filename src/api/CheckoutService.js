@@ -24,66 +24,147 @@ const calculateItemsTotal = (items = []) =>
   items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
 
 export const getAddresses = async () => {
-  await delay();
+  // Load from localStorage instead of API
+  const savedAddresses = loadSavedAddresses();
+  
   return {
     data: {
-      addresses: [
-        {
-          id: "addr_1",
-          fullName: "Mukesh Reddy",
-          phone: "9441282440",
-          address1: "103, 5-55/3/1, Vajra Residency, Mallikarjun Nagar",
-          address2: "Buddha Nagar, Boduppal",
-          city: "HYDERABAD",
-          state: "TELANGANA",
-          zip: "500092",
-          country: "India",
-          isDefault: true,
-        },
-        {
-          id: "addr_2",
-          fullName: "Mukesh Reddy",
-          phone: "9949687659",
-          address1: "301, Sai Ganga Residency, GFG9+9g4, Pipe Line Rd",
-          address2: "Sri Ram Nagar, Jeedimetla",
-          city: "HYDERABAD",
-          state: "TELANGANA",
-          zip: "500055",
-          country: "India",
-          isDefault: false,
-        },
-        {
-          id: "addr_3",
-          fullName: "Mukesh Reddy",
-          phone: "9182513118",
-          address1: "H.No. 4-5-135/33, Sriram Nagar Colony, Nacharam",
-          address2: "",
-          city: "HYDERABAD",
-          state: "TELANGANA",
-          zip: "500076",
-          country: "India",
-          isDefault: false,
-        },
-      ],
+      addresses: savedAddresses.map(addr => ({
+        id: addr.id,
+        fullName: addr.fullName || addr.name || "",
+        phone: String(addr.phone || ""),
+        address1: addr.address1 || addr.full_address || "",
+        address2: addr.address2 || "",
+        city: addr.city || "",
+        state: addr.state || addr.district || "",
+        district: addr.district || addr.state || "",
+        zip: addr.zip || "",
+        country: addr.country || "India",
+        email: addr.email || "",
+        label: addr.label || addr.fullName || "",
+        backendFormat: addr.backendFormat, // Keep backend format for shipping
+      })),
     },
   };
 };
 
+// Store addresses locally (bypass backend for now)
+const STORAGE_KEY = "saved_addresses_v1";
+
+const loadSavedAddresses = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch (err) {
+    console.error("Error loading saved addresses:", err);
+    return [];
+  }
+};
+
+const saveAddresses = (addresses) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
+  } catch (err) {
+    console.error("Error saving addresses:", err);
+  }
+};
+
 export const addAddress = async (payload) => {
-  await delay();
+  // Map frontend format to backend format
+  // Backend expects: { email, name, phone (number), full_address, district, city, label }
+  // Clean and normalize all values
+  const cleanString = (str) => {
+    if (!str) return "";
+    return String(str).trim().replace(/[""]/g, '"').replace(/['']/g, "'");
+  };
+  
+  const districtValue = cleanString(payload.district || payload.state || "");
+  const cityValue = cleanString(payload.city || "");
+  
+  // Validate email is provided
+  const email = cleanString(payload.email || "");
+  if (!email || !email.trim()) {
+    throw new Error("Email is required to create an address");
+  }
+  
+  // Create address object (stored locally, not sent to backend)
+  const addressId = `addr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const address = {
+    id: addressId,
+    fullName: cleanString(payload.fullName || ""),
+    phone: String(payload.phone || ""),
+    address1: cleanString(payload.address1 || ""),
+    address2: cleanString(payload.address2 || ""),
+    city: cityValue,
+    state: districtValue, // Using state field for district
+    district: districtValue, // Also store as district for backend format
+    zip: cleanString(payload.zip || ""),
+    country: payload.country || "India",
+    email: email,
+    label: cleanString(payload.label || payload.fullName || ""),
+    // Store backend format for when we need to send it
+    backendFormat: {
+      email: email,
+      name: cleanString(payload.fullName || ""),
+      phone: payload.phone ? (typeof payload.phone === 'string' ? parseInt(payload.phone.replace(/\D/g, ''), 10) : Number(payload.phone)) : 0,
+      full_address: cleanString(`${payload.address1 || ""} ${payload.address2 || ""}`),
+      district: districtValue,
+      city: cityValue,
+      label: cleanString(payload.label || payload.fullName || ""),
+    },
+  };
+  
+  // Save to localStorage
+  const savedAddresses = loadSavedAddresses();
+  savedAddresses.push(address);
+  saveAddresses(savedAddresses);
+  
+  console.log("Address saved locally:", address);
+  
   return {
     data: {
-      address: {
-        id: "addr_" + Math.floor(Math.random() * 10000),
-        ...payload,
-        isDefault: false,
-      },
+      address,
     },
   };
 };
 
 export const updateAddress = async (id, payload) => {
-  await delay();
+  const cleanString = (str) => {
+    if (!str) return "";
+    return String(str).trim().replace(/[""]/g, '"').replace(/['']/g, "'");
+  };
+  
+  const districtValue = cleanString(payload.district || payload.state || "");
+  const cityValue = cleanString(payload.city || "");
+  
+  // Load and update in localStorage
+  const savedAddresses = loadSavedAddresses();
+  const index = savedAddresses.findIndex(addr => addr.id === id);
+  
+  if (index !== -1) {
+    const updatedAddress = {
+      ...savedAddresses[index],
+      ...payload,
+      city: cityValue,
+      state: districtValue,
+      district: districtValue,
+      backendFormat: {
+        email: cleanString(payload.email || ""),
+        name: cleanString(payload.fullName || ""),
+        phone: payload.phone ? (typeof payload.phone === 'string' ? parseInt(payload.phone.replace(/\D/g, ''), 10) : Number(payload.phone)) : 0,
+        full_address: cleanString(`${payload.address1 || ""} ${payload.address2 || ""}`),
+        district: districtValue,
+        city: cityValue,
+        label: cleanString(payload.label || payload.fullName || ""),
+      },
+    };
+    
+    savedAddresses[index] = updatedAddress;
+    saveAddresses(savedAddresses);
+    
+    return { data: { address: updatedAddress } };
+  }
+  
   return { data: { address: { id, ...payload } } };
 };
 
@@ -93,9 +174,19 @@ export const setDefaultAddress = async (id) => {
 };
 
 // ====== Shipping Quote ======
-export const getShippingQuote = async () => {
-  await delay();
+// Accept address data to include in shipping calculation
+export const getShippingQuote = async (addressData = null) => {
+  // If address data is provided, we can include it in the request
+  // For now, using mock data but address can be sent to backend if needed
   const itemsTotal = 89.99;
+  
+  // If address is provided, log it for future backend integration
+  if (addressData) {
+    console.log("Shipping quote requested with address:", addressData);
+    // Future: Include address in API call
+    // const response = await API.post("/v1/orders/shipping-quote/", { address: addressData });
+  }
+  
   return {
     data: {
       itemsTotal,
@@ -123,24 +214,34 @@ export const createPaymentIntent = async (payload) => {
 };
 
 // ====== Order placement ======
+// Note: Orders are created through the payment flow, not a separate endpoint
+// The order is created when payment is processed via /v1/payments/order-payment/
 export const placeOrder = async (payload) => {
-  await delay(800);
-  const order = {
-    id: payload.paymentIntentId || `order_${Date.now()}`,
-    status: "succeeded",
-    paymentIntentId: payload.paymentIntentId,
-    addressId: payload.addressId,
-    items: payload.items,
-    total: payload.total,
-    placedAt: new Date().toISOString(),
-    paymentMethod: payload.paymentMethod || "card",
-  };
-  await createOrderRecord(order);
+  // Process payment which creates the order
+  const { processOrderPayment } = await import("./payment/PaymentService");
+  
+  const orderCode = `order_${Date.now()}`;
+  
+  // Get address data to include in order
+  const addressData = payload.addressData || null;
+  
+  // Process order payment - this will throw if it fails
+  await processOrderPayment({
+    payment_method: payload.paymentMethod || "card",
+    amount: String(payload.total),
+    order_code: orderCode,
+    ref_code: payload.paymentIntentId || "",
+    pidx: payload.paymentIntentId || "",
+    // Include address data for shipping
+    shipping_address: addressData,
+  });
+  
+  // Return order details only if payment succeeds
   return {
     data: {
-      orderId: order.id,
-      status: order.status,
-      message: "Order placed successfully (mock)",
+      orderId: orderCode,
+      status: "succeeded",
+      message: "Order placed successfully",
     },
   };
 };

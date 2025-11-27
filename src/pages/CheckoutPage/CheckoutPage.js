@@ -47,17 +47,22 @@ export default function CheckoutPage() {
   const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
   const selectedCountry = useSelector(selectCountry);
 
-  // Don't auto-fetch addresses - user must add manually
-  // useEffect(() => {
-  //   dispatch(fetchAddresses());
-  // }, [dispatch]);
+  // Load addresses when user is logged in and component mounts
+  useEffect(() => {
+    if (user?.email) {
+      dispatch(fetchAddresses());
+    }
+  }, [dispatch, user?.email]);
 
   useEffect(() => {
-    // Recalculate shipping when items change
+    // Recalculate shipping when items or address change
     if (items.length > 0 && selectedAddressId) {
-      dispatch(fetchShippingQuote());
+      // Get address data to pass to shipping quote
+      const address = addresses.find(addr => addr.id === selectedAddressId);
+      const addressData = address?.backendFormat || null;
+      dispatch(fetchShippingQuote(addressData));
     }
-  }, [dispatch, items, selectedAddressId]);
+  }, [dispatch, items, selectedAddressId, addresses]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -65,11 +70,11 @@ export default function CheckoutPage() {
     }
   }, [items.length, history]);
 
+  // Only show success overlay if payment succeeded AND order was confirmed
+  // Don't clear cart here - let OrderConfirmationPage handle it after order is confirmed
   useEffect(() => {
-    if (payment.status === "succeeded" && payment.orderId) {
-      setShowSuccessOverlay(true);
-      dispatch(clearCart());
-    }
+    // This effect is kept for backward compatibility but cart clearing is handled in OrderConfirmationPage
+    // Only redirect happens here if needed
   }, [payment.status, payment.orderId, dispatch]);
 
   const orderTotal = useMemo(

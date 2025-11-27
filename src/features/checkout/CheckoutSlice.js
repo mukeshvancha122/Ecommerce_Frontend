@@ -10,9 +10,14 @@ export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async 
   return data.addresses || [];
 });
 
-export const createAddress = createAsyncThunk("checkout/createAddress", async (payload) => {
-  const { data } = await addAddress(payload);
-  return data.address;
+export const createAddress = createAsyncThunk("checkout/createAddress", async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await addAddress(payload);
+    return data.address;
+  } catch (error) {
+    // Return error data so component can handle it
+    return rejectWithValue(error.response?.data || { message: error.message });
+  }
 });
 
 export const editAddress = createAsyncThunk("checkout/editAddress", async ({ id, payload }) => {
@@ -25,8 +30,16 @@ export const makeDefaultAddress = createAsyncThunk("checkout/makeDefaultAddress"
   return id;
 });
 
-export const fetchShippingQuote = createAsyncThunk("checkout/fetchShippingQuote", async () => {
-  const { data } = await getShippingQuote();
+export const fetchShippingQuote = createAsyncThunk("checkout/fetchShippingQuote", async (addressData, { getState }) => {
+  // Get address from state if not provided
+  const state = getState();
+  const addressId = state.checkout.selectedAddressId;
+  const addresses = state.checkout.addresses;
+  const address = addressId ? addresses.find(addr => addr.id === addressId) : null;
+  
+  // Pass address data (backend format) to shipping quote
+  const addressDataForShipping = address?.backendFormat || null;
+  const { data } = await getShippingQuote(addressDataForShipping);
   return data;
 });
 
@@ -40,28 +53,52 @@ export const startPayment = createAsyncThunk(
 
 export const confirmOrderThunk = createAsyncThunk(
   "checkout/confirmOrder",
-  async ({ addressId, items, paymentIntentId, paymentMethod, total, shipping }) => {
-    // Update checkout with shipping info if available
-    if (addressId && shipping) {
-      try {
-        await updateCheckout({
-          drop_location_id: addressId,
-          shipping: JSON.stringify(shipping),
-        });
-      } catch (error) {
-        console.warn("Failed to update checkout:", error);
-        // Continue with order placement even if update fails
+  async ({ addressId, items, paymentIntentId, paymentMethod, total, shipping }, { getState, rejectWithValue }) => {
+    try {
+      // Get address data from state to include in order
+      const state = getState();
+      const addresses = state.checkout.addresses;
+      const address = addressId ? addresses.find(addr => addr.id === addressId) : null;
+      const addressData = address?.backendFormat || null;
+      
+      // Update checkout with shipping info if available (include address data)
+      if (addressId && shipping) {
+        try {
+          await updateCheckout({
+            drop_location_id: addressId,
+            shipping: JSON.stringify(shipping),
+            // Include address data in update
+            address: addressData,
+          });
+        } catch (error) {
+          console.warn("Failed to update checkout:", error);
+          // Continue with order placement even if update fails
+        }
       }
-    }
 
-    const { data } = await placeOrder({
-      addressId,
-      items,
-      paymentIntentId,
-      paymentMethod,
-      total,
-    });
-    return data; // { orderId, status }
+      const { data } = await placeOrder({
+        addressId,
+        addressData, // Pass address data for shipping
+        items,
+        paymentIntentId,
+        paymentMethod,
+        total,
+      });
+      return data; // { orderId, status }
+    } catch (error) {
+      // Extract user-friendly error message
+      const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           "Failed to place order";
+      
+      // Return error with value so component can access it
+      return rejectWithValue({
+        message: errorMessage,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
   }
 );
 
@@ -124,10 +161,16 @@ const slice = createSlice({
      })
      .addCase(fetchAddresses.rejected, (s, a) => { s.status = "failed"; s.error = a.error?.message; })
 
+     .addCase(createAddress.pending, (s) => { s.status = "loading"; })
      .addCase(createAddress.fulfilled, (s, a) => {
+        s.status = "succeeded";
         s.addresses.push(a.payload);
         s.selectedAddressId = a.payload.id;
         saveSelectedAddressId(a.payload.id);
+     })
+     .addCase(createAddress.rejected, (s, a) => { 
+        s.status = "failed"; 
+        s.error = a.error?.message || "Failed to create address";
      })
      .addCase(editAddress.fulfilled, (s, a) => {
         const idx = s.addresses.findIndex(x => x.id === a.payload.id);

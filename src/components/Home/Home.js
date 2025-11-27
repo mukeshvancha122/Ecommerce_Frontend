@@ -103,17 +103,28 @@ function Home() {
   const goNextHero = () => setHeroIndex((i) => (i + 1) % heroSlides.length);
 
   useEffect(() => {
-    const id = setInterval(goNextHero, 6000);
+    // Only auto-play hero carousel if page is visible (performance optimization)
+    if (document.hidden) return;
+    
+    const id = setInterval(() => {
+      if (!document.hidden) {
+        goNextHero();
+      }
+    }, 6000);
     return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         const [pageOne, pageTwo] = await Promise.all([
           getFeaturedProducts(1),
           getFeaturedProducts(2),
         ]);
+        if (!isMounted) return;
+        
         const extractProducts = (payload) => {
           if (Array.isArray(payload?.data)) return payload.data;
           if (Array.isArray(payload?.results)) return payload.results;
@@ -124,75 +135,122 @@ function Home() {
           ...extractProducts(pageOne),
           ...extractProducts(pageTwo),
         ];
-        setFeaturedProducts(products);
+        if (isMounted) {
+          setFeaturedProducts(products);
+        }
       } catch (err) {
         console.error("featured load", err);
-        setFeaturedProducts([]);
+        if (isMounted) {
+          setFeaturedProducts([]);
+        }
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Fetch top-selling products from API
     (async () => {
       try {
         const topSelling = await getTopSellingProducts(1);
-        setDiscountedProducts(Array.isArray(topSelling) ? topSelling.slice(0, 10) : []);
+        if (isMounted) {
+          setDiscountedProducts(Array.isArray(topSelling) ? topSelling.slice(0, 10) : []);
+        }
       } catch (err) {
         console.error("top-selling products load", err);
-        // Fallback: filter from featured products if API fails
-        const fallback = (featuredProducts || [])
-          .filter((p) => p?.is_top_selling === true)
-          .slice(0, 10);
-        setDiscountedProducts(fallback);
+        if (isMounted) {
+          // Fallback: filter from featured products if API fails
+          const fallback = (featuredProducts || [])
+            .filter((p) => p?.is_top_selling === true)
+            .slice(0, 10);
+          setDiscountedProducts(fallback);
+        }
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [featuredProducts]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadCategorySpecials = async (slug, setter) => {
       try {
         const response = await getProductsByCategory(slug, 1);
+        if (!isMounted) return;
         const items = (Array.isArray(response?.results) ? response.results : []).slice(
           0,
           10
         );
-        setter(items);
+        if (isMounted) {
+          setter(items);
+        }
       } catch (err) {
         console.error(`category specials load ${slug}`, err);
       }
     };
     loadCategorySpecials("mens-clothing", setMensSpecials);
     loadCategorySpecials("womens-clothing", setWomensSpecials);
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         const sc = await getSaleCategories();
-        setSaleCategories(Array.isArray(sc) ? sc : []);
+        if (isMounted) {
+          setSaleCategories(Array.isArray(sc) ? sc : []);
+        }
       } catch (err) {
         console.error("sale categories load", err);
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         const all = await getAllProducts(1);
-        setHistoryProducts(Array.isArray(all?.results) ? all.results : []);
+        if (isMounted) {
+          setHistoryProducts(Array.isArray(all?.results) ? all.results : []);
+        }
       } catch (err) {
         console.error("history products load", err);
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         console.log("Home.js - Fetching categories...");
         const cats = await getAllCategories();
+        if (!isMounted) return;
+        
         console.log("Home.js - Raw categories response:", cats);
         console.log("Home.js - Categories type:", typeof cats);
         console.log("Home.js - Is Array?", Array.isArray(cats));
@@ -215,16 +273,22 @@ function Home() {
           console.log("Home.js - First category image field:", categoriesArray[0]?.category_image);
         }
         
-        // Store all categories for the holiday carousel
-        setAllCategories(categoriesArray);
-      
-        const limitedCategories = categoriesArray.slice(0, 16);
-        console.log("Home.js - All categories for panels:", limitedCategories);
-        setCategories(limitedCategories);
+        if (isMounted) {
+          // Store all categories for the holiday carousel
+          setAllCategories(categoriesArray);
+        
+          const limitedCategories = categoriesArray.slice(0, 16);
+          console.log("Home.js - All categories for panels:", limitedCategories);
+          setCategories(limitedCategories);
+        }
       } catch (err) {
         console.error("categories load", err);
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const navigateToSearch = useCallback(
