@@ -32,7 +32,7 @@ const SearchResultsPage = () => {
   } = location.state || {};
 
   const handleOpenProduct = (product) => {
-    const target = product?.id ?? product?.slug;
+    const target = product?.slug || product?.id;
     if (!target) return;
     history.push(`/product/${target}`);
   };

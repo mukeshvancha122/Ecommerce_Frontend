@@ -64,9 +64,10 @@ export default function HolidayCategoryCarousel({
     container.scrollBy({ left: amount, behavior: "smooth" });
   };
 
-  const handleItemClick = (slug) => {
-    if (slug) {
-      history.push(`/product/${slug}`);
+  const handleItemClick = (item) => {
+    const identifier = item?.slug || item?.id;
+    if (identifier) {
+      history.push(`/product/${identifier}`);
     }
   };
 
@@ -107,7 +108,7 @@ export default function HolidayCategoryCarousel({
               key={item.id}
               type="button"
               className="holidayCarouselItem"
-              onClick={() => handleItemClick(item.slug)}
+              onClick={() => handleItemClick(item)}
             >
               <div className="holidayCarouselImage">
                 <img 

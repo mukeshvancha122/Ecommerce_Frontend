@@ -104,7 +104,12 @@ export default function BuyBox({ product }) {
           className="btn btn--accent"
           onClick={() => {
             if (!user) {
-              history.push("/login");
+              // Add to cart first, then redirect to login
+              onAdd();
+              history.push({
+                pathname: "/login",
+                state: { from: "/proceed-to-checkout" }
+              });
               return;
             }
             // Add to cart and proceed to checkout

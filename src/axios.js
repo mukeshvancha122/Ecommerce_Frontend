@@ -34,9 +34,42 @@ const API = axios.create({
 
 // attach token
 API.interceptors.request.use((config) => {
+  // List of endpoints that should NOT have Authorization header
+  // These are public endpoints that don't require authentication
+  const publicEndpoints = [
+    '/v1/user/get-token/',      // Login endpoint
+    '/v1/user/register/',        // Registration endpoint
+    '/v1/user/password-reset-email/',  // Password reset email
+    '/v1/user/password-reset-verify/', // Password reset OTP verify
+    '/v1/user/reset-password/',  // Password reset
+  ];
+  
+  // Check if the current request is to a public endpoint
+  const isPublicEndpoint = publicEndpoints.some(endpoint => 
+    config.url?.includes(endpoint)
+  );
+  
+  // Get state for both token and language
   const state = store.getState();
-  const token = state?.auth?.token || JSON.parse(localStorage.getItem("auth_v1"))?.token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  // Only attach token if it's not a public endpoint
+  if (!isPublicEndpoint) {
+    let token = state?.auth?.token;
+    
+    // Try to get token from localStorage if not in Redux state
+    if (!token) {
+      try {
+        const authData = localStorage.getItem("auth_v1");
+        if (authData) {
+          token = JSON.parse(authData)?.token;
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+    
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
 
   const language = getSupportedLanguage(state?.locale?.language || "en");
   config.headers["Accept-Language"] = language;

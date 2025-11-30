@@ -55,11 +55,12 @@ export default function App() {
               <AccountPage />
             </ProtectedRoute>
 
-            <ProtectedRoute path="/checkout">
+            {/* Checkout route is public - allows guests to view cart */}
+            <Route path="/checkout">
               <Header />
               <SubHeader />
               <Checkout />
-            </ProtectedRoute>
+            </Route>
 
             <ProtectedRoute path="/payment">
               <Header />

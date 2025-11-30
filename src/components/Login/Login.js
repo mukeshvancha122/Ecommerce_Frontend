@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Login.css";
 import { useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { store } from "../../store";
 
 import { setCredentials } from "../../features/auth/AuthSlice";
@@ -19,7 +19,11 @@ import { resetPassword } from "../../api/user/UserResetPasswordService";
 export default function Login() {
   const dispatch = useDispatch();
   const history = useHistory();
+  const location = useLocation();
   const { t } = useTranslation();
+  
+  // Get the intended destination from location state (set by ProtectedRoute)
+  const from = location.state?.from || "/";
 
   /**
    * UI modes:
@@ -122,7 +126,8 @@ export default function Login() {
       });
     }, 100);
 
-    history.push("/"); // send to home / dashboard
+    // Redirect to the intended page (from ProtectedRoute) or home
+    history.push(from);
   };
 
   const resetMessages = () => {

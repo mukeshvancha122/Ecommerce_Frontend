@@ -49,8 +49,10 @@ export default function DiscountDealsCarousel({ products = [] }) {
   const goNext = () => setIndex((prev) => Math.min(pages - 1, prev + 1));
 
   const handleClick = (product) => {
-    if (!product?.slug) return;
-    history.push(`/product/${product.slug}`);
+    const identifier = product?.slug || product?.id;
+    if (identifier) {
+      history.push(`/product/${identifier}`);
+    }
   };
 
   return (

@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import "./ProductInfo.css";
-import RatingStars from "../RatingStars";
 import PriceTag from "../PriceTag";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -82,10 +81,6 @@ export default function ProductInfo({ product }) {
             Brand: <a href="/">{brand}</a>
           </span>
         )}
-        <span className="pinfo__reviews">
-          <RatingStars value={rating} />
-          <a href="/"> {product?.reviews_count || "100+"} ratings</a>
-        </span>
       </div>
 
       <div className="hr" />

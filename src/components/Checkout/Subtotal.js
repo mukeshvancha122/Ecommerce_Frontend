@@ -17,6 +17,14 @@ export default function Subtotal() {
   const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   const handleProceedToCheckout = () => {
+    if (!user) {
+      // Redirect to login with the checkout page as the return destination
+      history.push({
+        pathname: "/login",
+        state: { from: "/proceed-to-checkout" }
+      });
+      return;
+    }
     history.push("/proceed-to-checkout");
   };
 

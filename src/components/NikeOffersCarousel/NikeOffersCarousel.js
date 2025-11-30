@@ -87,8 +87,9 @@ export default function NikeOffersCarousel() {
   }, [products.length]);
 
   const handleProductClick = (product) => {
-    if (product?.slug) {
-      history.push(`/product/${product.slug}`);
+    const identifier = product?.slug || product?.id;
+    if (identifier) {
+      history.push(`/product/${identifier}`);
     }
   };
 
