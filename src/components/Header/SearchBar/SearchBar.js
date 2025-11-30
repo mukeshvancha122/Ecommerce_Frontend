@@ -1,11 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 
 // Use the dedicated search services instead of calling axios directly.
 import { searchProducts } from "../../../api/products/searchProduct/SearchProductService";
 import { searchProductsByImage } from "../../../api/products/searchProduct/ImageSearchService";
+import { addRecentSearch } from "../../../utils/recentSearches";
 
 import SearchCategoryDropdown from "./SearchCategoryDropDown";
+import SearchSuggestions from "./SearchSuggestions";
 import "./SearchBar.css";
 
 function SearchBar() {
@@ -15,40 +17,51 @@ function SearchBar() {
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const [imageInputKey, setImageInputKey] = useState(Date.now());
   const [error, setError] = useState("");
 
   // refs
   const fileInputRef = useRef(null);
+  const searchBarRef = useRef(null);
 
   // ---- helpers ----
 
   // Text search -> backend
-  const handleSearch = async () => {
-    if (!query.trim() || loading) return;
+  const handleSearch = async (searchQuery = null) => {
+    const finalQuery = searchQuery || query.trim();
+    if (!finalQuery || loading) return;
 
     try {
       setLoading(true);
       setError("");
+      setShowSuggestions(false);
 
-      // Call the search service (currently backed by a rich mock dataset).
+      // Save to recent searches
+      addRecentSearch(finalQuery);
+
+      // Call the intelligent search service
       const response = await searchProducts({
-        product_name: query.trim(),
+        product_name: finalQuery,
         category: category === "all" ? undefined : category,
         page: 1,
         page_size: 20,
+        useIntelligentSearch: true, // Enable intelligent search
       });
 
       const results = response?.results || [];
       const total = response?.count ?? results.length;
+      const searchStrategy = response?.searchStrategy;
 
       history.push("/search", {
         mode: "text",
-        query: query.trim(),
+        query: finalQuery,
         category,
         results,
         total,
+        searchStrategy, // Pass search strategy for displaying related products message
       });
     } catch (err) {
       console.error("Text search error:", err);
@@ -58,7 +71,7 @@ function SearchBar() {
       // Still navigate to search page with empty results so user can see the error
       history.push("/search", {
         mode: "text",
-        query: query.trim(),
+        query: finalQuery,
         category,
         results: [],
         total: 0,
@@ -73,7 +86,30 @@ function SearchBar() {
     if (e.key === "Enter") {
       e.preventDefault();
       handleSearch();
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setIsFocused(false);
     }
+  };
+
+  // Handle input focus
+  const handleFocus = () => {
+    setIsFocused(true);
+    setShowSuggestions(true);
+  };
+
+  // Handle input blur (with delay to allow clicks on suggestions)
+  const handleBlur = () => {
+    setTimeout(() => {
+      setIsFocused(false);
+      setShowSuggestions(false);
+    }, 200);
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (selectedQuery) => {
+    setQuery(selectedQuery);
+    handleSearch(selectedQuery);
   };
 
   // Trigger hidden file input on camera click
@@ -129,8 +165,8 @@ function SearchBar() {
   };
 
   return (
-    <div className="searchBarWrapper">
-      <div className={`searchBarOuter ${loading ? "isLoading" : ""}`}>
+    <div className="searchBarWrapper" ref={searchBarRef}>
+      <div className={`searchBarOuter ${loading ? "isLoading" : ""} ${showSuggestions ? "hasSuggestions" : ""}`}>
         {/* CATEGORY DROPDOWN (moved out to its own component) */}
         <SearchCategoryDropdown
           value={category}
@@ -146,8 +182,13 @@ function SearchBar() {
           type="text"
           placeholder="Search products, brands and more…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShowSuggestions(true);
+          }}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           disabled={loading}
         />
 
@@ -202,6 +243,17 @@ function SearchBar() {
           )}
         </button>
       </div>
+
+      {/* Search Suggestions Dropdown */}
+      {showSuggestions && (
+        <SearchSuggestions
+          query={query}
+          isOpen={showSuggestions && isFocused}
+          onSelect={handleSuggestionSelect}
+          onClose={() => setShowSuggestions(false)}
+          category={category}
+        />
+      )}
 
       {/* error line */}
       {error && <div className="searchBarError">{error}</div>}

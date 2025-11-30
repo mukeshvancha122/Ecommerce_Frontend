@@ -2,6 +2,7 @@ import React from "react";
 import "./Checkout.css";
 import CheckoutProduct from "./CheckoutProduct";
 import Subtotal from "./Subtotal";
+import EmptyCartProducts from "./EmptyCartProducts";
 
 // ✅ Redux
 import { useSelector } from "react-redux";
@@ -37,7 +38,10 @@ export default function Checkout() {
           <h2 className="checkout-title">{t("cart.title")}</h2>
 
           {items.length === 0 ? (
-            <p>{t("cart.empty")}</p>
+            <>
+              <p>{t("cart.empty")}</p>
+              <EmptyCartProducts />
+            </>
           ) : (
             items.map((item) => (
               <CheckoutProduct
