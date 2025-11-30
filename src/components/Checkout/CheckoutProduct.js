@@ -2,13 +2,27 @@ import React from "react";
 import "./CheckoutProduct.css";
 import { useDispatch } from "react-redux";
 import { removeItem, setQty } from "../../features/cart/CartSlice";
+import { useCartSync } from "../../hooks/useCartSync";
 import { formatCurrency } from "../../utils/format"; // or inline formatter
 
 export default function CheckoutProduct({ id, title, image, price, rating, qty }) {
   const dispatch = useDispatch();
+  const { syncRemoveItem, syncUpdateItem } = useCartSync();
 
-  const onRemove = () => dispatch(removeItem({ sku: id }));
-  const onQtyChange = (e) => dispatch(setQty({ sku: id, qty: Number(e.target.value) }));
+  const onRemove = async () => {
+    // Remove from local cart
+    dispatch(removeItem({ sku: id }));
+    // Sync to backend if authenticated
+    await syncRemoveItem(id);
+  };
+  
+  const onQtyChange = async (e) => {
+    const newQty = Number(e.target.value);
+    // Update local cart
+    dispatch(setQty({ sku: id, qty: newQty }));
+    // Sync to backend if authenticated
+    await syncUpdateItem(id, newQty);
+  };
 
   return (
     <div className="checkoutProduct">

@@ -15,7 +15,28 @@ export const getUserToken = async (email, password) => {
       password,
     });
 
+    // Check if response indicates an error (4xx status)
+    if (response.status >= 400) {
+      const errorData = response.data || {};
+      const errorMessage = 
+        errorData.detail || 
+        errorData.message || 
+        errorData.error ||
+        (typeof errorData === 'string' ? errorData : 'Login failed');
+      
+      console.error("Login API error response:", {
+        status: response.status,
+        data: errorData,
+        message: errorMessage
+      });
+      
+      const error = new Error(errorMessage);
+      error.response = response;
+      throw error;
+    }
+
     console.log("Login API response:", response.data);
+    console.log("Response status:", response.status);
     console.log("Response structure:", {
       hasData: !!response.data,
       hasAccess: !!response.data?.access,
@@ -68,19 +89,24 @@ export const getUserToken = async (email, password) => {
     }
     
     // Extract tokens - check multiple possible locations
-    // The API returns: { data: { access: "...", refresh: "...", user_details: {...} } }
-    // So we need to check data.data.access first!
+    // The API might return: 
+    // - { data: { access: "...", refresh: "...", user_details: {...} } }
+    // - { access: "...", refresh: "...", user: {...} }
+    // - { access_token: "...", refresh_token: "...", user: {...} }
+    // - { token: "...", email: "..." }
     const accessToken = 
-      data.data?.access ||  // New format: nested in data.data (PRIMARY)
-      data.access ||        // Direct format (fallback)
-      data.access_token || 
-      data.token ||
+      data.data?.access ||        // Format: { data: { access, refresh, user_details } }
+      data.data?.access_token ||  // Format: { data: { access_token, refresh_token } }
+      data.access ||              // Format: { access, refresh, user }
+      data.access_token ||        // Format: { access_token, refresh_token, user }
+      data.token ||               // Format: { token, email }
       null;
     
     const refreshToken = 
-      data.data?.refresh ||  // New format: nested in data.data (PRIMARY)
-      data.refresh ||        // Direct format (fallback)
-      data.refresh_token || 
+      data.data?.refresh ||        // Format: { data: { access, refresh, user_details } }
+      data.data?.refresh_token ||  // Format: { data: { access_token, refresh_token } }
+      data.refresh ||              // Format: { access, refresh, user }
+      data.refresh_token ||        // Format: { access_token, refresh_token, user }
       null;
     
     console.log("Token extraction:", {
@@ -118,20 +144,52 @@ export const getUserToken = async (email, password) => {
   } catch (error) {
     console.error("Error fetching user token:", error);
     console.error("Error response:", error.response?.data);
+    console.error("Error status:", error.response?.status);
     
     // Handle authentication errors
     if (error.response?.data) {
       const errorData = error.response.data;
-      const errorMessage = 
-        errorData.detail || 
-        errorData.message || 
-        (typeof errorData === 'string' ? errorData : 'Login failed');
+      
+      // Handle different error formats
+      let errorMessage = 'Login failed';
+      
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData.detail) {
+        errorMessage = errorData.detail;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      } else if (Array.isArray(errorData) && errorData.length > 0) {
+        // Handle array of errors
+        errorMessage = errorData[0];
+      } else if (typeof errorData === 'object') {
+        // Try to extract error message from object
+        const errorKeys = Object.keys(errorData);
+        if (errorKeys.length > 0) {
+          const firstKey = errorKeys[0];
+          const firstValue = errorData[firstKey];
+          if (Array.isArray(firstValue) && firstValue.length > 0) {
+            errorMessage = `${firstKey}: ${firstValue[0]}`;
+          } else if (typeof firstValue === 'string') {
+            errorMessage = `${firstKey}: ${firstValue}`;
+          } else {
+            errorMessage = JSON.stringify(errorData);
+          }
+        }
+      }
       
       const enhancedError = new Error(errorMessage);
       enhancedError.response = error.response;
       throw enhancedError;
     }
     
-    throw error;
+    // If no response data, use the error message
+    if (error.message) {
+      throw error;
+    }
+    
+    throw new Error('Login failed: Unable to connect to server');
   }
 };
