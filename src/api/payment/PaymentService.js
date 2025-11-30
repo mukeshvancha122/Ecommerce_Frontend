@@ -44,40 +44,57 @@ export const processStripePayment = async (payload) => {
  */
 export const processOrderPayment = async (payload) => {
   try {
-    // Backend expects nested structure with value and errors
-    const requestBody = {
-      payment_method: {
-        value: payload.payment_method || "string",
-        errors: []
-      },
-      amount: {
-        value: String(payload.amount || "0"),
-        errors: []
-      },
-      order_code: {
-        value: payload.order_code || "string",
-        errors: []
-      },
-      ref_code: {
-        value: payload.ref_code || "string",
-        errors: []
-      },
-      pidx: {
-        value: payload.pidx || "string",
-        errors: []
-      }
-    };
+    console.log("[PaymentService] processOrderPayment() - Processing payment:", payload);
     
-    // Include shipping address if provided
-    if (payload.shipping_address) {
-      requestBody.shipping_address = payload.shipping_address;
-      console.log("Including shipping address in order payment:", payload.shipping_address);
+    // Validate required fields
+    if (!payload.payment_method) {
+      throw new Error("payment_method is required (esewa, khalti, or cod)");
+    }
+    if (payload.amount === undefined || payload.amount === null) {
+      throw new Error("amount is required");
+    }
+    if (!payload.order_code) {
+      throw new Error("order_code is required");
     }
     
+    // Validate payment method
+    const validMethods = ["esewa", "khalti", "cod"];
+    if (!validMethods.includes(payload.payment_method.toLowerCase())) {
+      throw new Error(`Invalid payment_method. Must be one of: ${validMethods.join(", ")}`);
+    }
+    
+    // Format amount to 2 decimal places (API requirement)
+    const amountValue = parseFloat(payload.amount) || 0;
+    const formattedAmount = amountValue.toFixed(2);
+    
+    // Build request body according to API schema
+    // All fields must be strings according to schema
+    const requestBody = {
+      payment_method: String(payload.payment_method),
+      amount: formattedAmount, // Must have max 2 decimal places
+      order_code: String(payload.order_code),
+    };
+    
+    // Only include optional fields if they have actual values (not empty strings)
+    // API validation requires these fields to not be blank if included
+    if (payload.ref_code && String(payload.ref_code).trim() !== "") {
+      requestBody.ref_code = String(payload.ref_code).trim();
+    }
+    if (payload.pidx && String(payload.pidx).trim() !== "") {
+      requestBody.pidx = String(payload.pidx).trim();
+    }
+    
+    console.log("[PaymentService] processOrderPayment() - Request body:", requestBody);
+    
     const response = await API.post("/v1/payments/order-payment/", requestBody);
+    
+    console.log("[PaymentService] processOrderPayment() - Response:", response.data);
+    console.log("[PaymentService] processOrderPayment() - Response status:", response.status);
     return response.data;
   } catch (error) {
-    console.error("Error processing order payment:", error);
+    console.error("[PaymentService] processOrderPayment() - ERROR:", error);
+    console.error("[PaymentService] processOrderPayment() - Error response:", error.response?.data);
+    console.error("[PaymentService] processOrderPayment() - Error status:", error.response?.status);
     throw error;
   }
 };
@@ -91,10 +108,26 @@ export const processOrderPayment = async (payload) => {
  */
 export const updateCheckout = async (payload) => {
   try {
-    const response = await API.post("/v1/orders/update-checkout/", payload);
+    console.log("[PaymentService] updateCheckout() - Updating checkout with:", payload);
+    
+    // Clean payload - only send expected fields
+    const requestBody = {
+      drop_location_id: payload.drop_location_id,
+      shipping: payload.shipping,
+    };
+    
+    // Only include additional fields if they're expected by backend
+    // Remove 'address' field as it might cause 500 error
+    
+    console.log("[PaymentService] updateCheckout() - Request body:", requestBody);
+    
+    const response = await API.post("/v1/orders/update-checkout/", requestBody);
+    
+    console.log("[PaymentService] updateCheckout() - Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error updating checkout:", error);
+    console.error("[PaymentService] updateCheckout() - ERROR:", error);
+    console.error("[PaymentService] updateCheckout() - Error response:", error.response?.data);
     // Handle authentication error
     if (error.response?.status === 401) {
       throw new Error("Authentication required. Please log in to continue.");

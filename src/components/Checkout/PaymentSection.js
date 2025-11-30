@@ -20,34 +20,31 @@ import { useSelector } from "react-redux";
 import { selectCountry } from "../../features/country/countrySlice";
 import { selectShipping } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
-import { processStripePayment, processOrderPayment } from "../../api/payment/PaymentService";
+import { processStripePayment, processOrderPayment } from "../../api/orders/OrdersService";
 
 const paymentOptionsConfig = (t) => [
   {
     id: "card",
-    title: t("checkout.cardPayments"),
-    description: t("checkout.cardDesc"),
-    badge: "Stripe",
+    title: t("checkout.cardPayments") || "Card Payments",
+    description: t("checkout.cardDesc") || "Pay with credit or debit card",
+    badge: "Card",
   },
   {
-    id: "googlePay",
-    title: t("checkout.googlePay"),
-    description: t("checkout.googlePayDesc"),
-    badge: "Stripe GPay",
-  },
-  {
-    id: "phonePe",
-    title: t("checkout.phonePe"),
-    description: t("checkout.phonePeDesc"),
+    id: "upi",
+    title: "UPI",
+    description: "Pay with UPI (PhonePe, Google Pay, Paytm, etc.)",
     badge: "UPI",
   },
   {
-    id: "paypal",
-    title: t("checkout.paypal"),
-    description: t("checkout.paypalDesc"),
-    badge: "PayPal",
+    id: "cod",
+    title: "Cash on Delivery",
+    description: "Pay when you receive your order",
+    badge: "COD",
   },
 ];
+
+// Dummy payment bypass mode (for testing)
+const DUMMY_PAYMENT_MODE = process.env.REACT_APP_DUMMY_PAYMENT === "true" || true; // Set to true for bypass
 
 const defaultPayPalClientId = process.env.REACT_APP_PAYPAL_CLIENT_ID || "test";
 
@@ -162,23 +159,174 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   }, [paymentRequest, stripe, clientSecret, finalizeOrder]);
 
   const handleConfirmCard = useCallback(async () => {
-    // Redirect to order confirmation page instead of processing payment directly
-    history.push("/order-confirmation");
-  }, [history]);
+    // Dummy mode: skip validation and payment processing
+    if (DUMMY_PAYMENT_MODE) {
+      setProcessing(true);
+      setError("");
+      
+      try {
+        // Simulate payment delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create order (bypass actual payment)
+        const orderId = await finalizeOrder("dummy_payment_intent_" + Date.now(), "card");
+        
+        if (!orderId) {
+          throw new Error("Failed to create order");
+        }
 
-  const handlePhonePe = async (e) => {
+        // Dummy payment processing - skip actual API calls
+        console.log("[PaymentSection] Dummy mode: Bypassing card payment");
+        
+        // Redirect to success page with order data in state
+        history.push({
+          pathname: "/order-confirmation",
+          search: `?orderId=${orderId}`,
+          state: {
+            orderId,
+            items: [...items], // Copy items array
+            orderTotal,
+            shipping: { ...shipping }, // Copy shipping object
+            addressId,
+          }
+        });
+      } catch (err) {
+        setError(err.message || "Payment failed. Please try again.");
+        setProcessing(false);
+      }
+      return;
+    }
+
+    // Real payment mode
+    if (!cardForm.number || !cardForm.expMonth || !cardForm.expYear || !cardForm.cvv) {
+      setError("Please enter complete card details");
+      return;
+    }
+
+    setProcessing(true);
+    setError("");
+
+    try {
+      // First create order to get order_code
+      const orderId = await finalizeOrder(null, "card");
+      
+      if (!orderId) {
+        throw new Error("Failed to create order");
+      }
+
+      // Process Stripe payment
+      await processStripePayment({
+        card_number: cardForm.number.replace(/\s/g, ""),
+        expiry_month: cardForm.expMonth,
+        expiry_year: cardForm.expYear,
+        cvc: cardForm.cvv,
+      });
+
+      // Note: Stripe payment is already processed via processStripePayment above
+      // The order-payment endpoint only supports esewa, khalti, cod
+      // For Stripe, we don't need to call processOrderPayment
+      console.log("[PaymentSection] Stripe payment processed, skipping order-payment call");
+
+      // Redirect to success page with order data in state
+      history.push({
+        pathname: "/order-confirmation",
+        search: `?orderId=${orderId}`,
+        state: {
+          orderId,
+          items,
+          orderTotal,
+          shipping,
+          addressId,
+        }
+      });
+    } catch (err) {
+      setError(err.message || "Payment failed. Please try again.");
+      setProcessing(false);
+    }
+  }, [cardForm, orderTotal, finalizeOrder, history]);
+
+  const handleUPI = async (e) => {
     e.preventDefault();
+    
+    // Dummy mode: skip validation and payment processing
+    if (DUMMY_PAYMENT_MODE) {
+      setProcessing(true);
+      setError("");
+      
+      try {
+        // Simulate payment delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create order (bypass actual payment)
+        const orderId = await finalizeOrder("dummy_upi_payment_" + Date.now(), "upi");
+        
+        if (!orderId) {
+          throw new Error("Failed to create order");
+        }
+
+        // Dummy payment processing - skip actual API calls
+        console.log("[PaymentSection] Dummy mode: Bypassing UPI payment");
+        
+        // Redirect to success page with order data in state
+        history.push({
+          pathname: "/order-confirmation",
+          search: `?orderId=${orderId}`,
+          state: {
+            orderId,
+            items: [...items], // Copy items array
+            orderTotal,
+            shipping: { ...shipping }, // Copy shipping object
+            addressId,
+          }
+        });
+      } catch (err) {
+        setError(err.message || "Payment failed. Please try again.");
+        setProcessing(false);
+      }
+      return;
+    }
+
+    // Real payment mode
+    if (!phonePeVpa) {
+      setError("Please enter UPI ID");
+      return;
+    }
+
     setProcessing(true);
     setError("");
     try {
+      // First create order to get order_code
+      const orderId = await finalizeOrder(null, "upi");
+      
+      if (!orderId) {
+        throw new Error("Failed to create order");
+      }
+
       const { data } = await simulatePhonePeCharge({
         amount: Math.round(orderTotal * 100),
         vpa: phonePeVpa,
       });
-      await finalizeOrder(data.referenceId, "phonePe");
+      
+      // Note: UPI payment processing
+      // The order-payment endpoint only supports esewa, khalti, cod
+      // For UPI, we might need to use a different endpoint or map it
+      // For now, skip order-payment call for UPI
+      console.log("[PaymentSection] UPI payment processed, skipping order-payment call (not supported by order-payment endpoint)");
+
+      // Redirect to success page with order data in state
+      history.push({
+        pathname: "/order-confirmation",
+        search: `?orderId=${orderId}`,
+        state: {
+          orderId,
+          items: [...items], // Copy items array
+          orderTotal,
+          shipping: { ...shipping }, // Copy shipping object
+          addressId,
+        }
+      });
     } catch (err) {
-      setError(err.message || "PhonePe payment failed.");
-    } finally {
+      setError(err.message || "UPI payment failed.");
       setProcessing(false);
     }
   };
@@ -232,7 +380,12 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           </div>
         ))
       )}
-      <div className="ps-stripe-element">
+      {DUMMY_PAYMENT_MODE && (
+        <div className="ps-muted" style={{ fontSize: "12px", marginBottom: "12px", color: "#666" }}>
+          ⚠️ Dummy mode: Card details not required, payment will be bypassed
+        </div>
+      )}
+      <div className="ps-stripe-element" style={DUMMY_PAYMENT_MODE ? { opacity: 0.5, pointerEvents: "none" } : {}}>
         <CardElement
           options={{
             style: {
@@ -245,7 +398,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         />
       </div>
       <button className="ps-pay" onClick={handleConfirmCard} disabled={processing}>
-        {processing ? "Processing…" : `${t("checkout.usePaymentMethod")} (${formatCurrency(orderTotal)})`}
+        {processing ? "Processing…" : `Pay with Card (${formatCurrency(orderTotal)})`}
       </button>
     </div>
   );
@@ -263,25 +416,91 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     </div>
   );
 
-  const renderPhonePe = () => (
-    <form className="ps-phonepe" onSubmit={(e) => {
-      e.preventDefault();
-      history.push("/order-confirmation");
-    }}>
+  const renderUPI = () => (
+    <form className="ps-phonepe" onSubmit={handleUPI}>
       <label>
         UPI ID
         <input
           type="text"
           value={phonePeVpa}
           onChange={(e) => setPhonePeVpa(e.target.value)}
-          placeholder="username@okaxis"
-          required
+          placeholder="username@paytm or username@okaxis"
+          required={!DUMMY_PAYMENT_MODE}
         />
       </label>
+      {DUMMY_PAYMENT_MODE && (
+        <div className="ps-muted" style={{ fontSize: "12px", marginTop: "8px", color: "#666" }}>
+          ⚠️ Dummy mode: Payment will be bypassed
+        </div>
+      )}
       <button type="submit" className="ps-pay" disabled={processing}>
-        {processing ? "Processing…" : t("checkout.usePaymentMethod")}
+        {processing ? "Processing…" : `Pay with UPI (${formatCurrency(orderTotal)})`}
       </button>
     </form>
+  );
+
+
+  const handleCOD = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+    setError("");
+
+    try {
+      // First create order to get order_code
+      const orderId = await finalizeOrder(null, "cod");
+      
+      if (!orderId) {
+        throw new Error("Failed to create order");
+      }
+
+      // Dummy mode: skip actual payment API call
+      if (DUMMY_PAYMENT_MODE) {
+        console.log("[PaymentSection] Dummy mode: Bypassing COD payment");
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else {
+        // Process COD payment (no actual payment, just confirmation)
+        await processOrderPayment({
+          payment_method: "cod",
+          amount: String(orderTotal),
+          order_code: String(orderId),
+        });
+      }
+
+      // Redirect to success page with order data in state
+      history.push({
+        pathname: "/order-confirmation",
+        search: `?orderId=${orderId}`,
+        state: {
+          orderId,
+          items,
+          orderTotal,
+          shipping,
+          addressId,
+        }
+      });
+    } catch (err) {
+      setError(err.message || "Failed to place COD order. Please try again.");
+      setProcessing(false);
+    }
+  };
+
+
+  const renderCOD = () => (
+    <div className="ps-cod">
+      <div className="ps-muted">
+        <p>You will pay cash when you receive your order.</p>
+        <p>An additional charge may apply for COD orders.</p>
+      </div>
+      {DUMMY_PAYMENT_MODE && (
+        <div className="ps-muted" style={{ fontSize: "12px", marginTop: "8px", color: "#666" }}>
+          ⚠️ Dummy mode: Payment will be bypassed
+        </div>
+      )}
+      <button className="ps-pay" onClick={handleCOD} disabled={processing}>
+        {processing ? "Processing…" : `Place COD Order (${formatCurrency(orderTotal)})`}
+      </button>
+    </div>
   );
 
   const renderPayPal = () => (
@@ -315,12 +534,10 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     switch (selectedMethod) {
       case "card":
         return renderCardList();
-      case "googlePay":
-        return renderGooglePay();
-      case "phonePe":
-        return renderPhonePe();
-      case "paypal":
-        return renderPayPal();
+      case "upi":
+        return renderUPI();
+      case "cod":
+        return renderCOD();
       default:
         return null;
     }

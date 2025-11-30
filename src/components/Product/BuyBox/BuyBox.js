@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./BuyBox.css";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { addItem } from "../../../features/cart/CartSlice";
 import { selectUser } from "../../../features/auth/AuthSlice";
 import { useCartSync } from "../../../hooks/useCartSync";
 import { formatCurrency } from "../../../utils/currency";
@@ -26,7 +25,6 @@ const parsePrice = (value) => {
 };
 
 export default function BuyBox({ product }) {
-  const dispatch = useDispatch();
   const history = useHistory();
   const user = useSelector(selectUser);
   const { syncAddItem } = useCartSync();
@@ -58,7 +56,21 @@ export default function BuyBox({ product }) {
   const rawHeroImage = variation?.product_images?.[0]?.product_image;
   const heroImage = rawHeroImage ? getImageUrl(rawHeroImage) : "/images/NO_IMG.png";
 
-  const onAdd = async () => {
+  const onAdd = (e) => {
+    // Prevent event bubbling and multiple clicks
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Prevent multiple simultaneous calls
+    if (onAdd.processing) {
+      console.warn("Add to cart already processing, ignoring duplicate call");
+      return;
+    }
+    
+    onAdd.processing = true;
+    
     const item = {
       sku: variation?.id || product?.id,
       title: product?.product_name,
@@ -67,13 +79,20 @@ export default function BuyBox({ product }) {
       image: heroImage,
     };
     
-    // Add to local cart (works for both guests and authenticated users)
-    dispatch(addItem(item));
-    
-    // Sync to backend if user is authenticated
-    if (user) {
-      await syncAddItem(item);
+    // Validate item before adding
+    if (!item.sku) {
+      console.error("Cannot add item: missing variation ID");
+      onAdd.processing = false;
+      return;
     }
+    
+    // Add to cart (works with localStorage)
+    syncAddItem(item);
+    
+    // Reset processing flag after a short delay to prevent rapid clicks
+    setTimeout(() => {
+      onAdd.processing = false;
+    }, 1000);
   };
 
   return (

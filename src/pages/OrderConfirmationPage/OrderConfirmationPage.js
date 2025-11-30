@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { useHistory } from "react-router-dom";
+import React, { useMemo, useEffect } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import "./OrderConfirmationPage.css";
 import { selectCartItems, selectCartTotal, clearCart } from "../../features/cart/CartSlice";
@@ -12,6 +12,7 @@ import { downloadReceiptPDF } from "../../utils/receiptGenerator";
 
 export default function OrderConfirmationPage() {
   const history = useHistory();
+  const location = useLocation();
   const dispatch = useDispatch();
   
   const items = useSelector(selectCartItems);
@@ -26,7 +27,65 @@ export default function OrderConfirmationPage() {
   const [downloadingReceipt, setDownloadingReceipt] = React.useState(false);
   const [orderConfirmed, setOrderConfirmed] = React.useState(false);
   const [confirmedOrderData, setConfirmedOrderData] = React.useState(null);
+  const [orderIdFromUrl, setOrderIdFromUrl] = React.useState(null);
   const isMountedRef = React.useRef(true);
+  const processedOrderIdRef = React.useRef(null);
+
+  // Get orderId from URL or location state if present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get("orderId");
+    const locationState = location.state;
+    
+    // Only process if we have an orderId and haven't processed it yet
+    if (orderId && processedOrderIdRef.current !== orderId) {
+      processedOrderIdRef.current = orderId;
+      setOrderIdFromUrl(orderId);
+      
+      // Use items from location state if available (preserved from payment), otherwise use cart
+      const orderItems = locationState?.items || items;
+      const orderTotalFromState = locationState?.orderTotal || (itemsTotal + (shipping.shipping || 0) + (shipping.tax || 0) + (shipping.importCharges || 0));
+      const shippingFromState = locationState?.shipping || shipping;
+      const addressIdFromState = locationState?.addressId || selectedAddressId;
+      
+      // If orderId exists, it means order was already created via payment
+      // Mark as confirmed and create order data
+      if (orderItems && orderItems.length > 0) {
+        const orderData = {
+          order_code: orderId,
+          orderId: orderId,
+          order_date: new Date().toISOString(),
+          placedAt: new Date().toISOString(),
+          items: orderItems,
+          itemsTotal: orderItems.reduce((sum, item) => sum + (item.price * item.qty), 0),
+          total: orderTotalFromState,
+          shipping: shippingFromState,
+          selectedAddress: addresses.find(addr => addr.id === addressIdFromState),
+        };
+        setConfirmedOrderData(orderData);
+        setOrderConfirmed(true);
+        // Clear cart after showing confirmation
+        dispatch(clearCart());
+      } else if (items.length > 0) {
+        // Fallback to current cart items if location state not available
+        const orderData = {
+          order_code: orderId,
+          orderId: orderId,
+          order_date: new Date().toISOString(),
+          placedAt: new Date().toISOString(),
+          items: items,
+          itemsTotal: itemsTotal,
+          total: itemsTotal + (shipping.shipping || 0) + (shipping.tax || 0) + (shipping.importCharges || 0),
+          shipping: shipping,
+          selectedAddress: addresses.find(addr => addr.id === selectedAddressId),
+        };
+        setConfirmedOrderData(orderData);
+        setOrderConfirmed(true);
+        // Clear cart after showing confirmation
+        dispatch(clearCart());
+      }
+    }
+  }, [location.search, location.state]);
   
   React.useEffect(() => {
     return () => {
@@ -261,7 +320,158 @@ export default function OrderConfirmationPage() {
     }
   };
 
-  if (items.length === 0) {
+  // If order is already confirmed (from URL), show success even if cart is empty
+  if (orderConfirmed && confirmedOrderData) {
+    // Show order confirmation success page
+    const orderItems = confirmedOrderData.items || [];
+    const orderAddress = confirmedOrderData.selectedAddress;
+    
+    return (
+      <div className="orderConfirmationPage">
+        <div className="orderConfirmationContainer">
+          <div className="orderConfirmationHeader">
+            <h1>Order Confirmed!</h1>
+            <p className="orderConfirmationSubtitle">
+              Your order has been placed successfully
+            </p>
+          </div>
+
+          <div className="orderConfirmationGrid">
+            <div className="orderConfirmationMain">
+              {/* Order Items */}
+              <section className="orderConfirmationSection">
+                <h2>Order Items</h2>
+                <div className="orderConfirmationItems">
+                  {orderItems.map((item) => (
+                    <div className="orderConfirmationItem" key={item.sku || item.id}>
+                      <img
+                        src={getImageUrl(item.image)}
+                        alt={item.title}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "/images/NO_IMG.png";
+                        }}
+                      />
+                      <div className="orderConfirmationItemDetails">
+                        <h3>{item.title}</h3>
+                        <div className="orderConfirmationItemMeta">
+                          <span>Quantity: {item.qty}</span>
+                          <span className="orderConfirmationItemPrice">
+                            {formatCurrency(item.price * item.qty)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Shipping Address */}
+              {orderAddress && (
+                <section className="orderConfirmationSection">
+                  <h2>Shipping Address</h2>
+                  <div className="orderConfirmationAddress">
+                    <p className="orderConfirmationAddressName">
+                      {orderAddress.fullName}
+                    </p>
+                    <p className="orderConfirmationAddressLine">
+                      {orderAddress.address1}
+                    </p>
+                    {orderAddress.address2 && (
+                      <p className="orderConfirmationAddressLine">
+                        {orderAddress.address2}
+                      </p>
+                    )}
+                    <p className="orderConfirmationAddressLine">
+                      {orderAddress.city}, {orderAddress.state} {orderAddress.zip}
+                    </p>
+                    <p className="orderConfirmationAddressLine">
+                      {orderAddress.country}
+                    </p>
+                    <p className="orderConfirmationAddressPhone">
+                      Phone: {orderAddress.phone}
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              {/* Order Summary */}
+              <section className="orderConfirmationSection">
+                <h2>Order Summary</h2>
+                <div className="orderConfirmationSummary">
+                  <div className="orderConfirmationSummaryRow">
+                    <span>Items ({orderItems.length}):</span>
+                    <span>{formatCurrency(confirmedOrderData.itemsTotal || 0)}</span>
+                  </div>
+                  <div className="orderConfirmationSummaryRow">
+                    <span>Shipping:</span>
+                    <span>{formatCurrency(confirmedOrderData.shipping?.shipping || 0)}</span>
+                  </div>
+                  <div className="orderConfirmationSummaryRow">
+                    <span>Tax:</span>
+                    <span>{formatCurrency(confirmedOrderData.shipping?.tax || 0)}</span>
+                  </div>
+                  <div className="orderConfirmationSummaryRow orderConfirmationSummaryRow--total">
+                    <span>Order Total:</span>
+                    <span>{formatCurrency(confirmedOrderData.total || 0)}</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Sidebar */}
+            <aside className="orderConfirmationSidebar">
+              <div className="orderConfirmationSidebarCard">
+                <div className="orderConfirmationSuccess" style={{
+                  backgroundColor: "#d4edda",
+                  border: "1px solid #c3e6cb",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  marginBottom: "16px",
+                  color: "#155724",
+                }}>
+                  <div style={{ fontWeight: "600", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span>✅</span>
+                    <span>Order Confirmed!</span>
+                  </div>
+                  <p style={{ margin: "8px 0 0 0", fontSize: "14px" }}>
+                    Order ID: {orderIdFromUrl || confirmedOrderData.orderId}
+                  </p>
+                </div>
+
+                <button
+                  className="orderConfirmationBtn orderConfirmationBtn--primary"
+                  onClick={handleDownloadReceipt}
+                  disabled={downloadingReceipt}
+                >
+                  {downloadingReceipt ? "Generating Receipt..." : "Download Receipt"}
+                </button>
+
+                <button
+                  className="orderConfirmationBtn orderConfirmationBtn--secondary"
+                  onClick={() => history.push("/orders")}
+                  style={{ width: "100%", marginTop: "12px" }}
+                >
+                  View Orders
+                </button>
+
+                <button
+                  className="orderConfirmationBtn orderConfirmationBtn--secondary"
+                  onClick={() => history.push("/")}
+                  style={{ width: "100%", marginTop: "12px" }}
+                >
+                  Continue Shopping
+                </button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no items and no orderId, show empty cart message
+  if (items.length === 0 && !orderIdFromUrl) {
     return (
       <div className="orderConfirmationPage">
         <div className="orderConfirmationCard">

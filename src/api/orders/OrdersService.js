@@ -57,9 +57,13 @@ export const createOrderRecord = async (order) => {
  */
 export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1 }) => {
   try {
+    console.log("[OrdersService] fetchOrders() - Fetching orders with params:", { timeRange, query, tab, page });
+    
     const response = await API.get("/v1/orders/order-history/", {
       params: { page },
     });
+
+    console.log("[OrdersService] fetchOrders() - API response:", response.data);
 
     // Handle API response format
     let orders = [];
@@ -69,11 +73,15 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1 }
       } else if (response.data.results?.data && Array.isArray(response.data.results.data)) {
         orders = response.data.results.data;
       }
+    } else if (response.data?.data) {
+      if (Array.isArray(response.data.data)) {
+        orders = response.data.data;
+      }
     } else if (Array.isArray(response.data)) {
       orders = response.data;
-    } else if (response.data?.data && Array.isArray(response.data.data)) {
-      orders = response.data.data;
     }
+
+    console.log("[OrdersService] fetchOrders() - Extracted orders:", orders.length);
 
     // Apply client-side filtering if needed
     const normalizedQuery = (query || "").toLowerCase();
