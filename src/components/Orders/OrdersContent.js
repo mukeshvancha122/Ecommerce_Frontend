@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./OrdersContent.css";
 import OrdersEmptyState from "./OrdersEmptyState";
-import SponsoredAdCard from "../../components/Adcard/SponsoredAdCard";
 import { formatCurrency } from "../../utils/currency";
 import { getImageUrl } from "../../utils/imageUtils";
 import { downloadReceipt, sendReceiptEmail } from "../../utils/receiptGenerator";
@@ -61,14 +60,11 @@ export default function OrdersContent({
 
   if (!orders || orders.length === 0) {
     return (
-      <>
-        <OrdersEmptyState
-          message={emptyMessage}
-          ctaText={emptyLinkText}
-          ctaHref={emptyLinkHref}
-        />
-        <SponsoredAdCard />
-      </>
+      <OrdersEmptyState
+        message={emptyMessage}
+        ctaText={emptyLinkText}
+        ctaHref={emptyLinkHref}
+      />
     );
   }
 
