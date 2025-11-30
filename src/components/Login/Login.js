@@ -5,7 +5,6 @@ import { useHistory, useLocation } from "react-router-dom";
 import { store } from "../../store";
 
 import { setCredentials } from "../../features/auth/AuthSlice";
-import { mergeCartWithBackend, fetchCartFromBackend, selectCartItems } from "../../features/cart/CartSlice";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
 // auth services
@@ -22,7 +21,6 @@ export default function Login() {
   const history = useHistory();
   const location = useLocation();
   const { t } = useTranslation();
-  const localCartItems = useSelector(selectCartItems);
   
   // Get the intended destination from location state (set by ProtectedRoute)
   const from = location.state?.from || "/";
@@ -118,26 +116,8 @@ export default function Login() {
       })
     );
 
-    // Merge local cart with backend cart when user logs in
-    if (localCartItems && localCartItems.length > 0) {
-      console.log("Merging local cart with backend cart...", localCartItems);
-      dispatch(mergeCartWithBackend(localCartItems))
-        .then(() => {
-          console.log("Cart merged successfully");
-        })
-        .catch((error) => {
-          console.error("Failed to merge cart:", error);
-          // Continue with login even if cart merge fails
-        });
-    } else {
-      // If no local cart, fetch cart from backend
-      console.log("No local cart items, fetching from backend...");
-      dispatch(fetchCartFromBackend())
-        .catch((error) => {
-          console.error("Failed to fetch cart from backend:", error);
-          // Continue with login even if cart fetch fails
-        });
-    }
+    // Cart is stored in localStorage and will persist automatically
+    // No need to merge or fetch from backend
 
     // Verify Redux state after dispatch
     setTimeout(() => {

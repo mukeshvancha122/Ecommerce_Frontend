@@ -143,7 +143,6 @@ export default function CheckoutPage() {
                   orderTotal={orderTotal}
                   addressId={selectedAddressId}
                   items={items}
-                  shipping={shipping}
                 />
               )}
             </div>

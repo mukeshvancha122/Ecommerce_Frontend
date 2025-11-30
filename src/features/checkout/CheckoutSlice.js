@@ -7,6 +7,7 @@ import { updateCheckout } from "../../api/payment/PaymentService";
 
 export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async () => {
   const { data } = await getAddresses();
+  console.log("data", data);
   return data.addresses || [];
 });
 
@@ -61,19 +62,25 @@ export const confirmOrderThunk = createAsyncThunk(
       const address = addressId ? addresses.find(addr => addr.id === addressId) : null;
       const addressData = address?.backendFormat || null;
       
-      // Update checkout with shipping info if available (include address data)
-      if (addressId && shipping) {
+      // Update checkout with shipping info if available
+      // Only call updateCheckout if addressId is a numeric ID (backend database ID)
+      // Local storage addresses have string IDs like 'addr_xxx' which won't work
+      const isNumericId = addressId && /^\d+$/.test(String(addressId));
+      
+      if (isNumericId && shipping) {
         try {
+          console.log("[CheckoutSlice] Updating checkout with:", { drop_location_id: addressId, shipping });
           await updateCheckout({
-            drop_location_id: addressId,
+            drop_location_id: Number(addressId), // Ensure it's a number
             shipping: JSON.stringify(shipping),
-            // Include address data in update
-            address: addressData,
           });
         } catch (error) {
-          console.warn("Failed to update checkout:", error);
+          console.warn("[CheckoutSlice] Failed to update checkout:", error);
+          console.warn("[CheckoutSlice] Error details:", error.response?.data);
           // Continue with order placement even if update fails
         }
+      } else if (addressId && !isNumericId) {
+        console.log("[CheckoutSlice] Skipping updateCheckout - addressId is not a numeric backend ID:", addressId);
       }
 
       const { data } = await placeOrder({

@@ -225,16 +225,25 @@ export const placeOrder = async (payload) => {
   // Get address data to include in order
   const addressData = payload.addressData || null;
   
-  // Process order payment - this will throw if it fails
-  await processOrderPayment({
-    payment_method: payload.paymentMethod || "card",
-    amount: String(payload.total),
-    order_code: orderCode,
-    ref_code: payload.paymentIntentId || "",
-    pidx: payload.paymentIntentId || "",
-    // Include address data for shipping
-    shipping_address: addressData,
-  });
+  // Map payment methods to API-supported methods
+  // Only call processOrderPayment for methods supported by /api/v1/payments/order-payment/
+  // Stripe payments use a different endpoint (/api/v1/payments/stripe-payment/)
+  const paymentMethod = payload.paymentMethod || "card";
+  const supportedMethods = ["esewa", "khalti", "cod"];
+  
+  // Only process order payment for supported methods
+  // For Stripe/Card, payment is handled separately via stripe-payment endpoint
+  if (supportedMethods.includes(paymentMethod.toLowerCase())) {
+    await processOrderPayment({
+      payment_method: paymentMethod.toLowerCase(),
+      amount: String(payload.total),
+      order_code: orderCode,
+      ref_code: payload.paymentIntentId || "",
+      pidx: payload.paymentIntentId || "",
+    });
+  } else {
+    console.log(`[CheckoutService] Skipping order-payment for method: ${paymentMethod} (not supported by order-payment endpoint)`);
+  }
   
   // Return order details only if payment succeeds
   return {
