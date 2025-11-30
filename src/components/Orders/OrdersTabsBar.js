@@ -6,8 +6,6 @@ export default function OrdersTabsBar({ activeTab, onTabChange, options }) {
     { id: "orders", label: "Orders" },
     { id: "buyAgain", label: "Buy Again" },
     { id: "notShipped", label: "Not Yet Shipped" },
-    { id: "digital", label: "Digital Orders" },
-    { id: "amazonPay", label: "HyderNexa Pay" },
   ];
 
   return (

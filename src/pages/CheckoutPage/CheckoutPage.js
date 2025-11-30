@@ -5,6 +5,7 @@ import { useHistory } from "react-router-dom";
 import {
   fetchAddresses,
   fetchShippingQuote,
+  initializeCheckout,
   selectAddresses,
   selectSelectedAddressId,
   selectAddress as selectAddressAction,
@@ -13,6 +14,8 @@ import {
   goToPayment,
   startPayment,
   selectPaymentState,
+  selectCoupons,
+  selectRewards,
   resetCheckout,
 } from "../../features/checkout/CheckoutSlice";
 import { selectCartItems, selectCartTotal, clearCart, removeItem, setQty } from "../../features/cart/CartSlice";
@@ -47,10 +50,12 @@ export default function CheckoutPage() {
   const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
   const selectedCountry = useSelector(selectCountry);
 
-  // Load addresses when user is logged in and component mounts
+  // Load addresses and initialize checkout when user is logged in and component mounts
   useEffect(() => {
     if (user?.email) {
       dispatch(fetchAddresses());
+      // Initialize checkout to get available coupons and rewards
+      dispatch(initializeCheckout());
     }
   }, [dispatch, user?.email]);
 

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getAddresses, addAddress, updateAddress, setDefaultAddress,
-  getShippingQuote, createPaymentIntent, placeOrder
+  getShippingQuote, createPaymentIntent, placeOrder, startCheckout
 } from "../../api/CheckoutService";
 import { updateCheckout } from "../../api/payment/PaymentService";
 
@@ -9,6 +9,11 @@ export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async 
   const { data } = await getAddresses();
   console.log("data", data);
   return data.addresses || [];
+});
+
+export const initializeCheckout = createAsyncThunk("checkout/initializeCheckout", async () => {
+  const { data } = await startCheckout();
+  return data; // { coupons, rewards, checkoutData }
 });
 
 export const createAddress = createAsyncThunk("checkout/createAddress", async (payload, { rejectWithValue }) => {
@@ -137,6 +142,8 @@ const initialState = {
   selectedAddressId: loadSelectedAddressId(),
   shipping: { itemsTotal: 0, shipping: 0, tax: 0, importCharges: 0 },
   payment: { clientSecret: null, orderId: null, status: "idle", lastError: null },
+  coupons: [], // Available coupons from start-checkout
+  rewards: 0, // Available rewards points
   status: "idle",
   error: null,
 };
@@ -152,7 +159,11 @@ const slice = createSlice({
     goToPayment(state) { state.step = "payment"; },
     resetCheckout() { 
       saveSelectedAddressId(null);
-      return initialState; 
+      return {
+        ...initialState,
+        coupons: [],
+        rewards: 0,
+      }; 
     },
   },
   extraReducers: (b) => {
@@ -167,6 +178,16 @@ const slice = createSlice({
         }
      })
      .addCase(fetchAddresses.rejected, (s, a) => { s.status = "failed"; s.error = a.error?.message; })
+
+     .addCase(initializeCheckout.fulfilled, (s, a) => {
+        s.coupons = a.payload.coupons || [];
+        s.rewards = a.payload.rewards || 0;
+     })
+     .addCase(initializeCheckout.rejected, (s) => {
+        // If checkout initialization fails, set empty coupons/rewards
+        s.coupons = [];
+        s.rewards = 0;
+     })
 
      .addCase(createAddress.pending, (s) => { s.status = "loading"; })
      .addCase(createAddress.fulfilled, (s, a) => {
@@ -227,5 +248,7 @@ export const selectSelectedAddressId = (s) => s.checkout.selectedAddressId;
 export const selectCheckoutStep = (s) => s.checkout.step;
 export const selectShipping = (s) => s.checkout.shipping;
 export const selectPaymentState = (s) => s.checkout.payment;
+export const selectCoupons = (s) => s.checkout.coupons;
+export const selectRewards = (s) => s.checkout.rewards;
 
 export default slice.reducer;

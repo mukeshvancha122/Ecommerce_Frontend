@@ -1,147 +1,100 @@
 import API from "../../axios";
 
-export const getWishlist = async (page = 1) => {
-  console.log("Dummy wishlist page:", page);
-
-  return {
-    count: 123,
-    next: "http://api.example.org/accounts/?page=4",
-    previous: "http://api.example.org/accounts/?page=2",
-    results: [
-      {
-        id: 1,
-        products: [
-          {
-            id: 10,
-            product_name: "Wishlist Gaming Laptop",
-            product_description: "Powerful laptop with RTX graphics for gaming.",
-            product_discount: 25,
-
-            product_category: {
-              id: 2,
-              category_name: "Electronics",
-              category_image: "https://via.placeholder.com/300x200?text=Electronics",
-              slug: "electronics",
-              is_discount_active: true,
-              discount_start_date: "2025-11-20T02:15:24.897Z",
-              discount_end_date: "2025-12-05T02:15:24.897Z",
-            },
-
-            sub_category: {
-              id: 5,
-              sub_category_name: "Laptops",
-              sub_category_discount: 10,
-              discount_start_date: "2025-11-20T02:15:24.897Z",
-              discount_end_date: "2025-12-10T02:15:24.897Z",
-              sub_category_image: "https://via.placeholder.com/200x150?text=Laptops",
-              is_discount_active: true,
-              slug: "laptops",
-            },
-
-            is_top_selling: true,
-            weekly_drop: false,
-            exciting_deals: "Mega Laptop Sale",
-            featured_product: true,
-            faq: "Does it support HDMI 2.1? → Yes.",
-
-            brand: {
-              brand_name: "TechPro",
-              brand_image: "https://via.placeholder.com/150?text=TechPro",
-              slug: "techpro",
-            },
-
-            product_variations: [
-              {
-                id: 101,
-                product: {
-                  id: 10,
-                  product_name: "Wishlist Gaming Laptop",
-                  product_description: "Smooth 144Hz display.",
-                  brand: 1,
-                },
-                product_color: "Black",
-                product_size: "15-inch",
-                product_price: 1800,
-                laptop_product: {
-                  laptop_processor: "Intel i7",
-                  ram: "16GB",
-                  ssd: "1TB",
-                  hard_disk: "",
-                  graphics_card: "RTX 4070",
-                  screen_size: "15.6\"",
-                  battery_life: "8 hours",
-                  weight: "2.0kg",
-                  operating_system: "Windows 11",
-                  others: "RGB keyboard",
-                },
-                product_images: [
-                  { id: 1, product_image: "https://via.placeholder.com/300?text=Laptop1" },
-                ],
-                get_image_count: "1",
-                get_discounted_price: "1350",
-                stock: "7",
-              },
-            ],
-
-            business_product: {
-              minimum_bulk_quantity: 5,
-              business_discount: 10,
-            },
-
-            age_restriction: false,
-            get_rating_info: "4.8",
-            handpicked: true,
-            free_delivery: true,
-            best_seller: true,
-            slug: "wishlist-gaming-laptop",
-            tag: { product_tag: "wishlist" },
-            has_cashback: true,
-            excitingdeal_start_date: "2025-11-20T02:15:24.897Z",
-            excitingdeal_end_date: "2025-11-30T02:15:24.897Z",
-          },
-        ],
-      },
-    ],
-  };
-};
-
-export const addToWishlist = async (payload) => {
-  console.log("Dummy add to wishlist:", payload);
-
-  return {
-    success: true,
-    message: "Product added to wishlist (dummy).",
-  };
-};
-
-
 /**
+ * Get wishlist from backend API
  * GET /api/v1/products/wishlist/?page=1
  * Returns: { count, next, previous, results: [ { id, products: [...] } ] }
+ * @param {number} page - Page number (default: 1)
+ * @returns {Promise<Object>} Wishlist data with pagination
  */
-// export const getWishlist = async (page = 1) => {
-//   try {
-//     const response = await API.get("/v1/products/wishlist/", {
-//       params: { page },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error fetching wishlist:", error);
-//     throw error;
-//   }
-// };
+export const getWishlist = async (page = 1) => {
+  try {
+    const response = await API.get("/v1/products/wishlist/", {
+      params: { page },
+    });
+    
+    // API returns: { count, next, previous, results: [ { id, products: [...] } ] }
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching wishlist:", error);
+    
+    // If unauthorized (401), return empty wishlist (guest mode)
+    if (error.response?.status === 401) {
+      console.log("User not authenticated, returning empty wishlist");
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+      };
+    }
+    
+    throw error;
+  }
+};
 
-// /**
-//  * POST /api/v1/products/wishlist/
-//  * Payload shape depends on your backend (e.g. { product_id: 1 } or similar)
-//  * I'm keeping it generic so you can pass whatever your API expects.
-//  */
-// export const addToWishlist = async (payload) => {
-//   try {
-//     const response = await API.post("/v1/products/wishlist/", payload);
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error adding to wishlist:", error);
-//     throw error;
-//   }
-// };
+/**
+ * Add product to wishlist
+ * POST /api/v1/products/wishlist/?id={product_id}
+ * Note: API expects `id` as a query parameter, not in request body
+ * @param {Object|number|string} payload - Product to add (can be object with id or just the id)
+ * @param {number|string} [payload.id] - Product ID (if payload is object)
+ * @param {number|string} [payload.product_id] - Product ID (alternative)
+ * @param {number|string} [payload.productId] - Product ID (alternative)
+ * @returns {Promise<Object>} Response: { id, products: [...] }
+ */
+export const addToWishlist = async (payload) => {
+  try {
+    // Extract product ID from payload
+    // Payload can be: { id: 123 }, { product_id: 123 }, or just 123
+    const productId = 
+      typeof payload === 'object' 
+        ? (payload.id || payload.product_id || payload.productId)
+        : payload;
+    
+    if (!productId) {
+      throw new Error("Product ID is required to add to wishlist");
+    }
+    
+    // API expects `id` as a query parameter
+    const response = await API.post("/v1/products/wishlist/", {}, {
+      params: {
+        id: productId
+      }
+    });
+    
+    // Response format: { id: 0, products: [...] }
+    return response.data;
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    
+    // Handle authentication error
+    if (error.response?.status === 401) {
+      throw new Error("Authentication required. Please log in to add items to wishlist.");
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Remove product from wishlist
+ * DELETE /api/v1/products/wishlist/{id}/
+ * @param {number|string} wishlistItemId - Wishlist item ID
+ * @returns {Promise<Object>} Response from API
+ */
+export const removeFromWishlist = async (wishlistItemId) => {
+  try {
+    const response = await API.delete(`/v1/products/wishlist/${wishlistItemId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error removing from wishlist:", error);
+    
+    // Handle authentication error
+    if (error.response?.status === 401) {
+      throw new Error("Authentication required. Please log in to remove items from wishlist.");
+    }
+    
+    throw error;
+  }
+};
