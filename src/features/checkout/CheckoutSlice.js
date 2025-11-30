@@ -88,6 +88,7 @@ export const confirmOrderThunk = createAsyncThunk(
         console.log("[CheckoutSlice] Skipping updateCheckout - addressId is not a numeric backend ID:", addressId);
       }
 
+      console.log("[CheckoutSlice] confirmOrderThunk() - Calling placeOrder to create order in backend");
       const { data } = await placeOrder({
         addressId,
         addressData, // Pass address data for shipping
@@ -95,6 +96,10 @@ export const confirmOrderThunk = createAsyncThunk(
         paymentIntentId,
         paymentMethod,
         total,
+      });
+      console.log("[CheckoutSlice] confirmOrderThunk() - Order placed successfully:", {
+        orderId: data?.orderId,
+        status: data?.status
       });
       return data; // { orderId, status }
     } catch (error) {

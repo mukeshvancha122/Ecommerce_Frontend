@@ -1,4 +1,5 @@
 import API from "../../axios";
+import { getImageUrl } from "../../utils/imageUtils";
 
 /**
  * Cart Service - Handles cart operations with backend API
@@ -52,7 +53,10 @@ export const getCart = async () => {
       
       // Extract images from variation
       const images = variation.product_images || [];
-      const firstImage = images[0]?.product_image || images[0]?.image || null;
+      const rawImage = images[0]?.product_image || images[0]?.image || item.image || item.product_image || product.image || item.thumbnail || null;
+      
+      // Convert image URL to full URL using getImageUrl utility
+      const image = rawImage ? getImageUrl(rawImage) : "/images/NO_IMG.png";
       
       // Get price from variation (discounted price is calculated, use final_price or product_price)
       // Backend provides get_discounted_price() method result
@@ -71,7 +75,7 @@ export const getCart = async () => {
         title: product.product_name || item.product_name || variation.product_name || item.title || item.name || "Unknown Product",
         price: price,
         qty: parseInt(item.quantity || item.qty || 1, 10),
-        image: firstImage || item.image || item.product_image || product.image || item.thumbnail || "/images/NO_IMG.png",
+        image: image,
       };
       console.log(`[CartService] getCart() - Transformed item ${index}:`, transformed);
       return transformed;
@@ -179,7 +183,7 @@ export const addCartItem = async (item) => {
 
 /**
  * Reduce cart item quantity on backend
- * PUT /api/v1/orders/cart/reduce/
+ * PATCH /api/v1/orders/cart/reduce/
  * Note: item_id should be the variation ID (not cart item ID)
  * @param {string|number} variationId - Product variation ID (item_id in API)
  * @param {number} reduceBy - Amount to reduce quantity by
@@ -196,11 +200,11 @@ export const reduceCartItem = async (variationId, reduceBy = 1) => {
       item_id: varId, // item_id is the variation ID
       quantity: reduceQty,
     };
-    console.log("[CartService] reduceCartItem() - Sending PUT request to /v1/orders/cart/reduce/ with payload:", requestPayload);
+    console.log("[CartService] reduceCartItem() - Sending PATCH request to /v1/orders/cart/reduce/ with payload:", requestPayload);
     
-    const response = await API.put("/v1/orders/cart/reduce/", requestPayload);
-    console.log("[CartService] reduceCartItem() - PUT response:", response);
-    console.log("[CartService] reduceCartItem() - PUT response.data:", response.data);
+    const response = await API.patch("/v1/orders/cart/reduce/", requestPayload);
+    console.log("[CartService] reduceCartItem() - PATCH response:", response);
+    console.log("[CartService] reduceCartItem() - PATCH response.data:", response.data);
     
     // Response format: { item_id: <variation_id>, quantity: <reduced_by> }
     console.log("[CartService] reduceCartItem() - Returning response data:", response.data);
@@ -244,13 +248,36 @@ export const updateCartItem = async (itemId, qty, currentQty = null, variationId
       throw new Error(`Invalid variation ID: ${varId}`);
     }
     
-    // If we have current quantity and new qty is less, use reduce endpoint
-    if (currentQty !== null && newQty < currentQty) {
-      const reduceBy = currentQty - newQty;
-      console.log("[CartService] updateCartItem() - Decreasing quantity, reducing by:", reduceBy);
-      await reduceCartItem(varIdInt, reduceBy);
-      // Fetch updated cart to get the new state with complete data
-      console.log("[CartService] updateCartItem() - Fetching cart after reduce...");
+    // If we have current quantity, determine if we need to increase or decrease
+    if (currentQty !== null) {
+      if (newQty < currentQty) {
+        // Decrease: use reduce endpoint
+        const reduceBy = currentQty - newQty;
+        console.log("[CartService] updateCartItem() - Decreasing quantity, reducing by:", reduceBy);
+        await reduceCartItem(varIdInt, reduceBy);
+      } else if (newQty > currentQty) {
+        // Increase: add more items using add endpoint
+        const addQty = newQty - currentQty;
+        console.log("[CartService] updateCartItem() - Increasing quantity, adding:", addQty);
+        await addCartItem({
+          sku: String(varIdInt),
+          qty: addQty,
+        });
+      } else {
+        // Same quantity, no update needed
+        console.log("[CartService] updateCartItem() - Quantity unchanged, no update needed");
+        const cart = await getCart();
+        const updatedItem = cart.find(item => {
+          const itemVarId = parseInt(item.sku, 10);
+          return !isNaN(itemVarId) && itemVarId === varIdInt;
+        });
+        if (updatedItem) {
+          return updatedItem;
+        }
+      }
+      
+      // After reduce or add, fetch updated cart to get the new state
+      console.log("[CartService] updateCartItem() - Fetching cart after update...");
       const cart = await getCart();
       const updatedItem = cart.find(item => {
         const itemVarId = parseInt(item.sku, 10);
@@ -259,20 +286,20 @@ export const updateCartItem = async (itemId, qty, currentQty = null, variationId
         return matches;
       });
       if (updatedItem) {
-        console.log("[CartService] updateCartItem() - Found updated item after reduce:", updatedItem);
+        console.log("[CartService] updateCartItem() - Found updated item after operation:", updatedItem);
         return updatedItem;
       }
-      console.warn("[CartService] updateCartItem() - Item not found in cart after reduce");
+      console.warn("[CartService] updateCartItem() - Item not found in cart after update");
+      throw new Error("Item not found in cart after update");
     }
     
-    // For increases or if no current qty, try PATCH endpoint
-    // Note: This endpoint might not exist, so we'll handle the error gracefully
+    // If no current quantity, try PATCH endpoint as fallback
+    // This should rarely happen, but handle it gracefully
     try {
       const cartItemId = parseInt(itemId, 10);
-      console.log("[CartService] updateCartItem() - Parsed cartItemId:", cartItemId);
+      console.log("[CartService] updateCartItem() - No current quantity, trying PATCH with cartItemId:", cartItemId);
       
       if (isNaN(cartItemId) || cartItemId <= 0) {
-        console.error("[CartService] updateCartItem() - Invalid cart item ID:", itemId);
         throw new Error(`Invalid cart item ID: ${itemId}`);
       }
       
@@ -281,14 +308,14 @@ export const updateCartItem = async (itemId, qty, currentQty = null, variationId
       
       const response = await API.patch(`/v1/orders/cart/${cartItemId}/`, requestPayload);
       console.log("[CartService] updateCartItem() - PATCH response:", response);
-      console.log("[CartService] updateCartItem() - PATCH response.data:", response.data);
       
       // Transform response to frontend format
       const backendItem = response.data;
       const variation = backendItem.item || backendItem.product_variation || {};
       const product = variation.product || backendItem.product || {};
       const images = variation.product_images || [];
-      const firstImage = images[0]?.product_image || images[0]?.image || null;
+      const rawImage = images[0]?.product_image || images[0]?.image || backendItem.image || null;
+      const image = rawImage ? getImageUrl(rawImage) : "/images/NO_IMG.png";
       const variationPrice = variation.get_discounted_price?.final_price || 
                             variation.get_discounted_price || 
                             variation.product_price || 
@@ -300,25 +327,11 @@ export const updateCartItem = async (itemId, qty, currentQty = null, variationId
         title: product.product_name || backendItem.product_name || "Unknown Product",
         price: parseFloat(variationPrice || backendItem.price || 0),
         qty: parseInt(backendItem.quantity || backendItem.qty || newQty, 10),
-        image: firstImage || backendItem.image || "/images/NO_IMG.png",
+        image: image,
       };
       console.log("[CartService] updateCartItem() - Transformed item from PATCH:", transformed);
       return transformed;
     } catch (patchError) {
-      console.warn("[CartService] updateCartItem() - PATCH failed, trying fallback:", patchError);
-      // If PATCH doesn't work and we're increasing, fetch cart to get updated state
-      if (currentQty !== null && newQty > currentQty) {
-        console.log("[CartService] updateCartItem() - Fetching cart after PATCH failure (increasing)...");
-        const cart = await getCart();
-        const updatedItem = cart.find(item => {
-          const itemVarId = parseInt(item.sku, 10);
-          return !isNaN(itemVarId) && itemVarId === varIdInt;
-        });
-        if (updatedItem) {
-          console.log("[CartService] updateCartItem() - Found updated item in cart:", updatedItem);
-          return updatedItem;
-        }
-      }
       console.error("[CartService] updateCartItem() - PATCH error:", patchError);
       throw patchError;
     }

@@ -3,10 +3,8 @@ import "./Checkout.css";
 import CheckoutProduct from "./CheckoutProduct";
 import Subtotal from "./Subtotal";
 import EmptyCartProducts from "./EmptyCartProducts";
-
-// ✅ Redux
+import { useCart } from "../../hooks/useCart";
 import { useSelector } from "react-redux";
-import { selectCartItems } from "../../features/cart/CartSlice";
 import { selectUser } from "../../features/auth/AuthSlice";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
@@ -15,7 +13,7 @@ const safeName = (user) =>
   (user?.email ? user.email : null);
 
 export default function Checkout() {
-  const items = useSelector(selectCartItems);
+  const { items } = useCart();
   const user = useSelector(selectUser);
   const { t } = useTranslation();
 
@@ -45,7 +43,7 @@ export default function Checkout() {
           ) : (
             items.map((item) => (
               <CheckoutProduct
-                key={item.sku}
+                key={`${item.sku}-${item.qty}-${item.id}`}
                 id={item.sku}
                 title={item.title}
                 image={item.image}

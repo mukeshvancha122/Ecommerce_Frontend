@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import "./OrderConfirmationPage.css";
-import { selectCartItems, selectCartTotal, clearCart } from "../../features/cart/CartSlice";
+import { useCart } from "../../hooks/useCart";
 import { selectSelectedAddressId, selectAddresses, selectShipping } from "../../features/checkout/CheckoutSlice";
 import { confirmOrderThunk } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
@@ -15,8 +15,7 @@ export default function OrderConfirmationPage() {
   const location = useLocation();
   const dispatch = useDispatch();
   
-  const items = useSelector(selectCartItems);
-  const itemsTotal = useSelector(selectCartTotal);
+  const { items, total: itemsTotal, clearCart } = useCart();
   const shipping = useSelector(selectShipping);
   const selectedAddressId = useSelector(selectSelectedAddressId);
   const addresses = useSelector(selectAddresses);
@@ -65,7 +64,10 @@ export default function OrderConfirmationPage() {
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
         // Clear cart after showing confirmation
-        dispatch(clearCart());
+        console.log("[OrderConfirmationPage] Clearing cart after order confirmation");
+        clearCart().catch(err => {
+          console.error("[OrderConfirmationPage] Error clearing cart:", err);
+        });
       } else if (items.length > 0) {
         // Fallback to current cart items if location state not available
         const orderData = {
@@ -82,10 +84,13 @@ export default function OrderConfirmationPage() {
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
         // Clear cart after showing confirmation
-        dispatch(clearCart());
+        console.log("[OrderConfirmationPage] Clearing cart after order confirmation (fallback)");
+        clearCart().catch(err => {
+          console.error("[OrderConfirmationPage] Error clearing cart:", err);
+        });
       }
     }
-  }, [location.search, location.state]);
+  }, [location.search, location.state, items, itemsTotal, shipping, selectedAddressId, addresses, clearCart]);
   
   React.useEffect(() => {
     return () => {
@@ -248,8 +253,18 @@ export default function OrderConfirmationPage() {
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
         
-        // ONLY clear cart after successful order confirmation
-        dispatch(clearCart());
+        // CRITICAL: Clear cart AFTER successful order confirmation
+        // This ensures the cart is cleared only when order is successfully created in backend
+        console.log("[OrderConfirmationPage] Order confirmed successfully, clearing cart now...");
+        clearCart()
+          .then(() => {
+            console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
+          })
+          .catch(err => {
+            console.error("[OrderConfirmationPage] Error clearing cart:", err);
+            // Don't block UI if cart clearing fails - order is already created
+            // User can manually clear cart if needed
+          });
         
         // Don't redirect automatically - let user download receipt first
       } else if (confirmOrderThunk.rejected.match(action)) {
@@ -449,7 +464,7 @@ export default function OrderConfirmationPage() {
 
                 <button
                   className="orderConfirmationBtn orderConfirmationBtn--secondary"
-                  onClick={() => history.push("/orders")}
+                  onClick={() => history.push("/orders", { refreshOrders: true })}
                   style={{ width: "100%", marginTop: "12px" }}
                 >
                   View Orders
@@ -711,7 +726,7 @@ export default function OrderConfirmationPage() {
                     </p>
                     <button
                       className="orderConfirmationBtn orderConfirmationBtn--secondary"
-                      onClick={() => history.push("/orders")}
+                      onClick={() => history.push("/orders", { refreshOrders: true })}
                       style={{ width: "100%" }}
                     >
                       Go to Orders Page

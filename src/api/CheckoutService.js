@@ -1,22 +1,5 @@
-// import API from "../axios"; // your configured axios instance
-
-// export const getAddresses = () => API.get("/addresses");               // -> {addresses: []}
-// export const addAddress = (payload) => API.post("/addresses", payload); // -> {address}
-// export const updateAddress = (id, payload) => API.put(`/addresses/${id}`, payload);
-// export const setDefaultAddress = (id) => API.post(`/addresses/${id}/default`);
-
-// export const getShippingQuote = () => API.get("/checkout/shipping-quote"); // -> {shipping, tax, importCharges}
-// export const createPaymentIntent = (payload) =>
-//   API.post("/checkout/payment-intent", payload); // {amount, currency, clientSecret, orderId}
-
-// export const placeOrder = (payload) => API.post("/checkout/place-order", payload);
-// // payload: { addressId, items, paymentIntentId }
-// src/api/checkout.js
 import API from "../axios";
 import { createOrderRecord } from "./orders/OrdersService";
-
-// ======= TEMPORARY MOCK IMPLEMENTATION =======
-// Comment these out once you connect real backend.
 
 const delay = (ms = 500) => new Promise((res) => setTimeout(res, ms));
 
@@ -66,7 +49,6 @@ export const startCheckout = async () => {
         },
       };
     }
-    // For other errors, return empty but log the error
     return {
       data: {
         coupons: [],
@@ -96,7 +78,7 @@ export const getAddresses = async () => {
         country: addr.country || "India",
         email: addr.email || "",
         label: addr.label || addr.fullName || "",
-        backendFormat: addr.backendFormat, // Keep backend format for shipping
+        backendFormat: addr.backendFormat,
       })),
     },
   };
@@ -280,10 +262,12 @@ export const createPaymentIntent = async (payload) => {
  */
 export const createOrder = async (payload) => {
   try {
+    console.log("[CheckoutService] createOrder() - Starting order creation with payload:", payload);
     const { items = [], addressData = null, orderCode = null, paymentMethod = "card", total = 0 } = payload;
     
     // Generate order code if not provided
     const finalOrderCode = orderCode || `order_${Date.now()}`;
+    console.log("[CheckoutService] createOrder() - Order code:", finalOrderCode);
     
     // Transform cart items to API format
     // API expects: item: [{ id: 0, item: { id: 0, product: {...}, ... }, quantity: 0 }]
@@ -316,6 +300,8 @@ export const createOrder = async (payload) => {
       };
     });
     
+    console.log("[CheckoutService] createOrder() - Transformed order items:", orderItems.length);
+    
     // Prepare order payload
     const orderPayload = {
       item: orderItems,
@@ -342,12 +328,29 @@ export const createOrder = async (payload) => {
       delivered_by: "",
     };
     
+    console.log("[CheckoutService] createOrder() - Order payload prepared:", {
+      order_code: finalOrderCode,
+      item_count: orderItems.length,
+      total: orderPayload.order_price,
+      has_address: !!addressData
+    });
+    console.log("[CheckoutService] createOrder() - Making POST request to /v1/orders/");
+    
     const response = await API.post("/v1/orders/", orderPayload);
+    
+    console.log("[CheckoutService] createOrder() - Order created successfully:", {
+      status: response.status,
+      order_code: response.data?.order_code,
+      order_id: response.data?.id
+    });
+    
     return {
       data: response.data,
     };
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.error("[CheckoutService] createOrder() - ERROR creating order:", error);
+    console.error("[CheckoutService] createOrder() - Error response:", error.response?.data);
+    console.error("[CheckoutService] createOrder() - Error status:", error.response?.status);
     throw error;
   }
 };
@@ -357,7 +360,18 @@ export const createOrder = async (payload) => {
 // The order is created when payment is processed via /v1/payments/order-payment/
 export const placeOrder = async (payload) => {
   try {
-    // First, create the order via API
+    console.log("[CheckoutService] placeOrder() - Starting order placement with payload:", {
+      items_count: payload.items?.length || 0,
+      paymentMethod: payload.paymentMethod,
+      total: payload.total,
+      has_address: !!payload.addressData
+    });
+    
+    // Check if this is a dummy payment (paymentIntentId starts with "dummy_")
+    const isDummyPayment = payload.paymentIntentId && payload.paymentIntentId.startsWith("dummy_");
+    
+    // First, create the order via API - THIS IS THE CRITICAL CALL TO STORE ORDER IN BACKEND
+    console.log("[CheckoutService] placeOrder() - Creating order in backend...");
     const orderResponse = await createOrder({
       items: payload.items || [],
       addressData: payload.addressData || null,
@@ -367,21 +381,57 @@ export const placeOrder = async (payload) => {
       paymentToken: payload.paymentIntentId || "",
     });
     
-    const orderCode = orderResponse.data?.order_code || `order_${Date.now()}`;
+    const orderCode = orderResponse.data?.order_code || orderResponse.data?.id || `order_${Date.now()}`;
+    console.log("[CheckoutService] placeOrder() - Order created with code:", orderCode);
     
-    // Then process payment which updates the order
+    // Skip payment processing for dummy payments, COD, or card payments
+    // processOrderPayment only supports: esewa, khalti, cod
+    // Card payments are handled separately via Stripe
+    const skipPaymentProcessing = isDummyPayment || 
+                                  payload.paymentMethod === "cod" || 
+                                  payload.paymentMethod === "card";
+    
+    if (skipPaymentProcessing) {
+      console.log("[CheckoutService] Skipping payment processing for:", {
+        isDummyPayment,
+        paymentMethod: payload.paymentMethod,
+        reason: isDummyPayment ? "dummy payment" : 
+                payload.paymentMethod === "cod" ? "COD" : 
+                payload.paymentMethod === "card" ? "card payment (handled separately)" : "unknown"
+      });
+      
+      // Order created successfully - return success response
+      // Cart will be cleared by OrderConfirmationPage after confirmation
+      console.log("[CheckoutService] placeOrder() - Order created successfully, cart should be cleared");
+      return {
+        data: {
+          orderId: orderCode,
+          order: orderResponse.data,
+          status: "succeeded",
+          message: "Order placed successfully",
+        },
+      };
+    }
+    
+    // Then process payment which updates the order (only for esewa, khalti, etc.)
     const { processOrderPayment } = await import("./payment/PaymentService");
     
-    // Process order payment - this will throw if it fails
-    await processOrderPayment({
-      payment_method: payload.paymentMethod || "card",
-      amount: String(payload.total),
-      order_code: orderCode,
-      ref_code: payload.paymentIntentId || "",
-      pidx: payload.paymentIntentId || "",
-      // Include address data for shipping
-      shipping_address: payload.addressData,
-    });
+    try {
+      // Process order payment - this will throw if it fails
+      await processOrderPayment({
+        payment_method: payload.paymentMethod || "cod",
+        amount: String(payload.total),
+        order_code: orderCode,
+        ref_code: payload.paymentIntentId || "",
+        pidx: payload.paymentIntentId || "",
+        // Include address data for shipping
+        shipping_address: payload.addressData,
+      });
+    } catch (paymentError) {
+      console.error("[CheckoutService] Payment processing failed:", paymentError);
+      // Re-throw the error for non-card payment methods
+      throw paymentError;
+    }
     
     // Return order details
     return {

@@ -4,7 +4,7 @@ import "./Header.css";
 import SearchBar from "./SearchBar/SearchBar";
 import LocationModal from "./LocationModal/LocationModal";
 import { useSelector, useDispatch } from "react-redux";
-import { selectCartCount } from "../../features/cart/CartSlice";
+import { useCart } from "../../hooks/useCart";
 import { selectUser } from "../../features/auth/AuthSlice";
 import { selectLanguage, setLanguage } from "../../features/locale/localeSlice";
 import { selectAddresses, selectSelectedAddressId } from "../../features/checkout/CheckoutSlice";
@@ -28,7 +28,7 @@ const truncate = (str = "", max = 18) => (str.length > max ? `${str.slice(0, max
 
 function Header() {
   const dispatch = useDispatch();
-  const cartCount = useSelector(selectCartCount);
+  const { count: cartCount } = useCart();
   const user = useSelector(selectUser);
   const language = useSelector(selectLanguage);
   const addresses = useSelector(selectAddresses);

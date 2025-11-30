@@ -18,7 +18,7 @@ import {
   selectRewards,
   resetCheckout,
 } from "../../features/checkout/CheckoutSlice";
-import { selectCartItems, selectCartTotal, clearCart, removeItem, setQty } from "../../features/cart/CartSlice";
+import { useCart } from "../../hooks/useCart";
 import { selectUser } from "../../features/auth/AuthSlice";
 import AddressBook from "../../components/Checkout/AddressBook";
 import AddressModal from "../../components/Checkout/AddressModal";
@@ -41,8 +41,7 @@ export default function CheckoutPage() {
   const shipping = useSelector(selectShipping);
   const step = useSelector(selectCheckoutStep);
   const payment = useSelector(selectPaymentState);
-  const items = useSelector(selectCartItems);
-  const itemsTotal = useSelector(selectCartTotal);
+  const { items, total: itemsTotal, removeItem, updateItem } = useCart();
 
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
@@ -172,7 +171,13 @@ export default function CheckoutPage() {
                           Qty:{" "}
                           <select 
                             value={item.qty} 
-                            onChange={(e) => dispatch(setQty({ sku: item.sku, qty: Number(e.target.value) }))}
+                            onChange={(e) => {
+                              try {
+                                updateItem(item.sku, Number(e.target.value));
+                              } catch (error) {
+                                console.error("Failed to update quantity:", error);
+                              }
+                            }}
                             aria-label="Quantity"
                           >
                             {Array.from({ length: 99 }, (_, i) => i + 1).map((n) => (
@@ -188,7 +193,13 @@ export default function CheckoutPage() {
                       </div>
                       <button 
                         className="co-review-remove"
-                        onClick={() => dispatch(removeItem({ sku: item.sku }))}
+                        onClick={async () => {
+                          try {
+                            await removeItem(item.sku);
+                          } catch (error) {
+                            console.error("Failed to remove item:", error);
+                          }
+                        }}
                         aria-label="Remove item"
                       >
                         Remove

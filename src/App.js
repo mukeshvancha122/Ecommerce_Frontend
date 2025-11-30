@@ -22,6 +22,7 @@ import SearchResultPage from "./pages/SearchResultPage/SearchResultPage";
 import SearchResults from "./pages/SearchPage/SearchResultsPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage/OrderConfirmationPage";
 import { TranslationProvider } from "./i18n/TranslationProvider";
+import { CartProvider } from "./contexts/CartContext";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -39,8 +40,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <TranslationProvider>
-        <Router>
-          <div className="app">
+        <CartProvider>
+          <Router>
+            <div className="app">
             <Switch>
             {/* Protected Routes - Require Login */}
             <ProtectedRoute path="/orders">
@@ -131,6 +133,7 @@ export default function App() {
             <ChatWidget user={user} />
           </div>
         </Router>
+        </CartProvider>
       </TranslationProvider>
     </ErrorBoundary>
   );

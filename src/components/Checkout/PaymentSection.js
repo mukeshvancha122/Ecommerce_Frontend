@@ -20,7 +20,7 @@ import { useSelector } from "react-redux";
 import { selectCountry } from "../../features/country/countrySlice";
 import { selectShipping } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
-import { processStripePayment, processOrderPayment } from "../../api/orders/OrdersService";
+import { processStripePayment, processOrderPayment } from "../../api/payment/PaymentService";
 
 const paymentOptionsConfig = (t) => [
   {
@@ -44,9 +44,20 @@ const paymentOptionsConfig = (t) => [
 ];
 
 // Dummy payment bypass mode (for testing)
-const DUMMY_PAYMENT_MODE = process.env.REACT_APP_DUMMY_PAYMENT === "true" || true; // Set to true for bypass
+// Safely access process.env with fallback
+const getEnvVar = (key, defaultValue) => {
+  if (typeof window !== 'undefined' && window[key]) {
+    return window[key];
+  }
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key];
+  }
+  return defaultValue;
+};
 
-const defaultPayPalClientId = process.env.REACT_APP_PAYPAL_CLIENT_ID || "test";
+const DUMMY_PAYMENT_MODE = getEnvVar('REACT_APP_DUMMY_PAYMENT', 'true') === "true" || true; // Set to true for bypass
+
+const defaultPayPalClientId = getEnvVar('REACT_APP_PAYPAL_CLIENT_ID', 'test');
 
 export default function PaymentSection({ clientSecret, orderTotal, addressId, items }) {
   const stripe = useStripe();
@@ -177,8 +188,11 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
 
         // Dummy payment processing - skip actual API calls
         console.log("[PaymentSection] Dummy mode: Bypassing card payment");
+        console.log("[PaymentSection] Order created successfully with ID:", orderId);
+        console.log("[PaymentSection] Cart will be cleared on order confirmation page");
         
         // Redirect to success page with order data in state
+        // Cart will be cleared on the order confirmation page after order is confirmed
         history.push({
           pathname: "/order-confirmation",
           search: `?orderId=${orderId}`,
@@ -385,18 +399,35 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           ⚠️ Dummy mode: Card details not required, payment will be bypassed
         </div>
       )}
-      <div className="ps-stripe-element" style={DUMMY_PAYMENT_MODE ? { opacity: 0.5, pointerEvents: "none" } : {}}>
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#111827",
+      {!DUMMY_PAYMENT_MODE && (
+        <div className="ps-stripe-element">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: "16px",
+                  color: "#111827",
+                },
               },
-            },
-          }}
-        />
-      </div>
+            }}
+          />
+        </div>
+      )}
+      {DUMMY_PAYMENT_MODE && (
+        <div className="ps-dummy-card-info" style={{ 
+          padding: "12px", 
+          backgroundColor: "#f0f9ff", 
+          borderRadius: "8px", 
+          marginBottom: "12px",
+          fontSize: "14px",
+          color: "#0369a1"
+        }}>
+          <strong>Test Card (for reference):</strong><br />
+          Card: 4242 4242 4242 4242<br />
+          Expiry: 12/25 | CVC: 123<br />
+          <em>Note: In dummy mode, any values work - payment is bypassed</em>
+        </div>
+      )}
       <button className="ps-pay" onClick={handleConfirmCard} disabled={processing}>
         {processing ? "Processing…" : `Pay with Card (${formatCurrency(orderTotal)})`}
       </button>

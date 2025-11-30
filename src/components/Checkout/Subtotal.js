@@ -2,19 +2,16 @@ import React from "react";
 import "./Subtotal.css";
 import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { selectCartItems, selectCartTotal } from "../../features/cart/CartSlice";
+import { useCart } from "../../hooks/useCart";
 import { selectUser } from "../../features/auth/AuthSlice";
 import { formatCurrency } from "../../utils/currency";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
 export default function Subtotal() {
-  const items = useSelector(selectCartItems);
-  const total = useSelector(selectCartTotal);
+  const { items, count: itemCount, total } = useCart();
   const user = useSelector(selectUser);
   const history = useHistory();
   const { t } = useTranslation();
-
-  const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   const handleProceedToCheckout = () => {
     if (!user) {

@@ -1,32 +1,40 @@
 import React from "react";
 import "./CheckoutProduct.css";
-import { useDispatch } from "react-redux";
-import { removeItem, setQty } from "../../features/cart/CartSlice";
-import { useCartSync } from "../../hooks/useCartSync";
+import { useCart } from "../../hooks/useCart";
 import { formatCurrency } from "../../utils/format"; // or inline formatter
 
 export default function CheckoutProduct({ id, title, image, price, rating, qty }) {
-  const dispatch = useDispatch();
-  const { syncRemoveItem, syncUpdateItem } = useCartSync();
+  const { removeItem, updateItem } = useCart();
 
   const onRemove = async () => {
-    // Remove from local cart
-    dispatch(removeItem({ sku: id }));
-    // Sync to backend if authenticated
-    await syncRemoveItem(id);
+    try {
+      await removeItem(id);
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
   };
   
   const onQtyChange = async (e) => {
     const newQty = Number(e.target.value);
-    // Update local cart
-    dispatch(setQty({ sku: id, qty: newQty }));
-    // Sync to backend if authenticated
-    await syncUpdateItem(id, newQty);
+    try {
+      await updateItem(id, newQty);
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+    }
   };
 
   return (
     <div className="checkoutProduct">
-      <img className="checkoutProduct-image" src={image} alt={title} />
+      <img 
+        className="checkoutProduct-image" 
+        src={image} 
+        alt={title}
+        onError={(e) => {
+          if (e.target.src !== "/images/NO_IMG.png") {
+            e.target.src = "/images/NO_IMG.png";
+          }
+        }}
+      />
 
       <div className="checkoutProduct-info">
         <p className="checkoutProduct-title">{title}</p>
