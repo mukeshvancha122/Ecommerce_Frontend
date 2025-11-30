@@ -5,7 +5,7 @@ import OrdersHeaderBar from "../../components/Orders/OrdersHeaderBar";
 import OrdersTabsBar from "../../components/Orders/OrdersTabsBar";
 import OrdersFilterRow from "../../components/Orders/OrdersFilterRow";
 import OrdersContent from "../../components/Orders/OrdersContent";
-import OrdersBottomHistoryBar from "../../components/Orders/OrdersBottomHistoryBar";
+import RecentlyViewedCarousel from "../../components/RecentlyViewedCarousel/RecentlyViewedCarousel";
 import { fetchOrders } from "../../api/orders/OrdersService";
 import { useTranslation } from "../../i18n/TranslationProvider";
 
@@ -13,8 +13,6 @@ const tabOptions = [
   { id: "orders", label: "Orders" },
   { id: "buyAgain", label: "Buy again" },
   { id: "notShipped", label: "Not yet shipped" },
-  { id: "digital", label: "Digital Orders" },
-  { id: "amazonPay", label: "HyderNexa Pay" },
 ];
 
 export default function OrdersPage() {
@@ -95,7 +93,7 @@ export default function OrdersPage() {
           onPageChange={setPage}
         />
 
-        <OrdersBottomHistoryBar />
+        <RecentlyViewedCarousel />
       </div>
     </main>
   );

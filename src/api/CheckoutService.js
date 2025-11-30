@@ -23,6 +23,60 @@ const delay = (ms = 500) => new Promise((res) => setTimeout(res, ms));
 const calculateItemsTotal = (items = []) =>
   items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
 
+/**
+ * Start checkout process - Get available coupons and rewards
+ * POST /api/v1/orders/start-checkout/
+ * Returns: [{ coupon: "string", rewards: 0 }]
+ * @returns {Promise<Object>} Available coupons and rewards
+ */
+export const startCheckout = async () => {
+  try {
+    const response = await API.post("/v1/orders/start-checkout/");
+    
+    // API returns array: [{ coupon: "string", rewards: 0 }]
+    const checkoutData = Array.isArray(response.data) ? response.data : [];
+    
+    // Extract coupons and rewards
+    const coupons = checkoutData
+      .filter(item => item.coupon)
+      .map(item => ({
+        code: item.coupon,
+        rewards: item.rewards || 0,
+      }));
+    
+    const totalRewards = checkoutData.reduce((sum, item) => sum + (item.rewards || 0), 0);
+    
+    return {
+      data: {
+        coupons,
+        rewards: totalRewards,
+        checkoutData,
+      },
+    };
+  } catch (error) {
+    console.error("Error starting checkout:", error);
+    // If unauthorized (401), return empty coupons/rewards (guest mode)
+    if (error.response?.status === 401) {
+      console.log("User not authenticated, no coupons/rewards available");
+      return {
+        data: {
+          coupons: [],
+          rewards: 0,
+          checkoutData: [],
+        },
+      };
+    }
+    // For other errors, return empty but log the error
+    return {
+      data: {
+        coupons: [],
+        rewards: 0,
+        checkoutData: [],
+      },
+    };
+  }
+};
+
 export const getAddresses = async () => {
   // Load from localStorage instead of API
   const savedAddresses = loadSavedAddresses();
@@ -213,35 +267,133 @@ export const createPaymentIntent = async (payload) => {
   };
 };
 
+/**
+ * Create order directly via API
+ * POST /api/v1/orders/
+ * @param {Object} payload - Order creation payload
+ * @param {Array} payload.items - Cart items
+ * @param {Object} payload.addressData - Shipping address (drop_location format)
+ * @param {string} payload.orderCode - Order code
+ * @param {string} payload.paymentMethod - Payment method
+ * @param {number} payload.total - Order total
+ * @returns {Promise<Object>} Created order response
+ */
+export const createOrder = async (payload) => {
+  try {
+    const { items = [], addressData = null, orderCode = null, paymentMethod = "card", total = 0 } = payload;
+    
+    // Generate order code if not provided
+    const finalOrderCode = orderCode || `order_${Date.now()}`;
+    
+    // Transform cart items to API format
+    // API expects: item: [{ id: 0, item: { id: 0, product: {...}, ... }, quantity: 0 }]
+    const orderItems = items.map((cartItem) => {
+      // cartItem has: { id, sku, title, price, qty, image, ... }
+      // We need to map to: { id: cart_item_id, item: { id: variation_id, product: {...}, ... }, quantity: qty }
+      return {
+        id: cartItem.id || 0, // Cart item ID (if available from backend)
+        item: {
+          id: cartItem.sku || cartItem.id || 0, // Variation ID (item_id)
+          product: {
+            id: cartItem.productId || 0, // Product ID
+            product_name: cartItem.title || cartItem.product_name || "",
+            product_description: cartItem.description || cartItem.product_description || "",
+            brand: cartItem.brandId || 0,
+          },
+          product_color: cartItem.color || "",
+          product_size: cartItem.size || "",
+          product_price: parseFloat(cartItem.price || 0),
+          // laptop_product can be added if needed
+          product_images: cartItem.image ? [{
+            id: 0,
+            product_image: cartItem.image
+          }] : [],
+          get_image_count: "0",
+          get_discounted_price: String(cartItem.discountedPrice || cartItem.price || 0),
+          stock: String(cartItem.stock || "0"),
+        },
+        quantity: parseInt(cartItem.qty || 1, 10),
+      };
+    });
+    
+    // Prepare order payload
+    const orderPayload = {
+      item: orderItems,
+      order_date: new Date().toISOString(),
+      order_price: parseFloat(total || 0),
+      order_code: finalOrderCode,
+      order_status: "PENDING",
+      payment: [{
+        payment_method: paymentMethod,
+        payment_date: new Date().toISOString(),
+        payment_token: payload.paymentToken || "",
+        is_paid: false, // Will be updated when payment is processed
+      }],
+      drop_location: addressData ? {
+        id: addressData.id || 0,
+        email: addressData.email || "",
+        name: addressData.name || "",
+        phone: addressData.phone ? (typeof addressData.phone === 'string' ? parseInt(addressData.phone.replace(/\D/g, ''), 10) : Number(addressData.phone)) : 0,
+        full_address: addressData.full_address || "",
+        district: addressData.district || "",
+        city: addressData.city || "",
+        label: addressData.label || "",
+      } : null,
+      delivered_by: "",
+    };
+    
+    const response = await API.post("/v1/orders/", orderPayload);
+    return {
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error creating order:", error);
+    throw error;
+  }
+};
+
 // ====== Order placement ======
-// Note: Orders are created through the payment flow, not a separate endpoint
+// Note: Orders can be created directly via createOrder or through payment flow
 // The order is created when payment is processed via /v1/payments/order-payment/
 export const placeOrder = async (payload) => {
-  // Process payment which creates the order
-  const { processOrderPayment } = await import("./payment/PaymentService");
-  
-  const orderCode = `order_${Date.now()}`;
-  
-  // Get address data to include in order
-  const addressData = payload.addressData || null;
-  
-  // Process order payment - this will throw if it fails
-  await processOrderPayment({
-    payment_method: payload.paymentMethod || "card",
-    amount: String(payload.total),
-    order_code: orderCode,
-    ref_code: payload.paymentIntentId || "",
-    pidx: payload.paymentIntentId || "",
-    // Include address data for shipping
-    shipping_address: addressData,
-  });
-  
-  // Return order details only if payment succeeds
-  return {
-    data: {
-      orderId: orderCode,
-      status: "succeeded",
-      message: "Order placed successfully",
-    },
-  };
+  try {
+    // First, create the order via API
+    const orderResponse = await createOrder({
+      items: payload.items || [],
+      addressData: payload.addressData || null,
+      orderCode: payload.orderCode || null,
+      paymentMethod: payload.paymentMethod || "card",
+      total: payload.total || 0,
+      paymentToken: payload.paymentIntentId || "",
+    });
+    
+    const orderCode = orderResponse.data?.order_code || `order_${Date.now()}`;
+    
+    // Then process payment which updates the order
+    const { processOrderPayment } = await import("./payment/PaymentService");
+    
+    // Process order payment - this will throw if it fails
+    await processOrderPayment({
+      payment_method: payload.paymentMethod || "card",
+      amount: String(payload.total),
+      order_code: orderCode,
+      ref_code: payload.paymentIntentId || "",
+      pidx: payload.paymentIntentId || "",
+      // Include address data for shipping
+      shipping_address: payload.addressData,
+    });
+    
+    // Return order details
+    return {
+      data: {
+        orderId: orderCode,
+        order: orderResponse.data,
+        status: "succeeded",
+        message: "Order placed successfully",
+      },
+    };
+  } catch (error) {
+    console.error("Error placing order:", error);
+    throw error;
+  }
 };

@@ -6,6 +6,7 @@ import RecommendationPrompt from "../RecommendationPrompt/RecommendationPrompt";
 import Footer from "../Footer/Footer";
 import FeaturedProductsCarousel from "../FeaturedProductsCarousel/FeaturedProductsCarousel";
 import DiscountDealsCarousel from "../DiscountDealsCarousel/DiscountDealsCarousel";
+import ExcitingDealsCarousel from "../ExcitingDealsCarousel/ExcitingDealsCarousel";
 import HolidayCategoryCarousel from "../HolidayCategoryCarousel/HolidayCategoryCarousel";
 import CategoryHolidayCarousel from "../CategoryHolidayCarousel/CategoryHolidayCarousel";
 import NikeOffersCarousel from "../NikeOffersCarousel/NikeOffersCarousel";
@@ -13,6 +14,7 @@ import RecentlyViewedCarousel from "../RecentlyViewedCarousel/RecentlyViewedCaro
 import { getFeaturedProducts } from "../../api/products/FeaturedProductService";
 import { getTopSellingProducts } from "../../api/products/TopSellingService";
 import { getSaleCategories } from "../../api/products/SaleCategoryService";
+import { getExcitingDeals } from "../../api/ExcitingDealsService";
 import { getAllProducts, getProductsByCategory } from "../../api/products/CategoryProductsService";
 import { searchProducts } from "../../api/products/searchProduct/SearchProductService";
 import { getAllCategories } from "../../api/products/CategoryService";
@@ -67,6 +69,7 @@ function Home() {
 
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [discountedProducts, setDiscountedProducts] = useState([]);
+  const [excitingDeals, setExcitingDeals] = useState([]);
   const [saleCategories, setSaleCategories] = useState([]);
   const [mensSpecials, setMensSpecials] = useState([]);
   const [womensSpecials, setWomensSpecials] = useState([]);
@@ -234,6 +237,32 @@ function Home() {
         }
       } catch (err) {
         console.error("history products load", err);
+      }
+    })();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch exciting deals
+  useEffect(() => {
+    let isMounted = true;
+    
+    (async () => {
+      try {
+        const response = await getExcitingDeals(1);
+        if (!isMounted) return;
+        
+        const deals = Array.isArray(response?.data) ? response.data : [];
+        if (isMounted) {
+          setExcitingDeals(deals);
+        }
+      } catch (err) {
+        console.error("Error loading exciting deals:", err);
+        if (isMounted) {
+          setExcitingDeals([]);
+        }
       }
     })();
     
@@ -674,6 +703,9 @@ function Home() {
           </div>
         )}
       </section>
+
+      {/* Exciting Deals Carousel */}
+      <ExcitingDealsCarousel products={excitingDeals} />
 
       {/* Featured Products Carousel */}
       <FeaturedProductsCarousel products={featuredProducts} />

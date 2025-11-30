@@ -179,3 +179,92 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1 }
   }
 };
 
+/**
+ * Track order by order code and email
+ * GET /api/v1/orders/track-order/{order_code}/{email}/
+ * @param {string} orderCode - Order code
+ * @param {string} email - Email address
+ * @returns {Promise<Object>} Order tracking information
+ */
+export const trackOrder = async (orderCode, email) => {
+  try {
+    // URL encode email to handle special characters
+    const encodedEmail = encodeURIComponent(email);
+    const response = await API.get(`/v1/orders/track-order/${orderCode}/${encodedEmail}/`);
+    return {
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error tracking order:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create a return request for a product
+ * POST /api/v1/orders/return-product/
+ * @param {Object} payload - Return request data
+ * @param {string} payload.reason - Reason for return
+ * @param {Array<string>} payload.uploaded_images - Array of image URLs
+ * @param {string} payload.pickup_location - Pickup location address
+ * @param {string} payload.district - District
+ * @param {string} payload.city - City
+ * @param {string} payload.contact - Contact number
+ * @param {string} payload.ordercode - Order code
+ * @param {string|number} payload.productvariation_id - Product variation ID
+ * @returns {Promise<Object>} Created return request
+ */
+export const createReturnRequest = async (payload) => {
+  try {
+    const requestBody = {
+      reason: payload.reason || "",
+      uploaded_images: Array.isArray(payload.uploaded_images) ? payload.uploaded_images : [],
+      pickup_location: payload.pickup_location || "",
+      district: payload.district || "",
+      city: payload.city || "",
+      contact: payload.contact || "",
+      ordercode: payload.ordercode || "",
+      productvariation_id: String(payload.productvariation_id || ""),
+    };
+    
+    const response = await API.post("/v1/orders/return-product/", requestBody);
+    
+    // Response format: { id, product, reason, created_at, order_code, pickup_location, district, city, contact, status }
+    return {
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error creating return request:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all return requests
+ * GET /api/v1/orders/return-product/
+ * @returns {Promise<Array>} Array of return requests
+ */
+export const getReturnRequests = async () => {
+  try {
+    const response = await API.get("/v1/orders/return-product/");
+    
+    // API returns array: [{ id, product, reason, created_at, order_code, ... }]
+    const returns = Array.isArray(response.data) ? response.data : [];
+    
+    return {
+      data: returns,
+    };
+  } catch (error) {
+    console.error("Error fetching return requests:", error);
+    
+    // Return empty array on error (don't break the page)
+    if (error.response?.status === 401) {
+      console.log("User not authenticated, returning empty return requests");
+    }
+    
+    return {
+      data: [],
+    };
+  }
+};
+
