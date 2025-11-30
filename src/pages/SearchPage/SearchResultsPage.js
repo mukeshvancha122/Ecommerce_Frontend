@@ -173,6 +173,7 @@ export const ProductResultsExperience = ({
   error = "",
   onProductClick = () => {},
   history = null,
+  searchStrategy = null,
 }) => {
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [selectedPrice, setSelectedPrice] = useState("");
@@ -387,6 +388,20 @@ export const ProductResultsExperience = ({
                       total || sortedItems.length ? ` • ${total || sortedItems.length} products` : ""
                     }`}
               </p>
+              {searchStrategy && searchStrategy.searchType !== 'broad' && sortedItems.length > 0 && (
+                <p className="searchResultsRelated" style={{ 
+                  color: '#007185', 
+                  fontSize: '14px', 
+                  marginTop: '8px',
+                  fontStyle: 'italic'
+                }}>
+                  {searchStrategy.searchType === 'keyword-category' 
+                    ? `Showing related products in ${searchStrategy.primaryCategory || 'related categories'}`
+                    : searchStrategy.searchType === 'category'
+                    ? `Showing products in ${searchStrategy.primaryCategory || 'selected category'}`
+                    : 'Showing related products'}
+                </p>
+              )}
             </div>
 
             <div className="resultsSort">
@@ -451,6 +466,7 @@ const SearchResultsPage = () => {
     previewImageUrl,
     results = [],
     total = 0,
+    searchStrategy = null,
   } = location.state || {};
 
   const headingCategory =
@@ -473,6 +489,7 @@ const SearchResultsPage = () => {
           ? "No products found for this search. Showing similar products below."
           : ""
       }
+      searchStrategy={searchStrategy}
       history={history}
       onProductClick={(product) => {
         if (!product) return;

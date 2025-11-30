@@ -1,12 +1,24 @@
 import API from "../../../axios";
 import { translateProduct } from "../../../utils/productTranslations";
+import { getIntelligentSearchStrategy } from "../../../utils/searchIntelligence";
 
+/**
+ * Intelligent search with fallback to related categories
+ * @param {Object} filters - Search filters
+ * @param {string} filters.product_name - Product name to search
+ * @param {string} filters.category - Selected category
+ * @param {boolean} filters.useIntelligentSearch - Whether to use intelligent search (default: true)
+ * @returns {Promise<Object>} Search results with fallback suggestions
+ */
 export const searchProducts = async (filters = {}) => {
   try {
-    // Build query parameters
+    const useIntelligentSearch = filters.useIntelligentSearch !== false;
+    const query = filters.product_name || "";
+    
+    // Build query parameters for primary search
     const params = {};
     
-    if (filters.product_name) params.product_name = filters.product_name;
+    if (query) params.product_name = query;
     if (filters.products) params.products = filters.products;
     if (filters.category && filters.category !== "all") params.category = filters.category;
     if (filters.brand) {
@@ -27,10 +39,9 @@ export const searchProducts = async (filters = {}) => {
     params.page = filters.page || 1;
     params.page_size = filters.page_size || 20;
 
-    const response = await API.get("/v1/products/search-product-view/", { params });
-
-    // Handle response format: {count, next, previous, results: {data: [...], brands: [...], attributes: {...}}}
-    const responseData = response.data;
+    // Try primary search
+    let response = await API.get("/v1/products/search-product-view/", { params });
+    let responseData = response.data;
     let products = [];
 
     if (responseData?.results) {
@@ -38,6 +49,74 @@ export const searchProducts = async (filters = {}) => {
         products = responseData.results;
       } else if (responseData.results?.data && Array.isArray(responseData.results.data)) {
         products = responseData.results.data;
+      }
+    }
+
+    // If no results and intelligent search is enabled, try category-based search
+    if (products.length === 0 && useIntelligentSearch && query) {
+      const strategy = getIntelligentSearchStrategy(query, filters.category);
+      
+      // Try primary category from strategy
+      if (strategy.primaryCategory) {
+        try {
+          const categoryParams = { ...params };
+          categoryParams.category = strategy.primaryCategory;
+          // Remove product_name to get all products in category
+          delete categoryParams.product_name;
+          
+          const categoryResponse = await API.get("/v1/products/search-product-view/", { 
+            params: categoryParams 
+          });
+          
+          const categoryData = categoryResponse.data;
+          if (categoryData?.results) {
+            if (Array.isArray(categoryData.results)) {
+              products = categoryData.results;
+            } else if (categoryData.results?.data && Array.isArray(categoryData.results.data)) {
+              products = categoryData.results.data;
+            }
+          }
+          
+          // If we found products, add a note that these are related products
+          if (products.length > 0) {
+            console.log(`Found ${products.length} related products in ${strategy.primaryCategory} category`);
+          }
+        } catch (categoryError) {
+          console.warn("Category-based search failed:", categoryError);
+        }
+      }
+      
+      // If still no results, try fallback categories
+      if (products.length === 0 && strategy.fallbackCategories.length > 0) {
+        for (const fallbackCategory of strategy.fallbackCategories.slice(0, 2)) {
+          try {
+            const fallbackParams = { ...params };
+            fallbackParams.category = fallbackCategory;
+            delete fallbackParams.product_name;
+            
+            const fallbackResponse = await API.get("/v1/products/search-product-view/", { 
+              params: fallbackParams 
+            });
+            
+            const fallbackData = fallbackResponse.data;
+            if (fallbackData?.results) {
+              let fallbackProducts = [];
+              if (Array.isArray(fallbackData.results)) {
+                fallbackProducts = fallbackData.results;
+              } else if (fallbackData.results?.data && Array.isArray(fallbackData.results.data)) {
+                fallbackProducts = fallbackData.results.data;
+              }
+              
+              if (fallbackProducts.length > 0) {
+                products = fallbackProducts;
+                console.log(`Found ${products.length} related products in ${fallbackCategory} category`);
+                break;
+              }
+            }
+          } catch (fallbackError) {
+            console.warn(`Fallback search for ${fallbackCategory} failed:`, fallbackError);
+          }
+        }
       }
     }
 
@@ -49,6 +128,7 @@ export const searchProducts = async (filters = {}) => {
       next: responseData?.next || null,
       previous: responseData?.previous || null,
       results: translatedResults,
+      searchStrategy: useIntelligentSearch ? getIntelligentSearchStrategy(query, filters.category) : null,
     };
   } catch (error) {
     console.error("Error searching products:", error);
@@ -58,6 +138,7 @@ export const searchProducts = async (filters = {}) => {
       next: null,
       previous: null,
       results: [],
+      searchStrategy: null,
     };
   }
 };

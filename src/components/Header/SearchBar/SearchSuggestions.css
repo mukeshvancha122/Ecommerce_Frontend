@@ -1,0 +1,140 @@
+/* Search Suggestions Dropdown */
+.searchSuggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #d5d9d9;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.searchSuggestionsContent {
+  padding: 0.5rem 0;
+}
+
+.searchSuggestionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e7e7e7;
+  margin-bottom: 0.25rem;
+}
+
+.searchSuggestionsTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.searchSuggestionsClear {
+  background: none;
+  border: none;
+  color: #007185;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+.searchSuggestionsClear:hover {
+  background-color: #f0f0f0;
+  text-decoration: underline;
+}
+
+.searchSuggestionsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.searchSuggestionsItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  position: relative;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.searchSuggestionsItem:last-child {
+  border-bottom: none;
+}
+
+.searchSuggestionsItem.hasDivider {
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.searchSuggestionsItem:hover,
+.searchSuggestionsItem.focused {
+  background-color: #f0f0f0;
+}
+
+.searchSuggestionsIcon {
+  font-size: 1rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.searchSuggestionsText {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #111;
+  line-height: 1.4;
+}
+
+.searchSuggestionsText strong {
+  font-weight: 600;
+  color: #111;
+}
+
+.searchSuggestionsRemove {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.5rem;
+  border-radius: 2px;
+  transition: all 0.2s;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.searchSuggestionsRemove:hover {
+  opacity: 1;
+  background-color: #e7e7e7;
+  color: #111;
+}
+
+/* Scrollbar styling */
+.searchSuggestions::-webkit-scrollbar {
+  width: 8px;
+}
+
+.searchSuggestions::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.searchSuggestions::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.searchSuggestions::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
