@@ -3,14 +3,14 @@ import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useHistory } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../features/auth/AuthSlice";
-import { selectCartItems } from "../../features/cart/CartSlice";
+import { useCart } from "../../hooks/useCart";
 import API from "../../axios"; 
 import "./Payment.css";
 
 const Payment = () => {
   const history = useHistory();
   const user = useSelector(selectUser);
-  const cart = useSelector(selectCartItems);
+  const { items: cart } = useCart();
 
   // stripe hooks
   const stripe = useStripe();

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import "./OrdersPage.css";
 import OrdersBreadcrumb from "../../components/Orders/OrdersBreadcrumb";
 import OrdersHeaderBar from "../../components/Orders/OrdersHeaderBar";
@@ -16,6 +17,7 @@ const tabOptions = [
 ];
 
 export default function OrdersPage() {
+  const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [timeRange, setTimeRange] = useState("past 3 months");
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,16 +26,21 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [summary, setSummary] = useState({ totalOrders: 0, delivered: 0, processing: 0 });
   const { t } = useTranslation();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
+  // Function to load orders
+  const loadOrders = useCallback(() => {
     let mounted = true;
     setLoading(true);
     fetchOrders({ timeRange, query: searchQuery, tab, page })
       .then(({ data }) => {
         if (!mounted) return;
+        console.log("[OrdersPage] Loaded orders:", data.orders?.length || 0);
         setOrders(data.orders || []);
         setSummary({
-          ...(data.summary || summary),
+          totalOrders: data.summary?.totalOrders || data.orders?.length || 0,
+          delivered: data.summary?.delivered || 0,
+          processing: data.summary?.processing || 0,
           pagination: data.pagination,
         });
       })
@@ -49,6 +56,22 @@ export default function OrdersPage() {
       mounted = false;
     };
   }, [timeRange, searchQuery, tab, page]);
+
+  // Load orders when filters change or page mounts
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  // Refresh orders when navigating from order confirmation
+  useEffect(() => {
+    if (location.state?.refreshOrders) {
+      console.log("[OrdersPage] Refreshing orders after order confirmation");
+      setRefreshKey(prev => prev + 1);
+      loadOrders();
+      // Clear the refresh flag
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, loadOrders]);
 
   const metrics = useMemo(
     () => [

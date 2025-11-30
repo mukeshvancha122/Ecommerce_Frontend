@@ -3,7 +3,7 @@ import "./BuyBox.css";
 import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { selectUser } from "../../../features/auth/AuthSlice";
-import { useCartSync } from "../../../hooks/useCartSync";
+import { useCart } from "../../../hooks/useCart";
 import { formatCurrency } from "../../../utils/currency";
 import { getImageUrl } from "../../../utils/imageUtils";
 import QuantitySelect from "../QuantitySelect";
@@ -27,7 +27,7 @@ const parsePrice = (value) => {
 export default function BuyBox({ product }) {
   const history = useHistory();
   const user = useSelector(selectUser);
-  const { syncAddItem } = useCartSync();
+  const { addItem } = useCart();
   const [qty, setQty] = useState(1);
   const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
 
@@ -56,7 +56,7 @@ export default function BuyBox({ product }) {
   const rawHeroImage = variation?.product_images?.[0]?.product_image;
   const heroImage = rawHeroImage ? getImageUrl(rawHeroImage) : "/images/NO_IMG.png";
 
-  const onAdd = (e) => {
+  const onAdd = async (e) => {
     // Prevent event bubbling and multiple clicks
     if (e) {
       e.preventDefault();
@@ -86,13 +86,17 @@ export default function BuyBox({ product }) {
       return;
     }
     
-    // Add to cart (works with localStorage)
-    syncAddItem(item);
-    
-    // Reset processing flag after a short delay to prevent rapid clicks
-    setTimeout(() => {
-      onAdd.processing = false;
-    }, 1000);
+    try {
+      // Add to cart (works with backend API or localStorage)
+      await addItem(item);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+    } finally {
+      // Reset processing flag after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        onAdd.processing = false;
+      }, 1000);
+    }
   };
 
   return (
