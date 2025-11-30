@@ -6,15 +6,22 @@ import { getSupportedLanguage } from "./i18n/translations";
 // Use proxy in development to avoid CORS issues, direct URL in production
 const getBaseURL = () => {
   // Check for environment variable first
-  if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) {
-    const envUrl = process.env.REACT_APP_API_BASE_URL;
+  // Use window.REACT_APP_API_BASE_URL or process.env (if available in build)
+  const envBaseUrl = typeof window !== 'undefined' && window.REACT_APP_API_BASE_URL
+    ? window.REACT_APP_API_BASE_URL
+    : (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL
+      ? process.env.REACT_APP_API_BASE_URL
+      : null);
+  
+  if (envBaseUrl) {
     // Ensure it includes /api if not already present
-    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`;
+    return envBaseUrl.endsWith('/api') ? envBaseUrl : `${envBaseUrl.replace(/\/$/, '')}/api`;
   }
   
   // In development, use relative path so proxy can intercept and handle CORS
   // The proxy forwards /api/* to http://54.145.239.205:8000/api/*
-  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
+  const isDevelopment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development';
+  if (isDevelopment) {
     return '/api';
   }
   

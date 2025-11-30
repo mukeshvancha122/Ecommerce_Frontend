@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { addItem } from "../../../features/cart/CartSlice";
 import { selectUser } from "../../../features/auth/AuthSlice";
+import { useCartSync } from "../../../hooks/useCartSync";
 import { formatCurrency } from "../../../utils/currency";
 import { getImageUrl } from "../../../utils/imageUtils";
 import QuantitySelect from "../QuantitySelect";
@@ -28,6 +29,7 @@ export default function BuyBox({ product }) {
   const dispatch = useDispatch();
   const history = useHistory();
   const user = useSelector(selectUser);
+  const { syncAddItem } = useCartSync();
   const [qty, setQty] = useState(1);
   const variation = useMemo(() => product?.product_variations?.[0] || {}, [product]);
 
@@ -56,16 +58,22 @@ export default function BuyBox({ product }) {
   const rawHeroImage = variation?.product_images?.[0]?.product_image;
   const heroImage = rawHeroImage ? getImageUrl(rawHeroImage) : "/images/NO_IMG.png";
 
-  const onAdd = () => {
-    dispatch(
-      addItem({
-        sku: variation?.id || product?.id,
-        title: product?.product_name,
-        price,
-        qty,
-        image: heroImage,
-      })
-    );
+  const onAdd = async () => {
+    const item = {
+      sku: variation?.id || product?.id,
+      title: product?.product_name,
+      price,
+      qty,
+      image: heroImage,
+    };
+    
+    // Add to local cart (works for both guests and authenticated users)
+    dispatch(addItem(item));
+    
+    // Sync to backend if user is authenticated
+    if (user) {
+      await syncAddItem(item);
+    }
   };
 
   return (
