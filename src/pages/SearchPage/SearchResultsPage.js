@@ -57,7 +57,14 @@ const getFormattedPrice = (value) => {
 };
 
 const getRatingValue = (product) => {
-  const value = parseFloat(product?.get_rating_info);
+  const ratingInfo = product?.get_rating_info;
+  // Handle object structure: { average_rating: number, total_ratings: number }
+  if (ratingInfo && typeof ratingInfo === 'object' && ratingInfo !== null) {
+    const avgRating = ratingInfo.average_rating;
+    return Number.isFinite(avgRating) ? avgRating : null;
+  }
+  // Handle number or string
+  const value = parseFloat(ratingInfo);
   return Number.isFinite(value) ? value : null;
 };
 
@@ -120,7 +127,14 @@ const ProductCard = ({ product, onClick }) => {
             <span className="resultsCard-ratingValue">{rating.toFixed(1)}</span>
             <span className="resultsCard-ratingStar">★</span>
             <span className="resultsCard-ratingMeta">
-              {product.get_rating_info_count || "100+"} ratings
+              {(() => {
+                const ratingInfo = product.get_rating_info;
+                if (ratingInfo && typeof ratingInfo === 'object' && ratingInfo !== null) {
+                  const totalRatings = ratingInfo.total_ratings || 0;
+                  return totalRatings > 0 ? `${totalRatings} ratings` : "100+ ratings";
+                }
+                return product.get_rating_info_count || "100+ ratings";
+              })()}
             </span>
           </div>
         )}

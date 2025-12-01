@@ -18,8 +18,21 @@ window.addEventListener("error", (event) => {
 
 // Global unhandled promise rejection handler
 window.addEventListener("unhandledrejection", (event) => {
+  // Filter out browser extension errors (common with React DevTools, Redux DevTools, etc.)
+  const errorMessage = event.reason?.message || String(event.reason || "");
+  if (
+    errorMessage.includes("message channel closed") ||
+    errorMessage.includes("Extension context invalidated") ||
+    errorMessage.includes("chrome-extension://") ||
+    errorMessage.includes("moz-extension://")
+  ) {
+    // Silently ignore browser extension errors
+    event.preventDefault();
+    return;
+  }
+  
   console.error("Unhandled promise rejection:", event.reason);
-  // Prevent default error handling
+  // Prevent default error handling for other errors too
   event.preventDefault();
 });
 

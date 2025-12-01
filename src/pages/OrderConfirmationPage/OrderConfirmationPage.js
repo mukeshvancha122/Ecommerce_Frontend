@@ -71,10 +71,11 @@ export default function OrderConfirmationPage() {
           timestamp: new Date().toISOString(),
         });
         
-        dispatch(updateOrderCheckoutThunk({
+        // Wrap in try-catch to handle any promise rejections
+        Promise.resolve(dispatch(updateOrderCheckoutThunk({
           shipping_address_id: addressIdFromState,
           shipping_type: shippingTypeFromState,
-        })).then((result) => {
+        }))).then((result) => {
           if (updateOrderCheckoutThunk.fulfilled.match(result)) {
             console.log("[OrderConfirmationPage] update-checkout successful:", {
               status: result.payload?.status,
@@ -82,7 +83,27 @@ export default function OrderConfirmationPage() {
               data: JSON.stringify(result.payload, null, 2),
             });
             console.log("[OrderConfirmationPage] ========== UPDATE-CHECKOUT SUCCESS ==========");
-            console.log("=".repeat(80));
+            console.log("[OrderConfirmationPage] Request sent:", {
+              shipping_address_id: addressIdFromState,
+              shipping_type: shippingTypeFromState,
+            });
+            console.log("[OrderConfirmationPage] Response received:", {
+              full_payload: result.payload,
+              response_data: result.payload?.data,
+              response_status: result.payload?.status,
+              was_skipped: result.payload?.skipped,
+            });
+            
+            // The API response might contain the order data, not the original request fields
+            // Log what was actually sent vs what was returned
+            if (result.payload?.data) {
+              console.log("[OrderConfirmationPage] Backend response data structure:", {
+                has_order: !!result.payload.data.order,
+                has_order_code: !!result.payload.data.order_code,
+                has_drop_location: !!result.payload.data.drop_location,
+                keys: Object.keys(result.payload.data),
+              });
+            }
           } else {
             console.warn("[OrderConfirmationPage] update-checkout failed (non-blocking):", {
               payload: result.payload,
@@ -94,13 +115,16 @@ export default function OrderConfirmationPage() {
           }
         }).catch((error) => {
           console.error("[OrderConfirmationPage] update-checkout error (non-blocking):", {
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status,
+            message: error?.message || "Unknown error",
+            response: error?.response?.data,
+            status: error?.response?.status,
           });
           console.error("[OrderConfirmationPage] ========== UPDATE-CHECKOUT ERROR (NON-BLOCKING) ==========");
           console.log("=".repeat(80));
           // Don't block the flow - order is already created
+        }).catch(() => {
+          // Final catch to prevent unhandled promise rejection
+          // This should never be reached, but ensures no unhandled rejections
         });
       } else {
         if (!addressIdFromState || !shippingTypeFromState) {
@@ -135,13 +159,16 @@ export default function OrderConfirmationPage() {
         if (!cartClearedRef.current) {
           cartClearedRef.current = true;
           console.log("[OrderConfirmationPage] Order confirmed - clearing cart now");
-          clearCart()
+          Promise.resolve(clearCart())
             .then(() => {
               console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
             })
             .catch(err => {
               console.error("[OrderConfirmationPage] Error clearing cart:", err);
               // Don't block UI if cart clearing fails - order is already placed
+            })
+            .catch(() => {
+              // Final catch to prevent unhandled promise rejection
             });
         }
       } else if (items.length > 0) {
@@ -164,13 +191,16 @@ export default function OrderConfirmationPage() {
         if (!cartClearedRef.current) {
           cartClearedRef.current = true;
           console.log("[OrderConfirmationPage] Order confirmed (fallback) - clearing cart now");
-          clearCart()
+          Promise.resolve(clearCart())
             .then(() => {
               console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
             })
             .catch(err => {
               console.error("[OrderConfirmationPage] Error clearing cart:", err);
               // Don't block UI if cart clearing fails - order is already placed
+            })
+            .catch(() => {
+              // Final catch to prevent unhandled promise rejection
             });
         }
       }
@@ -381,7 +411,7 @@ export default function OrderConfirmationPage() {
           cartClearedRef.current = true;
           console.log("[OrderConfirmationPage] handleConfirmOrder() - Clearing cart after order confirmation...");
           const cartClearStartTime = Date.now();
-          clearCart()
+          Promise.resolve(clearCart())
             .then(() => {
               const cartClearDuration = Date.now() - cartClearStartTime;
               console.log("[OrderConfirmationPage] handleConfirmOrder() - Cart cleared successfully:", {
@@ -392,6 +422,9 @@ export default function OrderConfirmationPage() {
               console.error("[OrderConfirmationPage] handleConfirmOrder() - Error clearing cart:", err);
               // Don't block UI if cart clearing fails - order is already created
               // User can manually clear cart if needed
+            })
+            .catch(() => {
+              // Final catch to prevent unhandled promise rejection
             });
         } else {
           console.log("[OrderConfirmationPage] handleConfirmOrder() - Cart already cleared, skipping");

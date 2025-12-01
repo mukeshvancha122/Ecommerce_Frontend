@@ -191,7 +191,19 @@ export const updateOrderCheckout = async (payload) => {
       shipping: shippingValue,
     };
     
-    console.log("[CheckoutService] updateOrderCheckout() - Request body (API format):", requestBody);
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] updateOrderCheckout() - ========== API REQUEST START ==========");
+    console.log("[CheckoutService] updateOrderCheckout() - API Endpoint: POST /v1/orders/update-checkout/");
+    console.log("[CheckoutService] updateOrderCheckout() - Request Body (what we're sending to backend):");
+    console.log(JSON.stringify(requestBody, null, 2));
+    console.log("[CheckoutService] updateOrderCheckout() - Request Details:", {
+      drop_location_id: dropLocationId,
+      drop_location_id_type: typeof dropLocationId,
+      shipping: shippingValue,
+      shipping_type: typeof shippingValue,
+      original_shipping_address_id: shipping_address_id,
+      original_shipping_type: shipping_type,
+    });
     
     const response = await API.post("/v1/orders/update-checkout/", requestBody);
     
@@ -200,13 +212,36 @@ export const updateOrderCheckout = async (payload) => {
       throw new Error(`Update checkout failed with status ${response.status}`);
     }
     
-    console.log("[CheckoutService] updateOrderCheckout() - Order checkout updated successfully:", {
-      status: response.status,
-      data: response.data
+    console.log("[CheckoutService] updateOrderCheckout() - ========== API RESPONSE RECEIVED ==========");
+    console.log("[CheckoutService] updateOrderCheckout() - Response Status:", response.status);
+    console.log("[CheckoutService] updateOrderCheckout() - Response Headers:", response.headers);
+    console.log("[CheckoutService] updateOrderCheckout() - Full Response Data (what backend returned):");
+    console.log(JSON.stringify(response.data, null, 2));
+    console.log("[CheckoutService] updateOrderCheckout() - Response Data Structure:", {
+      is_array: Array.isArray(response.data),
+      is_object: typeof response.data === 'object' && response.data !== null,
+      keys: response.data && typeof response.data === 'object' ? Object.keys(response.data) : 'N/A',
+      has_order: !!(response.data?.order),
+      has_order_code: !!(response.data?.order_code),
+      has_drop_location: !!(response.data?.drop_location),
+      has_shipping: !!(response.data?.shipping),
+      has_drop_location_id: !!(response.data?.drop_location_id),
     });
+    console.log("[CheckoutService] updateOrderCheckout() - ========== API REQUEST SUCCESS ==========");
+    console.log("=".repeat(80));
     
+    // Include the original request values in the response for reference
     return {
-      data: response.data,
+      data: {
+        ...response.data,
+        // Include original request values for logging/debugging
+        _request: {
+          shipping_address_id: shipping_address_id,
+          shipping_type: shipping_type,
+          drop_location_id: dropLocationId,
+          shipping: shippingValue,
+        },
+      },
       status: response.status,
     };
   } catch (error) {
@@ -217,8 +252,118 @@ export const updateOrderCheckout = async (payload) => {
   }
 };
 
+/**
+ * Create a shipping address in the backend
+ * POST /api/v1/orders/shipping-address/
+ * 
+ * @param {Object} addressData - Address data in backend format
+ * @param {string} addressData.email - Email address
+ * @param {string} addressData.name - Full name
+ * @param {number} addressData.phone - Phone number
+ * @param {string} addressData.full_address - Full address
+ * @param {string} addressData.district - District
+ * @param {string} addressData.city - City
+ * @param {string} addressData.label - Address label
+ * @returns {Promise<Object>} Created address with id from backend
+ */
+export const createShippingAddress = async (addressData) => {
+  try {
+    console.log("[CheckoutService] createShippingAddress() - Creating address in backend");
+    console.log("[CheckoutService] createShippingAddress() - API Endpoint: POST /v1/orders/shipping-address/");
+    console.log("[CheckoutService] createShippingAddress() - Request body:", JSON.stringify(addressData, null, 2));
+    
+    const response = await API.post("/v1/orders/shipping-address/", addressData);
+    
+    console.log("[CheckoutService] createShippingAddress() - Response Status:", response.status);
+    console.log("[CheckoutService] createShippingAddress() - Response Data:", JSON.stringify(response.data, null, 2));
+    
+    if (response.status === 201) {
+      console.log("[CheckoutService] createShippingAddress() - Address created successfully with ID:", response.data.id);
+      return {
+        data: response.data, // Contains: { id, email, name, phone, full_address, district, city, label }
+        status: response.status,
+      };
+    } else {
+      throw new Error(`Failed to create address: status ${response.status}`);
+    }
+  } catch (error) {
+    console.error("[CheckoutService] createShippingAddress() - Error creating address:", error);
+    console.error("[CheckoutService] createShippingAddress() - Error response:", error.response?.data);
+    console.error("[CheckoutService] createShippingAddress() - Error status:", error.response?.status);
+    throw error;
+  }
+};
+
 export const getAddresses = async () => {
-  // Load from localStorage instead of API
+  try {
+    console.log("[CheckoutService] getAddresses() - Fetching shipping addresses from backend API");
+    console.log("[CheckoutService] getAddresses() - API Endpoint: GET /v1/orders/shipping-address/");
+    
+    // Fetch shipping addresses from backend API
+    const response = await API.get("/v1/orders/shipping-address/");
+    
+    console.log("[CheckoutService] getAddresses() - API Response Status:", response.status);
+    console.log("[CheckoutService] getAddresses() - API Response Data:", JSON.stringify(response.data, null, 2));
+    
+    // Backend returns an array of addresses with format:
+    // [{ id, email, name, phone, full_address, district, city, label }]
+    const backendAddresses = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+    
+    console.log("[CheckoutService] getAddresses() - Found addresses:", backendAddresses.length);
+    
+    // Transform backend format to frontend format
+    const addresses = backendAddresses.map((addr) => {
+      const transformed = {
+        id: String(addr.id), // Use backend ID as string (this will be used as drop_location_id)
+        fullName: addr.name || "",
+        phone: String(addr.phone || ""),
+        address1: addr.full_address || "",
+        address2: "",
+        city: addr.city || "",
+        state: addr.district || "",
+        district: addr.district || "",
+        zip: "", // Backend doesn't provide zip in this endpoint
+        country: "India", // Default
+        email: addr.email || "",
+        label: addr.label || addr.name || "",
+        // Store backend format for shipping quote API
+        backendFormat: {
+          name: addr.name,
+          phone: String(addr.phone || ""),
+          full_address: addr.full_address,
+          district: addr.district,
+          city: addr.city,
+          email: addr.email,
+          label: addr.label,
+        },
+        // Store the backend ID for use in update-checkout
+        backendId: addr.id,
+      };
+      
+      console.log("[CheckoutService] getAddresses() - Transformed address:", {
+        id: transformed.id,
+        backendId: transformed.backendId,
+        name: transformed.fullName,
+        city: transformed.city,
+      });
+      
+      return transformed;
+    });
+    
+    console.log("[CheckoutService] getAddresses() - Successfully fetched and transformed addresses:", addresses.length);
+    
+    return {
+      data: {
+        addresses: addresses,
+      },
+    };
+  } catch (error) {
+    console.error("[CheckoutService] getAddresses() - Error fetching addresses from backend:", error);
+    console.error("[CheckoutService] getAddresses() - Error response:", error.response?.data);
+    console.error("[CheckoutService] getAddresses() - Error status:", error.response?.status);
+    
+    // Fallback to localStorage if API fails (for backward compatibility)
+    console.warn("[CheckoutService] getAddresses() - Falling back to localStorage addresses");
   const savedAddresses = loadSavedAddresses();
   
   return {
@@ -240,6 +385,7 @@ export const getAddresses = async () => {
       })),
     },
   };
+  }
 };
 
 // Store addresses locally (bypass backend for now)
@@ -281,10 +427,43 @@ export const addAddress = async (payload) => {
     throw new Error("Email is required to create an address");
   }
   
-  // Create address object (stored locally, not sent to backend)
-  const addressId = `addr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // Prepare backend format
+  const phoneNumber = payload.phone 
+    ? (typeof payload.phone === 'string' 
+        ? parseInt(payload.phone.replace(/\D/g, ''), 10) 
+        : Number(payload.phone))
+    : 0;
+  
+  const fullAddress = cleanString(`${payload.address1 || ""} ${payload.address2 || ""}`.trim());
+  
+  const backendAddressData = {
+    email: email,
+    name: cleanString(payload.fullName || ""),
+    phone: phoneNumber,
+    full_address: fullAddress,
+    district: districtValue,
+    city: cityValue,
+    label: cleanString(payload.label || payload.fullName || ""),
+  };
+  
+  // Create address in backend first
+  let backendId = null;
+  try {
+    console.log("[CheckoutService] addAddress() - Creating address in backend...");
+    const backendResponse = await createShippingAddress(backendAddressData);
+    backendId = backendResponse.data.id;
+    console.log("[CheckoutService] addAddress() - Address created in backend with ID:", backendId);
+  } catch (error) {
+    console.error("[CheckoutService] addAddress() - Failed to create address in backend:", error);
+    // Continue with local storage as fallback
+    console.warn("[CheckoutService] addAddress() - Saving address locally only");
+  }
+  
+  // Create address object (stored locally with backend ID if available)
+  const addressId = backendId ? String(backendId) : `addr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const address = {
     id: addressId,
+    backendId: backendId, // Store backend ID for use in update-checkout
     fullName: cleanString(payload.fullName || ""),
     phone: String(payload.phone || ""),
     address1: cleanString(payload.address1 || ""),
@@ -297,15 +476,7 @@ export const addAddress = async (payload) => {
     email: email,
     label: cleanString(payload.label || payload.fullName || ""),
     // Store backend format for when we need to send it
-    backendFormat: {
-      email: email,
-      name: cleanString(payload.fullName || ""),
-      phone: payload.phone ? (typeof payload.phone === 'string' ? parseInt(payload.phone.replace(/\D/g, ''), 10) : Number(payload.phone)) : 0,
-      full_address: cleanString(`${payload.address1 || ""} ${payload.address2 || ""}`),
-      district: districtValue,
-      city: cityValue,
-      label: cleanString(payload.label || payload.fullName || ""),
-    },
+    backendFormat: backendAddressData,
   };
   
   // Save to localStorage
@@ -313,11 +484,15 @@ export const addAddress = async (payload) => {
   savedAddresses.push(address);
   saveAddresses(savedAddresses);
   
-  console.log("Address saved locally:", address);
+  console.log("[CheckoutService] addAddress() - Address saved locally:", {
+    id: address.id,
+    backendId: address.backendId,
+    name: address.fullName,
+  });
   
   return {
     data: {
-      address,
+      address: address,
     },
   };
 };
@@ -775,7 +950,7 @@ export const placeOrder = async (payload) => {
     // Payment will be processed in PaymentSection component using order-payment endpoint
     const totalDuration = Date.now() - startTime;
     console.log("[CheckoutService] placeOrder() - Order placement completed successfully:", {
-      order_code: orderCode,
+        order_code: orderCode,
       total_duration_ms: totalDuration,
       payment_note: "Payment will be processed in PaymentSection via order-payment endpoint",
     });

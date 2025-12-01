@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getAddresses, addAddress, updateAddress, setDefaultAddress,
-  getShippingQuote, createPaymentIntent, placeOrder, startCheckout, updateOrderCheckout
+  getShippingQuote, createPaymentIntent, placeOrder, startCheckout, updateOrderCheckout,
+  createShippingAddress
 } from "../../api/CheckoutService";
 import { updateCheckout } from "../../api/payment/PaymentService";
 
@@ -10,6 +11,85 @@ export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async 
   console.log("data", data);
   return data.addresses || [];
 });
+
+/**
+ * Sync a local address to backend and get the backend ID
+ * This is called when a local address is selected but doesn't have a backendId
+ */
+export const syncAddressToBackend = createAsyncThunk(
+  "checkout/syncAddressToBackend",
+  async (address, { rejectWithValue }) => {
+    try {
+      console.log("[CheckoutSlice] syncAddressToBackend() - Syncing local address to backend:", {
+        id: address.id,
+        name: address.fullName,
+        hasBackendId: !!address.backendId,
+      });
+      
+      // If address already has a backendId, return it
+      if (address.backendId) {
+        console.log("[CheckoutSlice] syncAddressToBackend() - Address already has backendId:", address.backendId);
+        return {
+          localId: address.id,
+          backendId: address.backendId,
+          address: address,
+        };
+      }
+      
+      // Prepare backend format
+      const phoneNumber = address.phone 
+        ? (typeof address.phone === 'string' 
+            ? parseInt(address.phone.replace(/\D/g, ''), 10) 
+            : Number(address.phone))
+        : 0;
+      
+      const fullAddress = `${address.address1 || ""} ${address.address2 || ""}`.trim();
+      
+      const backendAddressData = {
+        email: address.email || "",
+        name: address.fullName || "",
+        phone: phoneNumber,
+        full_address: fullAddress,
+        district: address.district || address.state || "",
+        city: address.city || "",
+        label: address.label || address.fullName || "",
+      };
+      
+      // Create address in backend
+      const response = await createShippingAddress(backendAddressData);
+      const backendId = response.data.id;
+      
+      console.log("[CheckoutSlice] syncAddressToBackend() - Address created in backend with ID:", backendId);
+      
+      // Update local address with backendId
+      const updatedAddress = {
+        ...address,
+        backendId: backendId,
+      };
+      
+      // Update in localStorage
+      const savedAddresses = JSON.parse(localStorage.getItem("saved_addresses_v1") || "[]");
+      const addressIndex = savedAddresses.findIndex(addr => addr.id === address.id);
+      if (addressIndex !== -1) {
+        savedAddresses[addressIndex] = updatedAddress;
+        localStorage.setItem("saved_addresses_v1", JSON.stringify(savedAddresses));
+        console.log("[CheckoutSlice] syncAddressToBackend() - Updated address in localStorage with backendId");
+      }
+      
+      return {
+        localId: address.id,
+        backendId: backendId,
+        address: updatedAddress,
+      };
+    } catch (error) {
+      console.error("[CheckoutSlice] syncAddressToBackend() - Error syncing address:", error);
+      return rejectWithValue({
+        message: error.response?.data?.message || error.message || "Failed to sync address to backend",
+        status: error.response?.status,
+      });
+    }
+  }
+);
 
 export const initializeCheckout = createAsyncThunk("checkout/initializeCheckout", async (_, { rejectWithValue }) => {
   try {
@@ -29,9 +109,28 @@ export const updateOrderCheckoutThunk = createAsyncThunk(
   async ({ shipping_address_id, shipping_type }, { rejectWithValue, getState }) => {
     try {
       console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Updating order checkout");
+      console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Input:", {
+        shipping_address_id,
+        shipping_type,
+      });
+      
+      // Get the address from state to find the backend ID
+      const state = getState();
+      const addresses = state.checkout.addresses || [];
+      const selectedAddress = addresses.find(addr => addr.id === shipping_address_id);
+      
+      // Use backend ID if available, otherwise use the provided ID
+      // The backend ID comes from the shipping-address endpoint
+      const dropLocationId = selectedAddress?.backendId || selectedAddress?.id || shipping_address_id;
+      
+      console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Address lookup:", {
+        shipping_address_id,
+        found_address: !!selectedAddress,
+        backendId: selectedAddress?.backendId,
+        using_drop_location_id: dropLocationId,
+      });
       
       // First ensure order is created via startCheckout
-      const state = getState();
       if (!state.checkout.order && state.checkout.status !== "loading") {
         console.log("[CheckoutSlice] Order not found, calling startCheckout first");
         try {
@@ -51,7 +150,13 @@ export const updateOrderCheckoutThunk = createAsyncThunk(
         }
       }
       
-      const response = await updateOrderCheckout({ shipping_address_id, shipping_type });
+      // Use the backend ID (drop_location_id) for the API call
+      // The updateOrderCheckout function will map shipping_address_id to drop_location_id
+      // But we want to ensure we're using the backend ID from the shipping-address endpoint
+      const response = await updateOrderCheckout({ 
+        shipping_address_id: dropLocationId, // Use backend ID from shipping-address endpoint
+        shipping_type 
+      });
       
       // Check if update was skipped (for local storage addresses)
       if (response.skipped) {
@@ -73,6 +178,7 @@ export const updateOrderCheckoutThunk = createAsyncThunk(
       }
       
       console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Successfully updated with status:", response.status);
+      console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Response data received:", JSON.stringify(response.data, null, 2));
       
       return {
         data: response.data,
@@ -462,6 +568,17 @@ const slice = createSlice({
       state.selectedAddressId = action.payload;
       saveSelectedAddressId(action.payload);
     },
+    updateAddressBackendId(state, action) {
+      // Update an address with its backendId
+      const { localId, backendId } = action.payload;
+      const addressIndex = state.addresses.findIndex(addr => addr.id === localId);
+      if (addressIndex !== -1) {
+        state.addresses[addressIndex] = {
+          ...state.addresses[addressIndex],
+          backendId: backendId,
+        };
+      }
+    },
     selectShippingType(state, action) {
       state.shippingType = action.payload; // 'Normal' or 'Express'
     },
@@ -596,7 +713,7 @@ const slice = createSlice({
   },
 });
 
-export const { selectAddress, selectShippingType, goToPayment, resetCheckout } = slice.actions;
+export const { selectAddress, selectShippingType, goToPayment, resetCheckout, updateAddressBackendId } = slice.actions;
 
 export const selectAddresses = (s) => s.checkout.addresses;
 export const selectSelectedAddressId = (s) => s.checkout.selectedAddressId;

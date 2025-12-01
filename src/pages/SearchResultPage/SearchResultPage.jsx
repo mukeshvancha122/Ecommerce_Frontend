@@ -74,7 +74,14 @@ const SearchResultsPage = () => {
             mainVariation?.product_images?.[0]?.product_image || "";
           const price = parsePrice(mainVariation?.product_price);
           const discounted = parsePrice(mainVariation?.get_discounted_price);
-          const rating = p.get_rating_info;
+          // Handle rating info - can be object with average_rating or a number
+          const ratingInfo = p.get_rating_info;
+          const rating = typeof ratingInfo === 'object' && ratingInfo !== null 
+            ? ratingInfo.average_rating 
+            : (typeof ratingInfo === 'number' ? ratingInfo : null);
+          const totalRatings = typeof ratingInfo === 'object' && ratingInfo !== null
+            ? ratingInfo.total_ratings || 0
+            : 0;
 
           return (
             <article
@@ -102,10 +109,13 @@ const SearchResultsPage = () => {
                 <h2 className="srpProductName">{p.product_name}</h2>
                 <div className="srpBrand">{p.brand?.brand_name}</div>
 
-                {rating && (
+                {rating !== null && rating !== undefined && (
                   <div className="srpRatingRow">
                     <span className="srpStar">★</span>
-                    <span className="srpRatingValue">{rating}</span>
+                    <span className="srpRatingValue">{rating.toFixed(1)}</span>
+                    {totalRatings > 0 && (
+                      <span className="srpRatingCount">({totalRatings})</span>
+                    )}
                     <span className="srpStoreName">mystore</span>
                   </div>
                 )}
