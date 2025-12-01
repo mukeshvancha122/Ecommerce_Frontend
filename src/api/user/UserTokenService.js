@@ -10,28 +10,92 @@ import API from "../../axios";
  */
 export const getUserToken = async (email, password) => {
   try {
+    // Validate and sanitize inputs
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
+    
+    // Trim whitespace from inputs
+    const trimmedEmail = String(email).trim();
+    const trimmedPassword = String(password).trim();
+    
+    // Validate email format (basic check)
+    if (!trimmedEmail || trimmedEmail.length === 0) {
+      throw new Error("Email cannot be empty");
+    }
+    
+    if (!trimmedPassword || trimmedPassword.length === 0) {
+      throw new Error("Password cannot be empty");
+    }
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      throw new Error("Please enter a valid email address");
+    }
+    
+    console.log("[UserTokenService] Attempting login with email:", trimmedEmail);
+    
     const response = await API.post("/v1/user/get-token/", {
-      email,
-      password,
+      email: trimmedEmail,
+      password: trimmedPassword,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     // Check if response indicates an error (4xx status)
     if (response.status >= 400) {
       const errorData = response.data || {};
-      const errorMessage = 
-        errorData.detail || 
-        errorData.message || 
-        errorData.error ||
-        (typeof errorData === 'string' ? errorData : 'Login failed');
       
-      console.error("Login API error response:", {
+      // Log detailed error information for debugging
+      console.error("[UserTokenService] Login API error response:", {
         status: response.status,
+        statusText: response.statusText,
         data: errorData,
-        message: errorMessage
+        headers: response.headers,
+        requestUrl: response.config?.url,
+        requestMethod: response.config?.method,
+        requestData: {
+          email: trimmedEmail ? `${trimmedEmail.substring(0, 3)}***` : 'MISSING',
+          passwordLength: trimmedPassword ? trimmedPassword.length : 0,
+        }
       });
+      
+      // Extract error message from various possible formats
+      let errorMessage = 'Login failed';
+      
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData.detail) {
+        errorMessage = errorData.detail;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      } else if (Array.isArray(errorData) && errorData.length > 0) {
+        // Handle array of errors (common in Django REST Framework)
+        errorMessage = Array.isArray(errorData[0]) ? errorData[0][0] : String(errorData[0]);
+      } else if (typeof errorData === 'object') {
+        // Try to extract error from object (e.g., { email: ["error"], password: ["error"] })
+        const errorKeys = Object.keys(errorData);
+        if (errorKeys.length > 0) {
+          const firstKey = errorKeys[0];
+          const firstValue = errorData[firstKey];
+          if (Array.isArray(firstValue) && firstValue.length > 0) {
+            errorMessage = `${firstKey}: ${firstValue[0]}`;
+          } else if (typeof firstValue === 'string') {
+            errorMessage = `${firstKey}: ${firstValue}`;
+          } else {
+            errorMessage = JSON.stringify(errorData);
+          }
+        }
+      }
       
       const error = new Error(errorMessage);
       error.response = response;
+      error.status = response.status;
       throw error;
     }
 

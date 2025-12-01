@@ -18,9 +18,9 @@ import {
 import { useTranslation } from "../../i18n/TranslationProvider";
 import { useSelector } from "react-redux";
 import { selectCountry } from "../../features/country/countrySlice";
-import { selectShipping } from "../../features/checkout/CheckoutSlice";
+import { selectShipping, selectShippingTypeValue } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
-import { processStripePayment, processOrderPayment } from "../../api/payment/PaymentService";
+import { processOrderPayment } from "../../api/payment/PaymentService";
 
 const paymentOptionsConfig = (t) => [
   {
@@ -66,6 +66,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
   const history = useHistory();
   const { t } = useTranslation();
   const selectedCountry = useSelector(selectCountry);
+  const shippingType = useSelector(selectShippingTypeValue);
 
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [cards, setCards] = useState([]);
@@ -186,8 +187,22 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           throw new Error("Failed to create order");
         }
 
-        // Dummy payment processing - skip actual API calls
-        console.log("[PaymentSection] Dummy mode: Bypassing card payment");
+        // Dummy payment processing - call order-payment endpoint with dummy data
+        console.log("[PaymentSection] Dummy mode: Processing card payment via order-payment endpoint with dummy data");
+        try {
+          await processOrderPayment({
+            payment_method: "card", // Use "card" as payment method
+            amount: String(orderTotal), // Total amount as string
+            order_code: orderId, // Order code from order creation
+            ref_code: `dummy_card_${Date.now()}`, // Dummy reference code
+            pidx: "", // Optional payment ID (empty for dummy)
+          });
+          console.log("[PaymentSection] Dummy card payment processed successfully");
+        } catch (paymentErr) {
+          console.warn("[PaymentSection] Dummy payment processing failed (non-blocking):", paymentErr);
+          // Continue even if payment processing fails in dummy mode
+        }
+        
         console.log("[PaymentSection] Order created successfully with ID:", orderId);
         console.log("[PaymentSection] Cart will be cleared on order confirmation page");
         
@@ -202,6 +217,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             orderTotal,
             shipping: { ...shipping }, // Copy shipping object
             addressId,
+            shippingType, // Include shipping type for update-checkout call
           }
         });
       } catch (err) {
@@ -228,18 +244,17 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         throw new Error("Failed to create order");
       }
 
-      // Process Stripe payment
-      await processStripePayment({
-        card_number: cardForm.number.replace(/\s/g, ""),
-        expiry_month: cardForm.expMonth,
-        expiry_year: cardForm.expYear,
-        cvc: cardForm.cvv,
+      // Process payment using order-payment endpoint with dummy card data
+      console.log("[PaymentSection] Processing card payment via order-payment endpoint...");
+      await processOrderPayment({
+        payment_method: "card", // Use "card" as payment method
+        amount: String(orderTotal), // Total amount as string
+        order_code: orderId, // Order code from order creation
+        ref_code: `card_${Date.now()}`, // Dummy reference code for card payment
+        pidx: "", // Optional payment ID (empty for card)
       });
 
-      // Note: Stripe payment is already processed via processStripePayment above
-      // The order-payment endpoint only supports esewa, khalti, cod
-      // For Stripe, we don't need to call processOrderPayment
-      console.log("[PaymentSection] Stripe payment processed, skipping order-payment call");
+      console.log("[PaymentSection] Card payment processed successfully via order-payment endpoint");
 
       // Redirect to success page with order data in state
       history.push({
@@ -291,6 +306,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             orderTotal,
             shipping: { ...shipping }, // Copy shipping object
             addressId,
+            shippingType, // Include shipping type for update-checkout call
           }
         });
       } catch (err) {
@@ -337,6 +353,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           orderTotal,
           shipping: { ...shipping }, // Copy shipping object
           addressId,
+          shippingType, // Include shipping type for update-checkout call
         }
       });
     } catch (err) {
@@ -508,6 +525,7 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           orderTotal,
           shipping,
           addressId,
+          shippingType, // Include shipping type for update-checkout call
         }
       });
     } catch (err) {

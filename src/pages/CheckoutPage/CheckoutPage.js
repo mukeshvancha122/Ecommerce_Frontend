@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./CheckoutPage.css";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
@@ -6,10 +6,13 @@ import {
   fetchAddresses,
   fetchShippingQuote,
   initializeCheckout,
+  updateOrderCheckoutThunk,
   selectAddresses,
   selectSelectedAddressId,
   selectAddress as selectAddressAction,
   selectShipping,
+  selectShippingTypeValue,
+  selectShippingType,
   selectCheckoutStep,
   goToPayment,
   startPayment,
@@ -17,6 +20,10 @@ import {
   selectCoupons,
   selectRewards,
   resetCheckout,
+  selectIsLoadingCheckout,
+  selectIsUpdatingCheckout,
+  selectCheckoutError,
+  selectCheckoutUpdated,
 } from "../../features/checkout/CheckoutSlice";
 import { useCart } from "../../hooks/useCart";
 import { selectUser } from "../../features/auth/AuthSlice";
@@ -39,22 +46,43 @@ export default function CheckoutPage() {
   const addresses = useSelector(selectAddresses);
   const selectedAddressId = useSelector(selectSelectedAddressId);
   const shipping = useSelector(selectShipping);
+  const shippingType = useSelector(selectShippingTypeValue);
   const step = useSelector(selectCheckoutStep);
   const payment = useSelector(selectPaymentState);
+  const isLoadingCheckout = useSelector(selectIsLoadingCheckout);
+  const isUpdatingCheckout = useSelector(selectIsUpdatingCheckout);
+  const checkoutError = useSelector(selectCheckoutError);
+  const checkoutUpdated = useSelector(selectCheckoutUpdated);
   const { items, total: itemsTotal, removeItem, updateItem } = useCart();
 
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [showCountryError, setShowCountryError] = useState(false);
   const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
+  const [localShippingType, setLocalShippingType] = useState(null);
   const selectedCountry = useSelector(selectCountry);
+  const lastUpdateRef = useRef({ addressId: null, shippingType: null });
 
-  // Load addresses and initialize checkout when user is logged in and component mounts
+  // Call startCheckout when component mounts and items are available (convert cart to order)
+  // This should be called when navigating from Cart to Checkout
+  const hasStartedCheckout = useRef(false);
+  useEffect(() => {
+    // Call startCheckout to convert cart items to active order
+    // Only call once when items become available
+    if (items.length > 0 && !hasStartedCheckout.current && !isLoadingCheckout) {
+      console.log("[CheckoutPage] Starting checkout - converting cart to order");
+      hasStartedCheckout.current = true;
+      dispatch(initializeCheckout()).catch((error) => {
+        console.error("[CheckoutPage] Failed to start checkout:", error);
+        hasStartedCheckout.current = false; // Allow retry on error
+      });
+    }
+  }, [dispatch, items.length, isLoadingCheckout]);
+
+  // Load addresses when user is logged in
   useEffect(() => {
     if (user?.email) {
       dispatch(fetchAddresses());
-      // Initialize checkout to get available coupons and rewards
-      dispatch(initializeCheckout());
     }
   }, [dispatch, user?.email]);
 
@@ -86,11 +114,93 @@ export default function CheckoutPage() {
     [itemsTotal, shipping]
   );
 
+  // Handle shipping type selection
+  const handleShippingTypeChange = (type) => {
+    setLocalShippingType(type);
+    dispatch(selectShippingType(type));
+  };
+
+  // Call updateOrderCheckout when both address and shipping type are selected
+  useEffect(() => {
+    const updateCheckout = async () => {
+      // Only update if both are set, not currently updating, and values have changed
+      const hasChanged = 
+        selectedAddressId !== lastUpdateRef.current.addressId ||
+        localShippingType !== lastUpdateRef.current.shippingType;
+      
+      // Check if address ID is a numeric backend ID (not a local storage ID)
+      const isNumericId = selectedAddressId && /^\d+$/.test(String(selectedAddressId));
+      
+      if (selectedAddressId && localShippingType && !isUpdatingCheckout && hasChanged) {
+        try {
+          console.log("[CheckoutPage] Updating order checkout with address and shipping type");
+          const result = await dispatch(updateOrderCheckoutThunk({
+            shipping_address_id: selectedAddressId,
+            shipping_type: localShippingType,
+          })).unwrap();
+          
+          // If update was skipped (local address), still mark as processed
+          if (result.skipped) {
+            console.log("[CheckoutPage] Update skipped for local address - will be included in order creation");
+          } else {
+            console.log("[CheckoutPage] Order checkout updated successfully");
+          }
+          
+          // Update ref to track last successful update (even if skipped)
+          lastUpdateRef.current = {
+            addressId: selectedAddressId,
+            shippingType: localShippingType,
+          };
+        } catch (error) {
+          console.error("[CheckoutPage] Failed to update order checkout:", error);
+          // Don't block the flow - address will be included in final order creation
+        }
+      }
+    };
+
+    updateCheckout();
+  }, [selectedAddressId, localShippingType, dispatch, isUpdatingCheckout]);
+
   const handleDeliverToThis = async () => {
     if (!selectedAddressId || items.length === 0) return;
-    await dispatch(startPayment({ addressId: selectedAddressId, items }));
-    if (!payment.lastError) {
-      dispatch(goToPayment());
+    
+    // Ensure shipping type is selected
+    if (!localShippingType) {
+      alert("Please select a shipping type (Normal or Express)");
+      return;
+    }
+
+    // Ensure order is created and updated before proceeding
+    // Call updateOrderCheckout - this will also ensure startCheckout is called first
+    try {
+      console.log("[CheckoutPage] Updating order checkout before proceeding to payment");
+      const result = await dispatch(updateOrderCheckoutThunk({
+        shipping_address_id: selectedAddressId,
+        shipping_type: localShippingType,
+      })).unwrap();
+      
+      // Check if update was skipped (for local storage addresses)
+      if (result.skipped) {
+        console.log("[CheckoutPage] Update skipped for local address - address will be included in order creation");
+        // Still proceed - address data will be included in final order creation
+      } else {
+        // Verify we got a successful response (200/201) for backend addresses
+        if (result.status !== 200 && result.status !== 201) {
+          throw new Error(`Update checkout returned status ${result.status}`);
+        }
+        console.log("[CheckoutPage] Order checkout updated successfully with status:", result.status);
+      }
+      
+      // Now proceed to payment (works for both backend and local addresses)
+      await dispatch(startPayment({ addressId: selectedAddressId, items }));
+      if (!payment.lastError) {
+        dispatch(goToPayment());
+      }
+    } catch (error) {
+      console.error("[CheckoutPage] Failed to update order checkout:", error);
+      const errorMessage = error.message || error.response?.data?.message || "Failed to update order. Please try again.";
+      alert(errorMessage);
+      return;
     }
   };
 
@@ -117,6 +227,22 @@ export default function CheckoutPage() {
           <div className="co-main">
             <div className="co-card">
               <div className="co-card-title">{t("checkout.selectAddress")}</div>
+              
+              {/* Loading state for startCheckout */}
+              {isLoadingCheckout && (
+                <div className="co-loading">
+                  <p>Starting checkout...</p>
+                </div>
+              )}
+
+              {/* Error state for startCheckout */}
+              {checkoutError && !isLoadingCheckout && (
+                <div className="co-error">
+                  <p>Error: {checkoutError}</p>
+                  <button onClick={() => dispatch(initializeCheckout())}>Retry</button>
+                </div>
+              )}
+
               <AddressBook
                 addresses={addresses}
                 selectedId={selectedAddressId}
@@ -128,12 +254,51 @@ export default function CheckoutPage() {
                   setShowCountryError(true);
                 }}
               />
+
+              {/* Shipping Type Selection */}
+              {selectedAddressId && (
+                <div className="co-shipping-type" style={{ marginTop: "20px", marginBottom: "20px" }}>
+                  <div className="co-card-title" style={{ fontSize: "16px", marginBottom: "10px" }}>
+                    Select Shipping Type
+                  </div>
+                  <div style={{ display: "flex", gap: "15px" }}>
+                    <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                      <input
+                        type="radio"
+                        name="shippingType"
+                        value="Normal"
+                        checked={localShippingType === "Normal"}
+                        onChange={() => handleShippingTypeChange("Normal")}
+                        style={{ marginRight: "8px" }}
+                      />
+                      <span>Normal</span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                      <input
+                        type="radio"
+                        name="shippingType"
+                        value="Express"
+                        checked={localShippingType === "Express"}
+                        onChange={() => handleShippingTypeChange("Express")}
+                        style={{ marginRight: "8px" }}
+                      />
+                      <span>Express</span>
+                    </label>
+                  </div>
+                  {isUpdatingCheckout && (
+                    <div style={{ marginTop: "10px", color: "#666", fontSize: "14px" }}>
+                      Updating order...
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 className="co-cta"
-                disabled={!selectedAddressId || items.length === 0}
+                disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
                 onClick={handleDeliverToThis}
               >
-                {t("checkout.deliverCta")}
+                {isUpdatingCheckout ? "Updating..." : t("checkout.deliverCta")}
               </button>
             </div>
 
@@ -219,10 +384,10 @@ export default function CheckoutPage() {
           <aside className="co-summary">
             <button
               className="co-summary-cta"
-              disabled={!selectedAddressId || items.length === 0}
+              disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
               onClick={handleDeliverToThis}
             >
-              {step === "payment" ? t("checkout.usePaymentMethod") : t("checkout.deliverCta")}
+              {isUpdatingCheckout ? "Updating..." : step === "payment" ? t("checkout.usePaymentMethod") : t("checkout.deliverCta")}
             </button>
             <div className="co-summary-row">
               <span>{t("checkout.items")}:</span>

@@ -143,15 +143,26 @@ export default function Login() {
     setLoading(true);
     resetMessages();
 
-    // Validation
-    if (!email || !password) {
+    // Validation - trim and check
+    const trimmedEmail = email?.trim() || "";
+    const trimmedPassword = password?.trim() || "";
+
+    if (!trimmedEmail || !trimmedPassword) {
       setErrorMsg("Please enter both email and password.");
       setLoading(false);
       return;
     }
 
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMsg("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await getUserToken(email, password);
+      const data = await getUserToken(trimmedEmail, trimmedPassword);
       
       console.log("Login response from getUserToken:", data);
       console.log("Token check:", {

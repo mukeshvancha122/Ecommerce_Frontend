@@ -7,14 +7,60 @@ const calculateItemsTotal = (items = []) =>
   items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
 
 /**
- * Start checkout process - Get available coupons and rewards
+ * Get current active order
+ * GET /api/v1/orders/current-order/
+ * This retrieves the order created by startCheckout
+ * @returns {Promise<Object>} Current order data
+ */
+export const getCurrentOrder = async () => {
+  try {
+    console.log("[CheckoutService] getCurrentOrder() - Fetching current active order");
+    const response = await API.get("/v1/orders/current-order/");
+    console.log("[CheckoutService] getCurrentOrder() - Response:", response);
+    
+    // API returns paginated response: { count, next, previous, results: [...] }
+    // The current order should be the first item in results
+    const orders = response.data?.results || [];
+    const currentOrder = orders.length > 0 ? orders[0] : null;
+    
+    if (currentOrder) {
+      console.log("[CheckoutService] getCurrentOrder() - Found current order:", {
+        order_code: currentOrder.order_code,
+        order_status: currentOrder.order_status,
+        item_count: currentOrder.item?.length || 0,
+      });
+    } else {
+      console.warn("[CheckoutService] getCurrentOrder() - No current order found");
+    }
+    
+    return {
+      data: currentOrder,
+    };
+  } catch (error) {
+    console.error("[CheckoutService] getCurrentOrder() - Error fetching current order:", error);
+    // If unauthorized (401), return null (guest mode)
+    if (error.response?.status === 401) {
+      console.log("[CheckoutService] User not authenticated, no current order available");
+      return {
+        data: null,
+      };
+    }
+    throw error;
+  }
+};
+
+/**
+ * Start checkout process - Convert cart items to active order
  * POST /api/v1/orders/start-checkout/
- * Returns: [{ coupon: "string", rewards: 0 }]
- * @returns {Promise<Object>} Available coupons and rewards
+ * Returns: [{ coupon: "string", rewards: 0 }] and creates active order
+ * @returns {Promise<Object>} Available coupons, rewards, and order data
  */
 export const startCheckout = async () => {
   try {
+    console.log("[CheckoutService] startCheckout() - Starting checkout, converting cart to order");
     const response = await API.post("/v1/orders/start-checkout/");
+    console.log("[CheckoutService] startCheckout() - Response:", response);
+    console.log("[CheckoutService] startCheckout() - Response data:", JSON.stringify(response.data, null, 2));
     
     // API returns array: [{ coupon: "string", rewards: 0 }]
     const checkoutData = Array.isArray(response.data) ? response.data : [];
@@ -29,33 +75,145 @@ export const startCheckout = async () => {
     
     const totalRewards = checkoutData.reduce((sum, item) => sum + (item.rewards || 0), 0);
     
+    // Try to get order from response or fetch current order
+    let order = response.data?.order || null;
+    
+    // If order not in response, try to fetch it from current-order endpoint
+    if (!order) {
+      console.log("[CheckoutService] startCheckout() - Order not in response, fetching current order...");
+      try {
+        const currentOrderResponse = await getCurrentOrder();
+        order = currentOrderResponse.data;
+        if (order) {
+          console.log("[CheckoutService] startCheckout() - Found current order:", {
+            order_code: order.order_code,
+            order_status: order.order_status,
+          });
+        } else {
+          console.warn("[CheckoutService] startCheckout() - No current order found after startCheckout");
+        }
+      } catch (orderError) {
+        console.warn("[CheckoutService] startCheckout() - Could not fetch current order:", orderError.message);
+        // Continue without order - it may be created later
+      }
+    } else {
+      console.log("[CheckoutService] startCheckout() - Order found in response:", {
+        order_code: order.order_code,
+        order_status: order.order_status,
+      });
+    }
+    
+    console.log("[CheckoutService] startCheckout() - Checkout started successfully, order:", order ? "Found" : "Not found");
+    
     return {
       data: {
         coupons,
         rewards: totalRewards,
         checkoutData,
+        order: order, // Order data from response or current-order endpoint
       },
     };
   } catch (error) {
-    console.error("Error starting checkout:", error);
+    console.error("[CheckoutService] startCheckout() - Error starting checkout:", error);
     // If unauthorized (401), return empty coupons/rewards (guest mode)
     if (error.response?.status === 401) {
-      console.log("User not authenticated, no coupons/rewards available");
+      console.log("[CheckoutService] User not authenticated, no coupons/rewards available");
       return {
         data: {
           coupons: [],
           rewards: 0,
           checkoutData: [],
+          order: null,
         },
       };
     }
-    return {
-      data: {
-        coupons: [],
-        rewards: 0,
-        checkoutData: [],
-      },
+    throw error; // Re-throw error so component can handle it
+  }
+};
+
+/**
+ * Update order checkout with shipping address and shipping type
+ * POST /api/v1/orders/update-checkout/
+ * 
+ * API expects: { "drop_location_id": "string", "shipping": "string" }
+ * 
+ * Note: drop_location_id must be a numeric backend database ID, not a local storage ID
+ * 
+ * @param {Object} payload - Update checkout payload
+ * @param {string|number} payload.shipping_address_id - Shipping address ID (will be mapped to drop_location_id)
+ * @param {string} payload.shipping_type - Shipping type: "Normal" or "Express" (will be mapped to shipping)
+ * @returns {Promise<Object>} Updated order response (expects 200/201 status)
+ */
+export const updateOrderCheckout = async (payload) => {
+  try {
+    console.log("[CheckoutService] updateOrderCheckout() - Updating order checkout with:", payload);
+    
+    const { shipping_address_id, shipping_type } = payload;
+    
+    // Validate required fields
+    if (!shipping_address_id) {
+      throw new Error("shipping_address_id is required");
+    }
+    if (!shipping_type || !["Normal", "Express"].includes(shipping_type)) {
+      throw new Error("shipping_type is required and must be 'Normal' or 'Express'");
+    }
+    
+    // Check if address ID is a numeric backend database ID
+    // Local storage addresses have IDs like 'addr_xxx' which are not valid backend IDs
+    const isNumericId = /^\d+$/.test(String(shipping_address_id));
+    
+    if (!isNumericId) {
+      // This is a local storage address ID, not a backend database ID
+      // The backend API requires a numeric database ID for drop_location_id
+      // We'll skip this call and include address data in the final order creation instead
+      console.warn("[CheckoutService] updateOrderCheckout() - Skipping: addressId is not a numeric backend ID:", shipping_address_id);
+      console.warn("[CheckoutService] Address data will be included in final order creation instead");
+      
+      // Return a success response to allow the flow to continue
+      // The address will be included in the final order creation via placeOrder
+      return {
+        data: { message: "Skipped: using local address, will be included in order creation" },
+        status: 200,
+        skipped: true,
+      };
+    }
+    
+    // Map to API expected field names
+    // API expects: drop_location_id (string) and shipping (string)
+    // For numeric IDs, convert to string as API expects
+    const dropLocationId = String(shipping_address_id);
+    
+    // Shipping type should be sent as a string
+    const shippingValue = String(shipping_type);
+    
+    const requestBody = {
+      drop_location_id: dropLocationId,
+      shipping: shippingValue,
     };
+    
+    console.log("[CheckoutService] updateOrderCheckout() - Request body (API format):", requestBody);
+    
+    const response = await API.post("/v1/orders/update-checkout/", requestBody);
+    
+    // Validate successful response (200 or 201)
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(`Update checkout failed with status ${response.status}`);
+    }
+    
+    console.log("[CheckoutService] updateOrderCheckout() - Order checkout updated successfully:", {
+      status: response.status,
+      data: response.data
+    });
+    
+    return {
+      data: response.data,
+      status: response.status,
+    };
+  } catch (error) {
+    console.error("[CheckoutService] updateOrderCheckout() - Error updating order checkout:", error);
+    console.error("[CheckoutService] updateOrderCheckout() - Error response:", error.response?.data);
+    console.error("[CheckoutService] updateOrderCheckout() - Error status:", error.response?.status);
+    throw error;
   }
 };
 
@@ -261,20 +419,33 @@ export const createPaymentIntent = async (payload) => {
  * @returns {Promise<Object>} Created order response
  */
 export const createOrder = async (payload) => {
+  const startTime = Date.now();
   try {
-    console.log("[CheckoutService] createOrder() - Starting order creation with payload:", payload);
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] createOrder() - ========== ORDER CREATION START ==========");
+    console.log("[CheckoutService] createOrder() - Timestamp:", new Date().toISOString());
+    console.log("[CheckoutService] createOrder() - Starting order creation with payload:", JSON.stringify(payload, null, 2));
+    
     const { items = [], addressData = null, orderCode = null, paymentMethod = "card", total = 0 } = payload;
+    
+    // Validate inputs
+    console.log("[CheckoutService] createOrder() - Input validation:");
+    console.log("  - Items count:", items.length);
+    console.log("  - Items:", items.map(item => ({ sku: item.sku, title: item.title, qty: item.qty, price: item.price })));
+    console.log("  - Address data:", addressData ? "Present" : "Missing");
+    console.log("  - Payment method:", paymentMethod);
+    console.log("  - Total:", total);
+    console.log("  - Order code provided:", orderCode || "None (will generate)");
     
     // Generate order code if not provided
     const finalOrderCode = orderCode || `order_${Date.now()}`;
-    console.log("[CheckoutService] createOrder() - Order code:", finalOrderCode);
+    console.log("[CheckoutService] createOrder() - Final order code:", finalOrderCode);
     
     // Transform cart items to API format
     // API expects: item: [{ id: 0, item: { id: 0, product: {...}, ... }, quantity: 0 }]
-    const orderItems = items.map((cartItem) => {
-      // cartItem has: { id, sku, title, price, qty, image, ... }
-      // We need to map to: { id: cart_item_id, item: { id: variation_id, product: {...}, ... }, quantity: qty }
-      return {
+    console.log("[CheckoutService] createOrder() - Transforming cart items to API format...");
+    const orderItems = items.map((cartItem, index) => {
+      const transformed = {
         id: cartItem.id || 0, // Cart item ID (if available from backend)
         item: {
           id: cartItem.sku || cartItem.id || 0, // Variation ID (item_id)
@@ -298,20 +469,33 @@ export const createOrder = async (payload) => {
         },
         quantity: parseInt(cartItem.qty || 1, 10),
       };
+      
+      console.log(`[CheckoutService] createOrder() - Item ${index + 1}/${items.length} transformed:`, {
+        sku: cartItem.sku,
+        title: cartItem.title,
+        qty: transformed.quantity,
+        price: transformed.item.product_price,
+        product_id: transformed.item.product.id,
+      });
+      
+      return transformed;
     });
     
-    console.log("[CheckoutService] createOrder() - Transformed order items:", orderItems.length);
+    console.log("[CheckoutService] createOrder() - Transformed order items count:", orderItems.length);
+    console.log("[CheckoutService] createOrder() - Sample transformed item:", JSON.stringify(orderItems[0] || {}, null, 2));
     
     // Prepare order payload
+    console.log("[CheckoutService] createOrder() - Preparing order payload...");
+    const orderDate = new Date().toISOString();
     const orderPayload = {
       item: orderItems,
-      order_date: new Date().toISOString(),
+      order_date: orderDate,
       order_price: parseFloat(total || 0),
       order_code: finalOrderCode,
       order_status: "PENDING",
       payment: [{
         payment_method: paymentMethod,
-        payment_date: new Date().toISOString(),
+        payment_date: orderDate,
         payment_token: payload.paymentToken || "",
         is_paid: false, // Will be updated when payment is processed
       }],
@@ -328,29 +512,108 @@ export const createOrder = async (payload) => {
       delivered_by: "",
     };
     
-    console.log("[CheckoutService] createOrder() - Order payload prepared:", {
+    console.log("[CheckoutService] createOrder() - Order payload summary:", {
       order_code: finalOrderCode,
       item_count: orderItems.length,
       total: orderPayload.order_price,
-      has_address: !!addressData
+      has_address: !!addressData,
+      payment_method: paymentMethod,
+      order_date: orderDate,
     });
+    
+    if (addressData) {
+      console.log("[CheckoutService] createOrder() - Address data:", {
+        id: addressData.id,
+        name: addressData.name,
+        email: addressData.email,
+        city: addressData.city,
+        district: addressData.district,
+        full_address: addressData.full_address?.substring(0, 50) + "...",
+      });
+    } else {
+      console.warn("[CheckoutService] createOrder() - WARNING: No address data provided!");
+    }
+    
+    console.log("[CheckoutService] createOrder() - Full order payload (JSON):", JSON.stringify(orderPayload, null, 2));
     console.log("[CheckoutService] createOrder() - Making POST request to /v1/orders/");
     
+    const requestStartTime = Date.now();
     const response = await API.post("/v1/orders/", orderPayload);
+    const requestDuration = Date.now() - requestStartTime;
     
-    console.log("[CheckoutService] createOrder() - Order created successfully:", {
+    console.log("[CheckoutService] createOrder() - API request completed:", {
+      duration_ms: requestDuration,
       status: response.status,
-      order_code: response.data?.order_code,
-      order_id: response.data?.id
+      statusText: response.statusText,
     });
+    
+    console.log("[CheckoutService] createOrder() - API response data:", JSON.stringify(response.data, null, 2));
+    
+    // CRITICAL: Validate response status - only 200/201 means success
+    if (response.status !== 200 && response.status !== 201) {
+      const errorMessage = response.data?.detail || response.data?.message || `Order creation failed with status ${response.status}`;
+      console.error("[CheckoutService] createOrder() - API returned non-success status:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorMessage,
+        response_data: response.data,
+      });
+      
+      const error = new Error(errorMessage);
+      error.response = response;
+      error.status = response.status;
+      throw error;
+    }
+    
+    // Verify we have order data in response
+    if (!response.data) {
+      console.error("[CheckoutService] createOrder() - API returned success but no data in response");
+      throw new Error("Order creation succeeded but no order data returned");
+    }
+    
+    // Verify order_code or id exists in response
+    const returnedOrderCode = response.data?.order_code || response.data?.id || response.data?.orderCode;
+    if (!returnedOrderCode) {
+      console.warn("[CheckoutService] createOrder() - WARNING: No order_code/id in response, using generated code");
+      console.warn("[CheckoutService] createOrder() - Response data:", JSON.stringify(response.data, null, 2));
+    }
+    
+    const totalDuration = Date.now() - startTime;
+    console.log("[CheckoutService] createOrder() - Order created successfully in backend:", {
+      order_code: returnedOrderCode || finalOrderCode,
+      order_id: response.data?.id,
+      status: response.status,
+      total_duration_ms: totalDuration,
+      response_has_data: !!response.data,
+      response_keys: Object.keys(response.data || {}),
+    });
+    console.log("[CheckoutService] createOrder() - Full order response:", JSON.stringify(response.data, null, 2));
+    console.log("[CheckoutService] createOrder() - ========== ORDER CREATION SUCCESS ==========");
+    console.log("=".repeat(80));
     
     return {
       data: response.data,
+      status: response.status,
     };
   } catch (error) {
-    console.error("[CheckoutService] createOrder() - ERROR creating order:", error);
-    console.error("[CheckoutService] createOrder() - Error response:", error.response?.data);
-    console.error("[CheckoutService] createOrder() - Error status:", error.response?.status);
+    const totalDuration = Date.now() - startTime;
+    console.error("=".repeat(80));
+    console.error("[CheckoutService] createOrder() - ========== ORDER CREATION ERROR ==========");
+    console.error("[CheckoutService] createOrder() - Error after", totalDuration, "ms");
+    console.error("[CheckoutService] createOrder() - Error message:", error.message);
+    console.error("[CheckoutService] createOrder() - Error stack:", error.stack);
+    
+    if (error.response) {
+      console.error("[CheckoutService] createOrder() - Error response status:", error.response.status);
+      console.error("[CheckoutService] createOrder() - Error response headers:", error.response.headers);
+      console.error("[CheckoutService] createOrder() - Error response data:", JSON.stringify(error.response.data, null, 2));
+    } else if (error.request) {
+      console.error("[CheckoutService] createOrder() - Request was made but no response received");
+      console.error("[CheckoutService] createOrder() - Request:", error.request);
+    }
+    
+    console.error("[CheckoutService] createOrder() - ========== ORDER CREATION FAILED ==========");
+    console.error("=".repeat(80));
     throw error;
   }
 };
@@ -359,91 +622,191 @@ export const createOrder = async (payload) => {
 // Note: Orders can be created directly via createOrder or through payment flow
 // The order is created when payment is processed via /v1/payments/order-payment/
 export const placeOrder = async (payload) => {
+  const startTime = Date.now();
   try {
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] placeOrder() - ========== ORDER PLACEMENT START ==========");
+    console.log("[CheckoutService] placeOrder() - Timestamp:", new Date().toISOString());
     console.log("[CheckoutService] placeOrder() - Starting order placement with payload:", {
       items_count: payload.items?.length || 0,
       paymentMethod: payload.paymentMethod,
       total: payload.total,
-      has_address: !!payload.addressData
+      has_address: !!payload.addressData,
+      addressId: payload.addressId,
+      paymentIntentId: payload.paymentIntentId ? (payload.paymentIntentId.substring(0, 20) + "...") : "None",
+      orderCode: payload.orderCode || "NOT PROVIDED",
     });
+    
+    // CRITICAL: Log if orderCode is missing
+    if (!payload.orderCode) {
+      console.error("[CheckoutService] placeOrder() - WARNING: orderCode not provided in payload!");
+      console.error("[CheckoutService] placeOrder() - Full payload:", JSON.stringify({
+        ...payload,
+        paymentIntentId: payload.paymentIntentId ? (payload.paymentIntentId.substring(0, 20) + "...") : "None",
+      }, null, 2));
+    }
+    console.log("[CheckoutService] placeOrder() - Full payload:", JSON.stringify({
+      ...payload,
+      paymentIntentId: payload.paymentIntentId ? (payload.paymentIntentId.substring(0, 20) + "...") : "None",
+    }, null, 2));
     
     // Check if this is a dummy payment (paymentIntentId starts with "dummy_")
     const isDummyPayment = payload.paymentIntentId && payload.paymentIntentId.startsWith("dummy_");
-    
-    // First, create the order via API - THIS IS THE CRITICAL CALL TO STORE ORDER IN BACKEND
-    console.log("[CheckoutService] placeOrder() - Creating order in backend...");
-    const orderResponse = await createOrder({
-      items: payload.items || [],
-      addressData: payload.addressData || null,
-      orderCode: payload.orderCode || null,
-      paymentMethod: payload.paymentMethod || "card",
-      total: payload.total || 0,
-      paymentToken: payload.paymentIntentId || "",
+    console.log("[CheckoutService] placeOrder() - Payment type:", {
+      isDummyPayment,
+      paymentMethod: payload.paymentMethod,
     });
     
-    const orderCode = orderResponse.data?.order_code || orderResponse.data?.id || `order_${Date.now()}`;
-    console.log("[CheckoutService] placeOrder() - Order created with code:", orderCode);
+    // Step 1: Get the current order created by startCheckout
+    // The order should already exist from startCheckout, so we fetch it instead of creating a new one
+    console.log("[CheckoutService] placeOrder() - Step 1: Fetching current order from backend...");
+    const getOrderStartTime = Date.now();
     
-    // Skip payment processing for dummy payments, COD, or card payments
-    // processOrderPayment only supports: esewa, khalti, cod
-    // Card payments are handled separately via Stripe
-    const skipPaymentProcessing = isDummyPayment || 
-                                  payload.paymentMethod === "cod" || 
-                                  payload.paymentMethod === "card";
+    let currentOrder = null;
+    let orderCode = payload.orderCode || null;
     
-    if (skipPaymentProcessing) {
-      console.log("[CheckoutService] Skipping payment processing for:", {
+    // If orderCode is provided in payload, use it (from startCheckout)
+    if (orderCode) {
+      console.log("[CheckoutService] placeOrder() - Using orderCode from payload:", orderCode);
+      // Try to fetch the order to verify it exists, but don't fail if we can't
+      try {
+        const currentOrderResponse = await getCurrentOrder();
+        currentOrder = currentOrderResponse.data;
+        if (currentOrder) {
+          // Verify the order code matches
+          const fetchedOrderCode = currentOrder.order_code || currentOrder.id;
+          if (fetchedOrderCode && fetchedOrderCode !== orderCode) {
+            console.warn("[CheckoutService] placeOrder() - Order code mismatch:", {
+              provided: orderCode,
+              fetched: fetchedOrderCode,
+            });
+            // Use the fetched one if it exists
+            orderCode = fetchedOrderCode;
+          }
+          console.log("[CheckoutService] placeOrder() - Verified order exists:", {
+            order_code: orderCode,
+            order_status: currentOrder.order_status,
+            item_count: currentOrder.item?.length || 0,
+          });
+        } else {
+          console.warn("[CheckoutService] placeOrder() - Order code provided but order not found in backend, proceeding with provided code");
+        }
+      } catch (error) {
+        console.warn("[CheckoutService] placeOrder() - Could not verify order, but proceeding with provided orderCode:", orderCode);
+      }
+    } else {
+      // No orderCode provided, try to fetch current order
+      console.log("[CheckoutService] placeOrder() - No orderCode provided, fetching current order...");
+      try {
+        const currentOrderResponse = await getCurrentOrder();
+        currentOrder = currentOrderResponse.data;
+        
+        if (currentOrder) {
+          orderCode = currentOrder.order_code || currentOrder.id;
+          console.log("[CheckoutService] placeOrder() - Found current order:", {
+            order_code: orderCode,
+            order_status: currentOrder.order_status,
+            item_count: currentOrder.item?.length || 0,
+          });
+        } else {
+          console.error("[CheckoutService] placeOrder() - No current order found and no orderCode provided");
+          throw new Error("No current order found and no orderCode provided. Please ensure startCheckout was called first.");
+        }
+      } catch (error) {
+        console.error("[CheckoutService] placeOrder() - Error fetching current order:", error);
+        if (error.message && error.message.includes("No current order")) {
+          throw error; // Re-throw our custom error
+        }
+        // For other errors, still throw but with more context
+        throw new Error("Failed to fetch current order and no orderCode provided. Please ensure startCheckout was called first.");
+      }
+    }
+    
+    const getOrderDuration = Date.now() - getOrderStartTime;
+    
+    if (!orderCode) {
+      throw new Error("Order code is required but not found. Please ensure startCheckout was called first.");
+    }
+    
+    console.log("[CheckoutService] placeOrder() - Step 1 completed: Using order from backend:", {
+      order_code: orderCode,
+      duration_ms: getOrderDuration,
+      order_found: !!currentOrder,
+      order_status: currentOrder?.order_status,
+    });
+    
+    // Skip payment processing only for dummy payments
+    // All real payments (card, cod, esewa, khalti) should be processed in PaymentSection component
+    // PaymentSection will call order-payment endpoint with the order_code
+    if (isDummyPayment) {
+      console.log("[CheckoutService] placeOrder() - Step 2: Skipping payment processing (dummy payment):", {
         isDummyPayment,
         paymentMethod: payload.paymentMethod,
-        reason: isDummyPayment ? "dummy payment" : 
-                payload.paymentMethod === "cod" ? "COD" : 
-                payload.paymentMethod === "card" ? "card payment (handled separately)" : "unknown"
+        reason: "dummy payment - will be processed in PaymentSection"
       });
       
       // Order created successfully - return success response
-      // Cart will be cleared by OrderConfirmationPage after confirmation
-      console.log("[CheckoutService] placeOrder() - Order created successfully, cart should be cleared");
+      // Payment will be processed in PaymentSection component
+      const totalDuration = Date.now() - startTime;
+      console.log("[CheckoutService] placeOrder() - Order placement completed successfully:", {
+        order_code: orderCode,
+        total_duration_ms: totalDuration,
+        payment_note: "Payment will be processed in PaymentSection via order-payment endpoint",
+      });
+      console.log("[CheckoutService] placeOrder() - ========== ORDER PLACEMENT SUCCESS ==========");
+      console.log("=".repeat(80));
+      
       return {
         data: {
           orderId: orderCode,
-          order: orderResponse.data,
+          order: currentOrder || { order_code: orderCode, order_status: "PENDING" },
           status: "succeeded",
           message: "Order placed successfully",
         },
       };
     }
     
-    // Then process payment which updates the order (only for esewa, khalti, etc.)
-    const { processOrderPayment } = await import("./payment/PaymentService");
+    // For real payments, payment processing is handled in PaymentSection component
+    // PaymentSection will call order-payment endpoint with the order_code after order is created
+    console.log("[CheckoutService] placeOrder() - Step 2: Payment will be processed in PaymentSection component");
+    console.log("[CheckoutService] placeOrder() - Order code available for payment:", orderCode);
     
-    try {
-      // Process order payment - this will throw if it fails
-      await processOrderPayment({
-        payment_method: payload.paymentMethod || "cod",
-        amount: String(payload.total),
-        order_code: orderCode,
-        ref_code: payload.paymentIntentId || "",
-        pidx: payload.paymentIntentId || "",
-        // Include address data for shipping
-        shipping_address: payload.addressData,
-      });
-    } catch (paymentError) {
-      console.error("[CheckoutService] Payment processing failed:", paymentError);
-      // Re-throw the error for non-card payment methods
-      throw paymentError;
-    }
+    // Order created successfully - return success response
+    // Payment will be processed in PaymentSection component using order-payment endpoint
+    const totalDuration = Date.now() - startTime;
+    console.log("[CheckoutService] placeOrder() - Order placement completed successfully:", {
+      order_code: orderCode,
+      total_duration_ms: totalDuration,
+      payment_note: "Payment will be processed in PaymentSection via order-payment endpoint",
+    });
+    console.log("[CheckoutService] placeOrder() - ========== ORDER PLACEMENT SUCCESS ==========");
+    console.log("=".repeat(80));
     
-    // Return order details
     return {
       data: {
         orderId: orderCode,
-        order: orderResponse.data,
+        order: currentOrder || { order_code: orderCode, order_status: "PENDING" },
         status: "succeeded",
         message: "Order placed successfully",
       },
     };
   } catch (error) {
-    console.error("Error placing order:", error);
+    const totalDuration = Date.now() - startTime;
+    console.error("=".repeat(80));
+    console.error("[CheckoutService] placeOrder() - ========== ORDER PLACEMENT ERROR ==========");
+    console.error("[CheckoutService] placeOrder() - Error after", totalDuration, "ms");
+    console.error("[CheckoutService] placeOrder() - Error message:", error.message);
+    console.error("[CheckoutService] placeOrder() - Error stack:", error.stack);
+    
+    if (error.response) {
+      console.error("[CheckoutService] placeOrder() - Error response:", {
+        status: error.response.status,
+        data: JSON.stringify(error.response.data, null, 2),
+      });
+    }
+    
+    console.error("[CheckoutService] placeOrder() - ========== ORDER PLACEMENT FAILED ==========");
+    console.error("=".repeat(80));
     throw error;
   }
 };

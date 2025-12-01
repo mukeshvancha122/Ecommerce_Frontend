@@ -147,22 +147,23 @@ export default function OrdersContent({
             )}
           </div>
           <div className="ordersCard-items">
-            {(order.item || order.items || []).map((item, idx) => {
+            {((order.item && Array.isArray(order.item) ? order.item : []) || 
+              (order.items && Array.isArray(order.items) ? order.items : []) || 
+              []).map((item, idx) => {
               // Handle backend format: order.item[].item.product
               const productItem = item.item || item;
               const product = productItem.product || productItem;
               const quantity = item.quantity || productItem.quantity || item.qty || 1;
               const price = productItem.product_price || product.product_price || item.price || 0;
               const productName = product.product_name || productItem.product_name || item.title || "Product";
-              const productImage = productItem.product_images?.[0]?.product_image || 
-                                 product.product_images?.[0]?.product_image || 
-                                 item.image || 
-                                 null;
+              const productImages = productItem.product_images || product.product_images || item.product_images || [];
+              const productImage = productImages.length > 0 ? productImages[0]?.product_image : null;
+              const finalImage = productImage || item.image || null;
               
               return (
                 <div className="ordersItem" key={`${order.id}-${item.id || idx}`}>
                   <img 
-                    src={getImageUrl(productImage)} 
+                    src={getImageUrl(finalImage)} 
                     alt={productName} 
                     loading="lazy"
                     onError={(e) => {

@@ -3,7 +3,13 @@ import { useHistory, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import "./OrderConfirmationPage.css";
 import { useCart } from "../../hooks/useCart";
-import { selectSelectedAddressId, selectAddresses, selectShipping } from "../../features/checkout/CheckoutSlice";
+import { 
+  selectSelectedAddressId, 
+  selectAddresses, 
+  selectShipping, 
+  selectShippingTypeValue,
+  updateOrderCheckoutThunk 
+} from "../../features/checkout/CheckoutSlice";
 import { confirmOrderThunk } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
 import { getImageUrl } from "../../utils/imageUtils";
@@ -19,6 +25,7 @@ export default function OrderConfirmationPage() {
   const shipping = useSelector(selectShipping);
   const selectedAddressId = useSelector(selectSelectedAddressId);
   const addresses = useSelector(selectAddresses);
+  const shippingType = useSelector(selectShippingTypeValue);
   const selectedCountry = useSelector(selectCountry);
   
   const [processing, setProcessing] = React.useState(false);
@@ -29,6 +36,8 @@ export default function OrderConfirmationPage() {
   const [orderIdFromUrl, setOrderIdFromUrl] = React.useState(null);
   const isMountedRef = React.useRef(true);
   const processedOrderIdRef = React.useRef(null);
+  const cartClearedRef = React.useRef(false); // Track if cart has been cleared
+  const updateCheckoutCalledRef = React.useRef(false); // Track if update-checkout has been called
 
   // Get orderId from URL or location state if present
   useEffect(() => {
@@ -46,6 +55,64 @@ export default function OrderConfirmationPage() {
       const orderTotalFromState = locationState?.orderTotal || (itemsTotal + (shipping.shipping || 0) + (shipping.tax || 0) + (shipping.importCharges || 0));
       const shippingFromState = locationState?.shipping || shipping;
       const addressIdFromState = locationState?.addressId || selectedAddressId;
+      const shippingTypeFromState = locationState?.shippingType || shippingType;
+      
+      // Call update-checkout API when navigating to order confirmation page
+      // This ensures the checkout is updated in the backend with address and shipping type
+      // Only call once per orderId to prevent duplicate calls
+      if (addressIdFromState && shippingTypeFromState && !updateCheckoutCalledRef.current) {
+        updateCheckoutCalledRef.current = true;
+        console.log("=".repeat(80));
+        console.log("[OrderConfirmationPage] ========== UPDATE-CHECKOUT CALL START ==========");
+        console.log("[OrderConfirmationPage] Calling update-checkout API on page load:", {
+          addressId: addressIdFromState,
+          shippingType: shippingTypeFromState,
+          orderId,
+          timestamp: new Date().toISOString(),
+        });
+        
+        dispatch(updateOrderCheckoutThunk({
+          shipping_address_id: addressIdFromState,
+          shipping_type: shippingTypeFromState,
+        })).then((result) => {
+          if (updateOrderCheckoutThunk.fulfilled.match(result)) {
+            console.log("[OrderConfirmationPage] update-checkout successful:", {
+              status: result.payload?.status,
+              skipped: result.payload?.skipped,
+              data: JSON.stringify(result.payload, null, 2),
+            });
+            console.log("[OrderConfirmationPage] ========== UPDATE-CHECKOUT SUCCESS ==========");
+            console.log("=".repeat(80));
+          } else {
+            console.warn("[OrderConfirmationPage] update-checkout failed (non-blocking):", {
+              payload: result.payload,
+              error: result.error,
+            });
+            console.warn("[OrderConfirmationPage] ========== UPDATE-CHECKOUT FAILED (NON-BLOCKING) ==========");
+            console.log("=".repeat(80));
+            // Don't block the flow - order is already created
+          }
+        }).catch((error) => {
+          console.error("[OrderConfirmationPage] update-checkout error (non-blocking):", {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+          });
+          console.error("[OrderConfirmationPage] ========== UPDATE-CHECKOUT ERROR (NON-BLOCKING) ==========");
+          console.log("=".repeat(80));
+          // Don't block the flow - order is already created
+        });
+      } else {
+        if (!addressIdFromState || !shippingTypeFromState) {
+          console.warn("[OrderConfirmationPage] Cannot call update-checkout - missing data:", {
+            hasAddressId: !!addressIdFromState,
+            hasShippingType: !!shippingTypeFromState,
+            orderId,
+          });
+        } else if (updateCheckoutCalledRef.current) {
+          console.log("[OrderConfirmationPage] update-checkout already called for this order, skipping");
+        }
+      }
       
       // If orderId exists, it means order was already created via payment
       // Mark as confirmed and create order data
@@ -63,11 +130,20 @@ export default function OrderConfirmationPage() {
         };
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
-        // Clear cart after showing confirmation
-        console.log("[OrderConfirmationPage] Clearing cart after order confirmation");
-        clearCart().catch(err => {
-          console.error("[OrderConfirmationPage] Error clearing cart:", err);
-        });
+        
+        // Clear cart once when order is confirmed
+        if (!cartClearedRef.current) {
+          cartClearedRef.current = true;
+          console.log("[OrderConfirmationPage] Order confirmed - clearing cart now");
+          clearCart()
+            .then(() => {
+              console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
+            })
+            .catch(err => {
+              console.error("[OrderConfirmationPage] Error clearing cart:", err);
+              // Don't block UI if cart clearing fails - order is already placed
+            });
+        }
       } else if (items.length > 0) {
         // Fallback to current cart items if location state not available
         const orderData = {
@@ -83,11 +159,20 @@ export default function OrderConfirmationPage() {
         };
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
-        // Clear cart after showing confirmation
-        console.log("[OrderConfirmationPage] Clearing cart after order confirmation (fallback)");
-        clearCart().catch(err => {
-          console.error("[OrderConfirmationPage] Error clearing cart:", err);
-        });
+        
+        // Clear cart once when order is confirmed
+        if (!cartClearedRef.current) {
+          cartClearedRef.current = true;
+          console.log("[OrderConfirmationPage] Order confirmed (fallback) - clearing cart now");
+          clearCart()
+            .then(() => {
+              console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
+            })
+            .catch(err => {
+              console.error("[OrderConfirmationPage] Error clearing cart:", err);
+              // Don't block UI if cart clearing fails - order is already placed
+            });
+        }
       }
     }
   }, [location.search, location.state, items, itemsTotal, shipping, selectedAddressId, addresses, clearCart]);
@@ -165,22 +250,50 @@ export default function OrderConfirmationPage() {
   };
 
   const handleConfirmOrder = async () => {
+    const startTime = Date.now();
+    console.log("=".repeat(80));
+    console.log("[OrderConfirmationPage] handleConfirmOrder() - ========== ORDER CONFIRMATION START ==========");
+    console.log("[OrderConfirmationPage] handleConfirmOrder() - Timestamp:", new Date().toISOString());
+    
     if (!selectedAddressId || items.length === 0) {
+      console.warn("[OrderConfirmationPage] handleConfirmOrder() - Validation failed:", {
+        hasAddress: !!selectedAddressId,
+        itemsCount: items.length,
+      });
       setError("Please select an address and add items to cart.");
       return;
     }
 
-    if (!isMountedRef.current) return;
+    if (!isMountedRef.current) {
+      console.warn("[OrderConfirmationPage] handleConfirmOrder() - Component not mounted, aborting");
+      return;
+    }
 
     setProcessing(true);
     setError("");
+
+    const orderData = {
+      addressId: selectedAddressId,
+      items_count: items.length,
+      items: items.map(item => ({ sku: item.sku, title: item.title, qty: item.qty, price: item.price })),
+      total: orderTotal,
+      shipping: shipping,
+    };
+    
+    console.log("[OrderConfirmationPage] handleConfirmOrder() - Order confirmation data:", JSON.stringify(orderData, null, 2));
 
     try {
       // Generate a payment intent ID (in real flow, this would come from payment processing)
       const paymentIntentId = `pi_${Date.now()}`;
       const paymentMethod = "card"; // This would be selected from payment section
+      
+      console.log("[OrderConfirmationPage] handleConfirmOrder() - Payment details:", {
+        paymentIntentId: paymentIntentId.substring(0, 20) + "...",
+        paymentMethod,
+      });
 
       // Confirm and place the order
+      console.log("[OrderConfirmationPage] handleConfirmOrder() - Dispatching confirmOrderThunk...");
       const action = await dispatch(
         confirmOrderThunk({
           addressId: selectedAddressId,
@@ -250,21 +363,47 @@ export default function OrderConfirmationPage() {
           status: "Confirmed"
         };
         
+        const confirmationDuration = Date.now() - startTime;
+        console.log("[OrderConfirmationPage] handleConfirmOrder() - Order confirmation fulfilled:", {
+          orderId: action.payload?.orderId,
+          status: action.payload?.status,
+          duration_ms: confirmationDuration,
+          payload: JSON.stringify(action.payload, null, 2),
+        });
+        
         setConfirmedOrderData(orderData);
         setOrderConfirmed(true);
         
         // CRITICAL: Clear cart AFTER successful order confirmation
         // This ensures the cart is cleared only when order is successfully created in backend
-        console.log("[OrderConfirmationPage] Order confirmed successfully, clearing cart now...");
-        clearCart()
-          .then(() => {
-            console.log("[OrderConfirmationPage] Cart cleared successfully after order confirmation");
-          })
-          .catch(err => {
-            console.error("[OrderConfirmationPage] Error clearing cart:", err);
-            // Don't block UI if cart clearing fails - order is already created
-            // User can manually clear cart if needed
-          });
+        // Only clear once to prevent multiple clears
+        if (!cartClearedRef.current) {
+          cartClearedRef.current = true;
+          console.log("[OrderConfirmationPage] handleConfirmOrder() - Clearing cart after order confirmation...");
+          const cartClearStartTime = Date.now();
+          clearCart()
+            .then(() => {
+              const cartClearDuration = Date.now() - cartClearStartTime;
+              console.log("[OrderConfirmationPage] handleConfirmOrder() - Cart cleared successfully:", {
+                duration_ms: cartClearDuration,
+              });
+            })
+            .catch(err => {
+              console.error("[OrderConfirmationPage] handleConfirmOrder() - Error clearing cart:", err);
+              // Don't block UI if cart clearing fails - order is already created
+              // User can manually clear cart if needed
+            });
+        } else {
+          console.log("[OrderConfirmationPage] handleConfirmOrder() - Cart already cleared, skipping");
+        }
+        
+        const totalDuration = Date.now() - startTime;
+        console.log("[OrderConfirmationPage] handleConfirmOrder() - Order confirmation completed successfully:", {
+          orderId: action.payload?.orderId,
+          total_duration_ms: totalDuration,
+        });
+        console.log("[OrderConfirmationPage] handleConfirmOrder() - ========== ORDER CONFIRMATION SUCCESS ==========");
+        console.log("=".repeat(80));
         
         // Don't redirect automatically - let user download receipt first
       } else if (confirmOrderThunk.rejected.match(action)) {
@@ -278,8 +417,21 @@ export default function OrderConfirmationPage() {
         throw new Error("Unexpected error occurred while placing your order.");
       }
     } catch (err) {
+      const totalDuration = Date.now() - startTime;
       if (isMountedRef.current) {
-        console.error("Order confirmation error:", err);
+        console.error("=".repeat(80));
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - ========== ORDER CONFIRMATION ERROR ==========");
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - Error after", totalDuration, "ms");
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - Error:", err);
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - Error message:", err.message);
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - Error stack:", err.stack);
+        
+        if (err.response) {
+          console.error("[OrderConfirmationPage] handleConfirmOrder() - Error response:", {
+            status: err.response.status,
+            data: JSON.stringify(err.response.data, null, 2),
+          });
+        }
         
         // Format error message for user
         const userFriendlyError = formatErrorMessage(
@@ -287,6 +439,10 @@ export default function OrderConfirmationPage() {
           err.message || 
           err.toString()
         );
+        
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - User-friendly error:", userFriendlyError);
+        console.error("[OrderConfirmationPage] handleConfirmOrder() - ========== ORDER CONFIRMATION FAILED ==========");
+        console.error("=".repeat(80));
         
         setError(userFriendlyError);
         
@@ -296,6 +452,7 @@ export default function OrderConfirmationPage() {
     } finally {
       if (isMountedRef.current) {
         setProcessing(false);
+        console.log("[OrderConfirmationPage] handleConfirmOrder() - Processing state set to false");
       }
     }
   };

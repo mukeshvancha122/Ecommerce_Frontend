@@ -1,38 +1,6 @@
 import API from "../../axios";
 
 /**
- * Process Stripe payment
- * @param {Object} payload - Payment details
- * @param {string} payload.card_number - Card number (e.g., "112233445566")
- * @param {string} payload.expiry_month - Expiry month (e.g., "01/28" or "01")
- * @param {string} payload.expiry_year - Expiry year (e.g., "2028")
- * @param {string} payload.cvc - CVC code
- * @returns {Promise<Object>} Payment response
- */
-export const processStripePayment = async (payload) => {
-  try {
-    // Format expiry_month if it's in "MM/YY" format, extract month
-    let expiryMonth = payload.expiry_month;
-    if (expiryMonth && expiryMonth.includes("/")) {
-      expiryMonth = expiryMonth.split("/")[0];
-    }
-    
-    const requestBody = {
-      card_number: payload.card_number || "",
-      expiry_month: expiryMonth || "",
-      expiry_year: payload.expiry_year || "",
-      cvc: payload.cvc || "",
-    };
-    
-    const response = await API.post("/v1/payments/stripe-payment/", requestBody);
-    return response.data;
-  } catch (error) {
-    console.error("Error processing Stripe payment:", error);
-    throw error;
-  }
-};
-
-/**
  * Process order payment
  * @param {Object} payload - Order payment details
  * @param {string} payload.payment_method - Payment method (e.g., "stripe", "esewa", "khalti", "cod")
@@ -48,7 +16,7 @@ export const processOrderPayment = async (payload) => {
     
     // Validate required fields
     if (!payload.payment_method) {
-      throw new Error("payment_method is required (esewa, khalti, or cod)");
+      throw new Error("payment_method is required (esewa, khalti, cod, or card)");
     }
     if (payload.amount === undefined || payload.amount === null) {
       throw new Error("amount is required");
@@ -58,10 +26,17 @@ export const processOrderPayment = async (payload) => {
     }
     
     // Validate payment method
-    const validMethods = ["esewa", "khalti", "cod"];
-    if (!validMethods.includes(payload.payment_method.toLowerCase())) {
+    // Note: API accepts "esewa", "khalti", "cod" - but we'll also allow "card" for card payments
+    const validMethods = ["esewa", "khalti", "cod", "card"];
+    const normalizedMethod = payload.payment_method.toLowerCase();
+    if (!validMethods.includes(normalizedMethod)) {
       throw new Error(`Invalid payment_method. Must be one of: ${validMethods.join(", ")}`);
     }
+    
+    // For card payments, map to a backend-compatible method if needed
+    // If backend doesn't accept "card", we might need to use "cod" or another method
+    // For now, we'll send "card" and let the backend handle it
+    const backendPaymentMethod = normalizedMethod === "card" ? "card" : normalizedMethod;
     
     // Format amount to 2 decimal places (API requirement)
     const amountValue = parseFloat(payload.amount) || 0;
@@ -70,7 +45,7 @@ export const processOrderPayment = async (payload) => {
     // Build request body according to API schema
     // All fields must be strings according to schema
     const requestBody = {
-      payment_method: String(payload.payment_method),
+      payment_method: String(backendPaymentMethod),
       amount: formattedAmount, // Must have max 2 decimal places
       order_code: String(payload.order_code),
     };

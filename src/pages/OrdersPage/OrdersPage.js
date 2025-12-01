@@ -32,26 +32,61 @@ export default function OrdersPage() {
   const loadOrders = useCallback(() => {
     let mounted = true;
     setLoading(true);
-    fetchOrders({ timeRange, query: searchQuery, tab, page })
+    console.log("[OrdersPage] loadOrders() - Starting to load orders...");
+    console.log("[OrdersPage] loadOrders() - Request params:", { timeRange, query: searchQuery, tab, page, fetchAll: true });
+    
+    // Use fetchAll=true to get all orders from all pages
+    fetchOrders({ timeRange, query: searchQuery, tab, page, fetchAll: true })
       .then(({ data }) => {
         if (!mounted) return;
-        console.log("[OrdersPage] Loaded orders:", data.orders?.length || 0);
-        setOrders(data.orders || []);
+        console.log("[OrdersPage] loadOrders() - Orders loaded successfully:", {
+          orders_count: data.orders?.length || 0,
+          summary: data.summary,
+          pagination: data.pagination,
+        });
+        
+        // Ensure we have an array
+        const ordersArray = Array.isArray(data.orders) ? data.orders : [];
+        console.log("[OrdersPage] loadOrders() - Setting orders in state:", ordersArray.length);
+        
+        if (ordersArray.length > 0) {
+          console.log("[OrdersPage] loadOrders() - Sample order:", {
+            id: ordersArray[0].id,
+            order_code: ordersArray[0].order_code,
+            status: ordersArray[0].status,
+            items_count: ordersArray[0].items?.length || 0,
+          });
+        }
+        
+        setOrders(ordersArray);
         setSummary({
-          totalOrders: data.summary?.totalOrders || data.orders?.length || 0,
+          totalOrders: data.summary?.totalOrders || ordersArray.length || 0,
           delivered: data.summary?.delivered || 0,
           processing: data.summary?.processing || 0,
           pagination: data.pagination,
         });
       })
       .catch((err) => {
-        console.error("Error loading orders:", err);
+        console.error("[OrdersPage] loadOrders() - ========== ERROR LOADING ORDERS ==========");
+        console.error("[OrdersPage] loadOrders() - Error:", err);
+        console.error("[OrdersPage] loadOrders() - Error message:", err.message);
+        console.error("[OrdersPage] loadOrders() - Error response:", err.response);
+        if (err.response) {
+          console.error("[OrdersPage] loadOrders() - Status:", err.response.status);
+          console.error("[OrdersPage] loadOrders() - Data:", err.response.data);
+        }
+        console.error("[OrdersPage] loadOrders() - =========================================");
         if (mounted) {
           setOrders([]);
           setSummary({ totalOrders: 0, delivered: 0, processing: 0 });
         }
       })
-      .finally(() => mounted && setLoading(false));
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+          console.log("[OrdersPage] loadOrders() - Loading completed");
+        }
+      });
     return () => {
       mounted = false;
     };
