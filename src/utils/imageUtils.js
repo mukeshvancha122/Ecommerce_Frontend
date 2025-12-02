@@ -63,9 +63,26 @@ export const getImageUrl = (imageUrl) => {
     return "/images/NO_IMG.png";
   }
 
-  // Already absolute URL - return as-is (will be handled by onError if 404)
+  // Already absolute URL - convert to relative path on Netlify to avoid Mixed Content
   if (imageStr.startsWith("http://") || imageStr.startsWith("https://")) {
-    // Return the URL as-is - the browser will handle 404s and trigger onError
+    // Check if we're on Netlify
+    const isNetlify = typeof window !== 'undefined' && 
+      window.location.hostname.includes('netlify.app') &&
+      window.location.protocol === 'https:';
+    
+    // If it's an HTTP URL and we're on Netlify, convert to relative path
+    if (isNetlify && imageStr.startsWith("http://54.145.239.205:8000")) {
+      // Extract the path part (e.g., /media/category/perfume.jpg)
+      const url = new URL(imageStr);
+      return url.pathname; // Returns /media/category/perfume.jpg
+    }
+    
+    // For HTTPS URLs or non-Netlify, return as-is
+    if (imageStr.startsWith("https://")) {
+      return imageStr;
+    }
+    
+    // For HTTP URLs on non-Netlify (development), return as-is
     return imageStr;
   }
 

@@ -37,9 +37,9 @@ export const formatCurrency = (amount, currencyCode = null, locale = null) => {
     return `${symbol}0.00`;
   }
   
-  // Use provided currency or country currency
-  const currency = currencyCode || country?.currency || "USD";
-  const symbol = country?.symbol || "$";
+  // Use provided currency or country currency (default to INR for India)
+  const currency = currencyCode || country?.currency || "INR";
+  const symbol = country?.symbol || "₹";
   
   // Assume prices from API are in INR (base currency)
   // Convert to selected country currency if needed

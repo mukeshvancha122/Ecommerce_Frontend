@@ -16,12 +16,12 @@ const getInitialCountry = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      return COUNTRIES.find((c) => c.code === parsed.code) || COUNTRIES[0];
+      return COUNTRIES.find((c) => c.code === parsed.code) || COUNTRIES[1]; // Default to India (INR)
     } catch {
-      return COUNTRIES[0];
+      return COUNTRIES[1]; // Default to India (INR)
     }
   }
-  return COUNTRIES[0];
+  return COUNTRIES[1]; // Default to India (INR) instead of US (USD)
 };
 
 const initialState = {
@@ -33,7 +33,7 @@ const slice = createSlice({
   initialState,
   reducers: {
     setCountry(state, action) {
-      const country = COUNTRIES.find((c) => c.code === action.payload) || COUNTRIES[0];
+      const country = COUNTRIES.find((c) => c.code === action.payload) || COUNTRIES[1]; // Default to India (INR)
       state.country = country;
       localStorage.setItem("country_v1", JSON.stringify({ code: country.code }));
     },
