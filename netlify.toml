@@ -10,7 +10,31 @@
     NODE_OPTIONS = "--openssl-legacy-provider"
     CI = "false"
 
-# Redirect all routes to index.html for React Router (SPA routing)
+# Proxy chatbot API requests (must come before /api/* to avoid conflicts)
+# This prevents Mixed Content errors (HTTPS site calling HTTP API)
+[[redirects]]
+  from = "/api/chatbot"
+  to = "http://54.145.239.205:5005/webhooks/rest/webhook/"
+  status = 200
+  force = true
+
+# Proxy API requests to backend (before SPA redirect)
+# This prevents Mixed Content errors (HTTPS site calling HTTP API)
+[[redirects]]
+  from = "/api/*"
+  to = "http://54.145.239.205:8000/api/:splat"
+  status = 200
+  force = true
+
+# Proxy media files from backend (for images, etc.)
+# This prevents Mixed Content errors for images served from HTTP backend
+[[redirects]]
+  from = "/media/*"
+  to = "http://54.145.239.205:8000/media/:splat"
+  status = 200
+  force = true
+
+# Redirect all other routes to index.html for React Router (SPA routing)
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -25,8 +25,10 @@ const getBaseURL = () => {
     return '/api';
   }
   
-  // In production, use the backend server URL directly
-  return "http://54.145.239.205:8000/api";
+  // In production (Netlify), use relative path so Netlify proxy can handle it
+  // Netlify will proxy /api/* to http://54.145.239.205:8000/api/* via netlify.toml
+  // This prevents Mixed Content errors (HTTPS site calling HTTP API)
+  return '/api';
 };
 
 const API = axios.create({

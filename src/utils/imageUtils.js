@@ -4,6 +4,15 @@
  * @returns {string} - The absolute image URL
  */
 const getApiBaseUrl = () => {
+  // Check if we're on Netlify (production) - use relative path for proxy
+  const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+  const isNetlify = typeof window !== 'undefined' && window.location.hostname.includes('netlify.app');
+  
+  // On Netlify, use relative paths so Netlify proxy can handle it
+  if (isProduction || isNetlify) {
+    return ''; // Empty string means relative to current origin
+  }
+  
   if (typeof process !== "undefined" && process.env?.REACT_APP_API_BASE_URL) {
     const baseUrl = process.env.REACT_APP_API_BASE_URL;
     // Remove /api suffix if present (we'll add it back for images)
