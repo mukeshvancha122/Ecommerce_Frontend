@@ -3,18 +3,30 @@ import { store } from "./store";
 import { logout } from "./features/auth/AuthSlice";
 import { getSupportedLanguage } from "./i18n/translations";
 
-// Use proxy in development to avoid CORS issues, direct URL in production
+// Use proxy in development to avoid CORS issues, relative path in production for Netlify proxy
 const getBaseURL = () => {
-  // Check for environment variable first
-  // Use window.REACT_APP_API_BASE_URL or process.env (if available in build)
+  // Detect if we're on Netlify (check hostname and protocol)
+  const isNetlify = typeof window !== 'undefined' && 
+    window.location.hostname.includes('netlify.app') &&
+    window.location.protocol === 'https:';
+  
+  // On Netlify, ALWAYS use relative path to avoid Mixed Content errors
+  // The netlify.toml will proxy /api/* to http://54.145.239.205:8000/api/*
+  if (isNetlify) {
+    console.log('[axios] Using relative path /api for Netlify proxy');
+    return '/api';
+  }
+  
+  // Check for environment variable (but only if NOT on Netlify)
   const envBaseUrl = typeof window !== 'undefined' && window.REACT_APP_API_BASE_URL
     ? window.REACT_APP_API_BASE_URL
     : (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL
       ? process.env.REACT_APP_API_BASE_URL
       : null);
   
-  if (envBaseUrl) {
-    // Ensure it includes /api if not already present
+  // Only use env variable if it's HTTPS or we're in development
+  if (envBaseUrl && !envBaseUrl.startsWith('http://')) {
+    // HTTPS URL is safe
     return envBaseUrl.endsWith('/api') ? envBaseUrl : `${envBaseUrl.replace(/\/$/, '')}/api`;
   }
   
@@ -25,8 +37,7 @@ const getBaseURL = () => {
     return '/api';
   }
   
-  // In production (Netlify), use relative path so Netlify proxy can handle it
-  // Netlify will proxy /api/* to http://54.145.239.205:8000/api/* via netlify.toml
+  // In production (not Netlify), use relative path so proxy can handle it
   // This prevents Mixed Content errors (HTTPS site calling HTTP API)
   return '/api';
 };
