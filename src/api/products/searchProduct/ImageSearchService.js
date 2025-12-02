@@ -47,8 +47,6 @@ export const searchProductsByImage = async ({ image, page = 1, page_size = 10 })
 
     // Handle different response structures
     const responseData = response.data;
-    console.log("[ImageSearchService] Raw API response:", JSON.stringify(responseData, null, 2));
-    
     let products = [];
     let brands = [];
     let attributes = {};
