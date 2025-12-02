@@ -8,6 +8,7 @@
   [build.environment]
     NODE_VERSION = "18"
     NODE_OPTIONS = "--openssl-legacy-provider"
+    CI = "false"
 
 # Redirect all routes to index.html for React Router (SPA routing)
 [[redirects]]

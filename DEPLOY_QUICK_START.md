@@ -31,6 +31,7 @@ Your application has been built successfully. The `build/` folder contains all p
 6. **Add Environment Variables**:
    - `NODE_VERSION` = `18`
    - `NODE_OPTIONS` = `--openssl-legacy-provider`
+   - `CI` = `false` (prevents ESLint warnings from failing build)
    - `REACT_APP_API_BASE_URL` = `http://54.145.239.205:8000/api`
 7. **Click**: "Deploy site"
 
@@ -52,6 +53,7 @@ Add these in Netlify Dashboard → Site settings → Environment variables:
 ```
 NODE_VERSION = 18
 NODE_OPTIONS = --openssl-legacy-provider
+CI = false
 REACT_APP_API_BASE_URL = http://54.145.239.205:8000/api
 ```
 
