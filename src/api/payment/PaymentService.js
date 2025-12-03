@@ -8,11 +8,24 @@ import API from "../../axios";
  * @param {string} payload.order_code - Order code
  * @param {string} [payload.ref_code] - Reference code
  * @param {string} [payload.pidx] - Payment ID
+ * @param {Object} [payload.card_details] - Card details for card payments
+ * @param {string} [payload.card_details.number] - Card number (last 4 digits or full for dummy)
+ * @param {string} [payload.card_details.holder] - Card holder name
+ * @param {string} [payload.card_details.expMonth] - Expiry month
+ * @param {string} [payload.card_details.expYear] - Expiry year
+ * @param {string} [payload.card_details.cvv] - CVV (for dummy payments only, never send real CVV)
  * @returns {Promise<Object>} Payment response
  */
 export const processOrderPayment = async (payload) => {
   try {
-    console.log("[PaymentService] processOrderPayment() - Processing payment:", payload);
+    console.log("[PaymentService] processOrderPayment() - Processing payment:", {
+      ...payload,
+      card_details: payload.card_details ? {
+        ...payload.card_details,
+        number: payload.card_details.number ? (payload.card_details.number.length > 4 ? `****${payload.card_details.number.slice(-4)}` : payload.card_details.number) : undefined,
+        cvv: payload.card_details.cvv ? "***" : undefined,
+      } : undefined,
+    });
     
     // Validate required fields
     if (!payload.payment_method) {
@@ -59,7 +72,51 @@ export const processOrderPayment = async (payload) => {
       requestBody.pidx = String(payload.pidx).trim();
     }
     
-    console.log("[PaymentService] processOrderPayment() - Request body:", requestBody);
+    // Include card details for card payments (store in backend)
+    if (payload.payment_method === "card" && payload.card_details) {
+      const card = payload.card_details;
+      const isDummy = payload.ref_code && payload.ref_code.includes("dummy");
+      
+      // Store card information (mask sensitive data for real payments)
+      if (card.number) {
+        // For real payments, only send last 4 digits. For dummy, send full number if needed
+        requestBody.card_number = isDummy ? String(card.number) : String(card.number.slice(-4));
+      }
+      
+      if (card.holder) {
+        requestBody.card_holder = String(card.holder);
+      }
+      
+      if (card.expMonth) {
+        requestBody.card_exp_month = String(card.expMonth);
+      }
+      
+      if (card.expYear) {
+        requestBody.card_exp_year = String(card.expYear);
+      }
+      
+      // Only send CVV for dummy payments (NEVER for real payments - security risk)
+      if (isDummy && card.cvv) {
+        requestBody.card_cvv = String(card.cvv);
+      }
+      
+      // Determine card brand
+      if (card.number) {
+        const firstDigit = card.number.charAt(0);
+        if (firstDigit === "4") {
+          requestBody.card_brand = "Visa";
+        } else if (firstDigit === "5") {
+          requestBody.card_brand = "Mastercard";
+        } else if (firstDigit === "3") {
+          requestBody.card_brand = "Amex";
+        }
+      }
+    }
+    
+    console.log("[PaymentService] processOrderPayment() - Request body:", {
+      ...requestBody,
+      card_cvv: requestBody.card_cvv ? "***" : undefined, // Don't log CVV
+    });
     
     const response = await API.post("/v1/payments/order-payment/", requestBody);
     

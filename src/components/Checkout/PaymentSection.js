@@ -187,8 +187,8 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           throw new Error("Failed to create order");
         }
 
-        // Dummy payment processing - call order-payment endpoint with dummy data
-        console.log("[PaymentSection] Dummy mode: Processing card payment via order-payment endpoint with dummy data");
+        // Dummy payment processing - call order-payment endpoint with dummy card data
+        console.log("[PaymentSection] Dummy mode: Processing card payment via order-payment endpoint with dummy card data");
         try {
           await processOrderPayment({
             payment_method: "card", // Use "card" as payment method
@@ -196,8 +196,16 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             order_code: orderId, // Order code from order creation
             ref_code: `dummy_card_${Date.now()}`, // Dummy reference code
             pidx: "", // Optional payment ID (empty for dummy)
+            // Include dummy card details for backend storage
+            card_details: {
+              number: cardForm.number || "4242424242424242", // Dummy card number
+              holder: cardForm.holder || "Test User",
+              expMonth: cardForm.expMonth || "12",
+              expYear: cardForm.expYear || "2026",
+              cvv: cardForm.cvv || "123", // Dummy CVV (safe to send in dummy mode)
+            },
           });
-          console.log("[PaymentSection] Dummy card payment processed successfully");
+          console.log("[PaymentSection] Dummy card payment processed successfully with card details stored");
         } catch (paymentErr) {
           console.warn("[PaymentSection] Dummy payment processing failed (non-blocking):", paymentErr);
           // Continue even if payment processing fails in dummy mode
@@ -244,17 +252,25 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         throw new Error("Failed to create order");
       }
 
-      // Process payment using order-payment endpoint with dummy card data
-      console.log("[PaymentSection] Processing card payment via order-payment endpoint...");
+      // Process payment using order-payment endpoint with card details
+      console.log("[PaymentSection] Processing card payment via order-payment endpoint with card details...");
       await processOrderPayment({
         payment_method: "card", // Use "card" as payment method
         amount: String(orderTotal), // Total amount as string
         order_code: orderId, // Order code from order creation
-        ref_code: `card_${Date.now()}`, // Dummy reference code for card payment
+        ref_code: `card_${Date.now()}`, // Reference code for card payment
         pidx: "", // Optional payment ID (empty for card)
+        // Include card details for backend storage (last 4 digits only for security)
+        card_details: {
+          number: cardForm.number, // Will be masked to last 4 digits in API
+          holder: cardForm.holder,
+          expMonth: cardForm.expMonth,
+          expYear: cardForm.expYear,
+          // CVV is NOT sent for real payments (security)
+        },
       });
 
-      console.log("[PaymentSection] Card payment processed successfully via order-payment endpoint");
+      console.log("[PaymentSection] Card payment processed successfully with card details stored in backend");
 
       // Redirect to success page with order data in state
       history.push({
@@ -293,8 +309,21 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
           throw new Error("Failed to create order");
         }
 
-        // Dummy payment processing - skip actual API calls
-        console.log("[PaymentSection] Dummy mode: Bypassing UPI payment");
+        // Dummy payment processing - store payment in backend even in dummy mode
+        console.log("[PaymentSection] Dummy mode: Processing UPI payment via order-payment endpoint with dummy data");
+        try {
+          await processOrderPayment({
+            payment_method: "cod", // Map UPI to COD method
+            amount: String(orderTotal),
+            order_code: orderId,
+            ref_code: `dummy_upi_${Date.now()}`,
+            pidx: phonePeVpa || "dummy_upi_id", // Store UPI ID
+          });
+          console.log("[PaymentSection] Dummy UPI payment processed successfully");
+        } catch (paymentErr) {
+          console.warn("[PaymentSection] Dummy UPI payment processing failed (non-blocking):", paymentErr);
+          // Continue even if payment processing fails in dummy mode
+        }
         
         // Redirect to success page with order data in state
         history.push({
@@ -337,11 +366,28 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         vpa: phonePeVpa,
       });
       
-      // Note: UPI payment processing
-      // The order-payment endpoint only supports esewa, khalti, cod
-      // For UPI, we might need to use a different endpoint or map it
-      // For now, skip order-payment call for UPI
-      console.log("[PaymentSection] UPI payment processed, skipping order-payment call (not supported by order-payment endpoint)");
+      // Process UPI payment - store in backend
+      // Map UPI to "cod" method if backend doesn't support "upi", or use "upi" if supported
+      // Store UPI ID (VPA) in pidx field for reference
+      console.log("[PaymentSection] Processing UPI payment via order-payment endpoint...");
+      try {
+        await processOrderPayment({
+          payment_method: "cod", // Map UPI to COD method (backend may not have "upi" method)
+          amount: String(orderTotal),
+          order_code: String(orderId),
+          ref_code: DUMMY_PAYMENT_MODE ? `dummy_upi_${Date.now()}` : `upi_${Date.now()}`,
+          pidx: phonePeVpa, // Store UPI ID (VPA) in pidx field
+        });
+        console.log("[PaymentSection] UPI payment processed successfully");
+      } catch (paymentErr) {
+        // In dummy mode, log warning but continue (non-blocking)
+        if (DUMMY_PAYMENT_MODE) {
+          console.warn("[PaymentSection] Dummy UPI payment processing failed (non-blocking):", paymentErr);
+        } else {
+          console.warn("[PaymentSection] UPI payment processing failed (non-blocking):", paymentErr);
+          // Continue even if payment storage fails - order is already created
+        }
+      }
 
       // Redirect to success page with order data in state
       history.push({
@@ -501,18 +547,24 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         throw new Error("Failed to create order");
       }
 
-      // Dummy mode: skip actual payment API call
-      if (DUMMY_PAYMENT_MODE) {
-        console.log("[PaymentSection] Dummy mode: Bypassing COD payment");
-        // Simulate delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } else {
-        // Process COD payment (no actual payment, just confirmation)
+      // Process COD payment - always store in backend (even in dummy mode)
+      // This ensures payment details are recorded for order tracking
+      console.log("[PaymentSection] Processing COD payment via order-payment endpoint...");
+      try {
         await processOrderPayment({
           payment_method: "cod",
           amount: String(orderTotal),
           order_code: String(orderId),
+          ref_code: DUMMY_PAYMENT_MODE ? `dummy_cod_${Date.now()}` : `cod_${Date.now()}`,
         });
+        console.log("[PaymentSection] COD payment processed successfully");
+      } catch (paymentErr) {
+        // In dummy mode, log warning but continue (non-blocking)
+        if (DUMMY_PAYMENT_MODE) {
+          console.warn("[PaymentSection] Dummy COD payment processing failed (non-blocking):", paymentErr);
+        } else {
+          throw paymentErr; // In real mode, throw error
+        }
       }
 
       // Redirect to success page with order data in state
