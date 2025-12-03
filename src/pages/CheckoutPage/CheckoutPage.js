@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./CheckoutPage.css";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
@@ -6,7 +6,7 @@ import {
   fetchAddresses,
   fetchShippingQuote,
   updateOrderCheckoutThunk,
-  // createStartCheckoutThunk,
+  createStartCheckoutThunk,
   selectAddresses,
   selectSelectedAddressId,
   selectAddress as selectAddressAction,
@@ -17,12 +17,13 @@ import {
   goToPayment,
   startPayment,
   selectPaymentState,
-  selectCoupons,
-  selectRewards,
   resetCheckout,
   selectIsUpdatingCheckout,
+  selectIsLoadingCheckout,
   selectCheckoutError,
   selectCheckoutUpdated,
+  selectHasStartedCheckout,
+  selectStartCheckoutSignature,
 } from "../../features/checkout/CheckoutSlice";
 import { useCart } from "../../hooks/useCart";
 import { selectUser } from "../../features/auth/AuthSlice";
@@ -49,8 +50,11 @@ export default function CheckoutPage() {
   const step = useSelector(selectCheckoutStep);
   const payment = useSelector(selectPaymentState);
   const isUpdatingCheckout = useSelector(selectIsUpdatingCheckout);
+  const isLoadingCheckout = useSelector(selectIsLoadingCheckout);
   const checkoutError = useSelector(selectCheckoutError);
   const checkoutUpdated = useSelector(selectCheckoutUpdated);
+  const hasStartedCheckout = useSelector(selectHasStartedCheckout);
+  const lastStartCheckoutSignature = useSelector(selectStartCheckoutSignature);
   const { items, total: itemsTotal, removeItem, updateItem } = useCart();
 
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -59,26 +63,38 @@ export default function CheckoutPage() {
   const [countryErrorData, setCountryErrorData] = useState({ selectedCountry: "", addressCountry: "" });
   const [localShippingType, setLocalShippingType] = useState(null);
   const selectedCountry = useSelector(selectCountry);
-  const lastUpdateRef = useRef({ addressId: null, shippingType: null });
+  const cartSignature = useMemo(() => {
+    if (!items || items.length === 0) {
+      return null;
+    }
+    return items
+      .map((item) => `${item.sku || item.id || item.title}:${item.qty}`)
+      .sort()
+      .join("|");
+  }, [items]);
+
+  const hasStartedCurrentOrder = hasStartedCheckout && !!cartSignature && lastStartCheckoutSignature === cartSignature;
 
   // STEP 1: Create order from cart when checkout page loads
-  // useEffect(() => {
-  //   const initializeOrder = async () => {
-  //     // Only create order if we have items and haven't created one yet
-  //     if (items.length > 0 && !isUpdatingCheckout) {
-  //       console.log("[CheckoutPage] STEP 1: Creating order from cart...");
-  //       try {
-  //         await dispatch(createStartCheckoutThunk()).unwrap();
-  //         console.log("[CheckoutPage] STEP 1: Order created successfully");
-  //       } catch (error) {
-  //         console.error("[CheckoutPage] STEP 1: Failed to create order:", error);
-  //         // Don't block the flow - order will be created when address is selected
-  //       }
-  //     }
-  //   };
-    
-  //   initializeOrder();
-  // }, [dispatch, items.length, isUpdatingCheckout]);
+  useEffect(() => {
+    const initializeOrder = async () => {
+      if (!cartSignature) {
+        return;
+      }
+      if (hasStartedCurrentOrder || isLoadingCheckout) {
+        return;
+      }
+      console.log("[CheckoutPage] STEP 1: Creating order from cart...");
+      try {
+        await dispatch(createStartCheckoutThunk(cartSignature)).unwrap();
+        console.log("[CheckoutPage] STEP 1: Order created successfully");
+      } catch (error) {
+        console.error("[CheckoutPage] STEP 1: Failed to create order:", error);
+      }
+    };
+
+    initializeOrder();
+  }, [dispatch, cartSignature, hasStartedCurrentOrder, isLoadingCheckout]);
 
   // Load addresses when user is logged in
   useEffect(() => {
@@ -151,6 +167,24 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!hasStartedCurrentOrder) {
+      if (isLoadingCheckout) {
+        alert("Please wait while we prepare your checkout...");
+        return;
+      }
+      if (!cartSignature) {
+        alert("No items available to checkout.");
+        return;
+      }
+      try {
+        await dispatch(createStartCheckoutThunk(cartSignature)).unwrap();
+      } catch (error) {
+        console.error("[CheckoutPage] STEP 1 (retry) failed:", error);
+        alert("Unable to start checkout. Please try again.");
+        return;
+      }
+    }
+
     try {
       console.log("[CheckoutPage] STEP 2: Updating order with address ID:", selectedAddressId);
       const result = await dispatch(updateOrderCheckoutThunk({
@@ -209,14 +243,14 @@ export default function CheckoutPage() {
               <div className="co-card-title">{t("checkout.selectAddress")}</div>
               
               {/* Loading state for startCheckout */}
-              {isUpdatingCheckout && (
+              {isLoadingCheckout && (
                 <div className="co-loading">
                   <p>Starting checkout...</p>
                 </div>
               )}
 
               {/* Error state for startCheckout */}
-              {checkoutError && !isUpdatingCheckout && (
+              {checkoutError && !isUpdatingCheckout && !isLoadingCheckout && (
                 <div className="co-error">
                   <p>Error: {checkoutError}</p>
                 </div>
@@ -281,10 +315,10 @@ export default function CheckoutPage() {
 
               <button
                 className="co-cta"
-                disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isUpdatingCheckout}
+                disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
                 onClick={handleDeliverToThis}
               >
-                {isUpdatingCheckout ? "Updating..." : t("checkout.deliverCta")}
+                {isLoadingCheckout ? "Starting checkout..." : isUpdatingCheckout ? "Updating..." : t("checkout.deliverCta")}
               </button>
             </div>
 
@@ -393,10 +427,10 @@ export default function CheckoutPage() {
             
             <button
               className="co-summary-cta"
-              disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isUpdatingCheckout}
+              disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
               onClick={handleDeliverToThis}
             >
-              {isUpdatingCheckout ? "Updating..." : step === "payment" ? t("checkout.usePaymentMethod") : t("checkout.deliverCta")}
+              {isLoadingCheckout ? "Starting checkout..." : isUpdatingCheckout ? "Updating..." : step === "payment" ? t("checkout.usePaymentMethod") : t("checkout.deliverCta")}
             </button>
             <div className="co-summary-row">
               <span>{t("checkout.items")}:</span>

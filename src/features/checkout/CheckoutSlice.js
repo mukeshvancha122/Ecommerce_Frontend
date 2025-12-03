@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getAddresses, addAddress, updateAddress, setDefaultAddress,
   getShippingQuote, createPaymentIntent, placeOrder, getCurrentOrder, updateOrderCheckout,
-  createShippingAddress
+  createShippingAddress, createStartCheckout
 } from "../../api/CheckoutService";
 import { updateCheckout } from "../../api/payment/PaymentService";
 
@@ -11,6 +11,24 @@ export const fetchAddresses = createAsyncThunk("checkout/fetchAddresses", async 
   console.log("data", data);
   return data.addresses || [];
 });
+
+export const createStartCheckoutThunk = createAsyncThunk(
+  "checkout/createStartCheckout",
+  async (cartSignature = null, { rejectWithValue }) => {
+    try {
+      console.log("[CheckoutSlice] createStartCheckoutThunk() - Triggering start checkout");
+      const response = await createStartCheckout();
+      return response;
+    } catch (error) {
+      console.error("[CheckoutSlice] createStartCheckoutThunk() - Failed to start checkout", error);
+      return rejectWithValue({
+        message: error.response?.data?.message || error.message || "Failed to start checkout",
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
+  }
+);
 
 /**
  * Sync a local address to backend and get the backend ID
@@ -606,6 +624,8 @@ const initialState = {
   coupons: [], // Available coupons from start-checkout
   rewards: 0, // Available rewards points
   order: null, // Current active order from startCheckout
+  hasStartedCheckout: false,
+  lastStartCheckoutSignature: null,
   checkoutUpdated: false, // Flag to track if update-checkout was successful (200/201)
   status: "idle",
   error: null,
@@ -647,7 +667,46 @@ const slice = createSlice({
     },
   },
   extraReducers: (b) => {
-    b.addCase(fetchAddresses.pending, (s) => { s.status = "loading"; })
+    b.addCase(createStartCheckoutThunk.pending, (s) => {
+        s.isLoadingCheckout = true;
+        s.error = null;
+      })
+     .addCase(createStartCheckoutThunk.fulfilled, (s, a) => {
+        s.isLoadingCheckout = false;
+        s.hasStartedCheckout = true;
+        s.lastStartCheckoutSignature = a.meta?.arg || null;
+        s.error = null;
+        const payloadData = a.payload?.data || null;
+        let orderData = null;
+        if (payloadData) {
+          if (payloadData.order) {
+            orderData = payloadData.order;
+          } else if (Array.isArray(payloadData.data)) {
+            orderData = payloadData.data[0] || null;
+          } else if (payloadData.data && typeof payloadData.data === "object") {
+            orderData = payloadData.data;
+          } else if (typeof payloadData === "object") {
+            orderData = payloadData;
+          }
+        }
+        if (orderData) {
+          s.order = orderData;
+        }
+        if (Array.isArray(payloadData?.coupons)) {
+          s.coupons = payloadData.coupons;
+        }
+        if (typeof payloadData?.rewards === "number") {
+          s.rewards = payloadData.rewards;
+        }
+      })
+     .addCase(createStartCheckoutThunk.rejected, (s, a) => {
+        s.isLoadingCheckout = false;
+        s.hasStartedCheckout = false;
+        s.lastStartCheckoutSignature = null;
+        s.error = a.payload?.message || a.error?.message || "Failed to start checkout";
+      })
+
+     .addCase(fetchAddresses.pending, (s) => { s.status = "loading"; })
      .addCase(fetchAddresses.fulfilled, (s, a) => {
         s.status = "succeeded";
         s.addresses = a.payload;
@@ -759,6 +818,8 @@ export const selectPaymentState = (s) => s.checkout.payment;
 export const selectCoupons = (s) => s.checkout.coupons;
 export const selectRewards = (s) => s.checkout.rewards;
 export const selectOrder = (s) => s.checkout.order;
+export const selectHasStartedCheckout = (s) => s.checkout.hasStartedCheckout;
+export const selectStartCheckoutSignature = (s) => s.checkout.lastStartCheckoutSignature;
 export const selectIsLoadingCheckout = (s) => s.checkout.isLoadingCheckout;
 export const selectIsUpdatingCheckout = (s) => s.checkout.isUpdatingCheckout;
 export const selectCheckoutError = (s) => s.checkout.error;
