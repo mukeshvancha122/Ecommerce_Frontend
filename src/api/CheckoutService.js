@@ -1,5 +1,4 @@
 import API from "../axios";
-import { createOrderRecord } from "./orders/OrdersService";
 
 const delay = (ms = 500) => new Promise((res) => setTimeout(res, ms));
 
@@ -50,99 +49,21 @@ export const getCurrentOrder = async () => {
 };
 
 /**
- * Start checkout process - Convert cart items to active order
- * POST /api/v1/orders/start-checkout/
- * Returns: [{ coupon: "string", rewards: 0 }] and creates active order
- * @returns {Promise<Object>} Available coupons, rewards, and order data
- */
-export const startCheckout = async () => {
-  try {
-    console.log("[CheckoutService] startCheckout() - Starting checkout, converting cart to order");
-    const response = await API.post("/v1/orders/start-checkout/");
-    console.log("[CheckoutService] startCheckout() - Response:", response);
-    console.log("[CheckoutService] startCheckout() - Response data:", JSON.stringify(response.data, null, 2));
-    
-    // API returns array: [{ coupon: "string", rewards: 0 }]
-    const checkoutData = Array.isArray(response.data) ? response.data : [];
-    
-    // Extract coupons and rewards
-    const coupons = checkoutData
-      .filter(item => item.coupon)
-      .map(item => ({
-        code: item.coupon,
-        rewards: item.rewards || 0,
-      }));
-    
-    const totalRewards = checkoutData.reduce((sum, item) => sum + (item.rewards || 0), 0);
-    
-    // Try to get order from response or fetch current order
-    let order = response.data?.order || null;
-    
-    // If order not in response, try to fetch it from current-order endpoint
-    if (!order) {
-      console.log("[CheckoutService] startCheckout() - Order not in response, fetching current order...");
-      try {
-        const currentOrderResponse = await getCurrentOrder();
-        order = currentOrderResponse.data;
-        if (order) {
-          console.log("[CheckoutService] startCheckout() - Found current order:", {
-            order_code: order.order_code,
-            order_status: order.order_status,
-          });
-        } else {
-          console.warn("[CheckoutService] startCheckout() - No current order found after startCheckout");
-        }
-      } catch (orderError) {
-        console.warn("[CheckoutService] startCheckout() - Could not fetch current order:", orderError.message);
-        // Continue without order - it may be created later
-      }
-    } else {
-      console.log("[CheckoutService] startCheckout() - Order found in response:", {
-        order_code: order.order_code,
-        order_status: order.order_status,
-      });
-    }
-    
-    console.log("[CheckoutService] startCheckout() - Checkout started successfully, order:", order ? "Found" : "Not found");
-    
-    return {
-      data: {
-        coupons,
-        rewards: totalRewards,
-        checkoutData,
-        order: order, // Order data from response or current-order endpoint
-      },
-    };
-  } catch (error) {
-    console.error("[CheckoutService] startCheckout() - Error starting checkout:", error);
-    // If unauthorized (401), return empty coupons/rewards (guest mode)
-    if (error.response?.status === 401) {
-      console.log("[CheckoutService] User not authenticated, no coupons/rewards available");
-      return {
-        data: {
-          coupons: [],
-          rewards: 0,
-          checkoutData: [],
-          order: null,
-        },
-      };
-    }
-    throw error; // Re-throw error so component can handle it
-  }
-};
-
-/**
  * Update order checkout with shipping address and shipping type
  * POST /api/v1/orders/update-checkout/
  * 
+ * IMPORTANT: This API call PLACES THE ORDER in the backend.
+ * The shipping address ID MUST come from GET /v1/orders/shipping-address/ endpoint.
+ * 
  * API expects: { "drop_location_id": "string", "shipping": "string" }
  * 
- * Note: drop_location_id must be a numeric backend database ID, not a local storage ID
+ * Note: drop_location_id must be a numeric backend database ID from the shipping-address endpoint
+ * The ID is obtained by calling GET /v1/orders/shipping-address/ first
  * 
  * @param {Object} payload - Update checkout payload
- * @param {string|number} payload.shipping_address_id - Shipping address ID (will be mapped to drop_location_id)
+ * @param {string|number} payload.shipping_address_id - Shipping address ID from GET /v1/orders/shipping-address/ (will be mapped to drop_location_id)
  * @param {string} payload.shipping_type - Shipping type: "Normal" or "Express" (will be mapped to shipping)
- * @returns {Promise<Object>} Updated order response (expects 200/201 status)
+ * @returns {Promise<Object>} Updated order response (expects 200/201 status) - This places the order in the backend
  */
 export const updateOrderCheckout = async (payload) => {
   try {

@@ -5,7 +5,6 @@ import { useHistory } from "react-router-dom";
 import {
   fetchAddresses,
   fetchShippingQuote,
-  initializeCheckout,
   updateOrderCheckoutThunk,
   selectAddresses,
   selectSelectedAddressId,
@@ -65,18 +64,9 @@ export default function CheckoutPage() {
 
   // Call startCheckout when component mounts and items are available (convert cart to order)
   // This should be called when navigating from Cart to Checkout
-  const hasStartedCheckout = useRef(false);
   useEffect(() => {
-    // Call startCheckout to convert cart items to active order
-    // Only call once when items become available
-    if (items.length > 0 && !hasStartedCheckout.current && !isLoadingCheckout) {
-      console.log("[CheckoutPage] Starting checkout - converting cart to order");
-      hasStartedCheckout.current = true;
-      dispatch(initializeCheckout()).catch((error) => {
-        console.error("[CheckoutPage] Failed to start checkout:", error);
-        hasStartedCheckout.current = false; // Allow retry on error
-      });
-    }
+    // Note: Order will be created/placed when updateOrderCheckout is called
+    // No need to initialize checkout separately
   }, [dispatch, items.length, isLoadingCheckout]);
 
   // Load addresses when user is logged in
@@ -239,7 +229,6 @@ export default function CheckoutPage() {
               {checkoutError && !isLoadingCheckout && (
                 <div className="co-error">
                   <p>Error: {checkoutError}</p>
-                  <button onClick={() => dispatch(initializeCheckout())}>Retry</button>
                 </div>
               )}
 
