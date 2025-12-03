@@ -5,8 +5,8 @@ import { getIntelligentSearchStrategy } from "../../../utils/searchIntelligence"
 /**
  * Intelligent search with fallback to related categories
  * @param {Object} filters - Search filters
- * @param {string} filters.product_name - Product name to search
- * @param {string} filters.category - Selected category
+ * @param {string} filters.product_name - Prodelected categoryuct name to search
+ * @param {string} filters.category - S
  * @param {boolean} filters.useIntelligentSearch - Whether to use intelligent search (default: true)
  * @returns {Promise<Object>} Search results with fallback suggestions
  */

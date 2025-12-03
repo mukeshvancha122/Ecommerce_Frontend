@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getAddresses, addAddress, updateAddress, setDefaultAddress,
-  getShippingQuote, createPaymentIntent, placeOrder, startCheckout, updateOrderCheckout,
+  getShippingQuote, createPaymentIntent, placeOrder, getCurrentOrder, updateOrderCheckout,
   createShippingAddress
 } from "../../api/CheckoutService";
 import { updateCheckout } from "../../api/payment/PaymentService";
@@ -91,22 +91,9 @@ export const syncAddressToBackend = createAsyncThunk(
   }
 );
 
-export const initializeCheckout = createAsyncThunk("checkout/initializeCheckout", async (_, { rejectWithValue }) => {
-  try {
-    const { data } = await startCheckout();
-    return data; // { coupons, rewards, checkoutData, order }
-  } catch (error) {
-    console.error("[CheckoutSlice] initializeCheckout failed:", error);
-    return rejectWithValue({
-      message: error.response?.data?.message || error.message || "Failed to start checkout",
-      status: error.response?.status,
-    });
-  }
-});
-
 export const updateOrderCheckoutThunk = createAsyncThunk(
   "checkout/updateOrderCheckout",
-  async ({ shipping_address_id, shipping_type }, { rejectWithValue, getState }) => {
+  async ({ shipping_address_id, shipping_type }, { rejectWithValue, getState, dispatch }) => {
     try {
       console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Updating order checkout");
       console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Input:", {
@@ -114,40 +101,131 @@ export const updateOrderCheckoutThunk = createAsyncThunk(
         shipping_type,
       });
       
-      // Get the address from state to find the backend ID
+      // CRITICAL: Ensure addresses are fetched from backend GET endpoint first
+      // GET /v1/orders/shipping-address/ - This is where we get the backend ID
       const state = getState();
-      const addresses = state.checkout.addresses || [];
-      const selectedAddress = addresses.find(addr => addr.id === shipping_address_id);
+      let addresses = state.checkout.addresses || [];
       
-      // Use backend ID if available, otherwise use the provided ID
-      // The backend ID comes from the shipping-address endpoint
-      const dropLocationId = selectedAddress?.backendId || selectedAddress?.id || shipping_address_id;
+      // If addresses are not loaded or empty, fetch them from backend
+      if (addresses.length === 0) {
+        console.log("[CheckoutSlice] updateOrderCheckoutThunk() - No addresses in state, fetching from backend...");
+        try {
+          await dispatch(fetchAddresses());
+          // Get updated state after fetch
+          const updatedState = getState();
+          addresses = updatedState.checkout.addresses || [];
+          console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Fetched addresses from backend:", addresses.length);
+        } catch (fetchError) {
+          console.error("[CheckoutSlice] updateOrderCheckoutThunk() - Failed to fetch addresses:", fetchError);
+          return rejectWithValue({
+            message: "Failed to fetch shipping addresses. Please try again.",
+            status: fetchError.response?.status,
+          });
+        }
+      }
+      
+      // Find the selected address
+      const selectedAddress = addresses.find(addr => 
+        addr.id === shipping_address_id || 
+        addr.backendId === shipping_address_id ||
+        String(addr.id) === String(shipping_address_id)
+      );
+      
+      if (!selectedAddress) {
+        console.error("[CheckoutSlice] updateOrderCheckoutThunk() - Address not found:", {
+          shipping_address_id,
+          available_addresses: addresses.map(a => ({ id: a.id, backendId: a.backendId })),
+        });
+        return rejectWithValue({
+          message: "Selected address not found. Please select a valid address.",
+        });
+      }
+      
+      // CRITICAL: Use the backend ID from the GET /v1/orders/shipping-address/ endpoint
+      // The backendId comes from the GET endpoint response
+      const backendId = selectedAddress.backendId || selectedAddress.id;
+      
+      // Validate that we have a numeric backend ID (required by update-checkout API)
+      const isNumericId = /^\d+$/.test(String(backendId));
+      
+      if (!isNumericId) {
+        // Address doesn't have a backend ID - need to create it in backend first
+        console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Address doesn't have backend ID, creating in backend...");
+        try {
+          // Create address in backend to get the ID
+          const { createShippingAddress } = await import("../../api/CheckoutService");
+          const backendFormat = selectedAddress.backendFormat || {
+            email: selectedAddress.email || "",
+            name: selectedAddress.fullName || "",
+            phone: selectedAddress.phone ? parseInt(selectedAddress.phone.replace(/\D/g, ''), 10) : 0,
+            full_address: selectedAddress.address1 || "",
+            district: selectedAddress.district || selectedAddress.state || "",
+            city: selectedAddress.city || "",
+            label: selectedAddress.label || selectedAddress.fullName || "",
+          };
+          
+          const createResponse = await createShippingAddress(backendFormat);
+          const newBackendId = createResponse.data.id;
+          
+          console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Address created in backend with ID:", newBackendId);
+          
+          // Update the address in state with the new backend ID
+          dispatch(updateAddressBackendId({ 
+            addressId: selectedAddress.id, 
+            backendId: newBackendId 
+          }));
+          
+          // Use the new backend ID
+          const dropLocationId = String(newBackendId);
+          
+          console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Using newly created backend ID:", dropLocationId);
+          
+          // Continue with updateOrderCheckout using the new backend ID
+          const response = await updateOrderCheckout({ 
+            shipping_address_id: dropLocationId,
+            shipping_type 
+          });
+          
+          if (response.status !== 200 && response.status !== 201) {
+            throw new Error(`Update checkout failed with status ${response.status}`);
+          }
+          
+          return {
+            data: response.data,
+            status: response.status,
+          };
+        } catch (createError) {
+          console.error("[CheckoutSlice] updateOrderCheckoutThunk() - Failed to create address in backend:", createError);
+          return rejectWithValue({
+            message: "Failed to create address in backend. Please try again.",
+            status: createError.response?.status,
+          });
+        }
+      }
+      
+      // Use the backend ID from the GET endpoint
+      const dropLocationId = String(backendId);
       
       console.log("[CheckoutSlice] updateOrderCheckoutThunk() - Address lookup:", {
         shipping_address_id,
         found_address: !!selectedAddress,
-        backendId: selectedAddress?.backendId,
+        backendId: selectedAddress.backendId,
+        address_id_from_get_endpoint: backendId,
         using_drop_location_id: dropLocationId,
+        note: "Using backend ID from GET /v1/orders/shipping-address/ endpoint",
       });
       
-      // First ensure order is created via startCheckout
-      if (!state.checkout.order && state.checkout.status !== "loading") {
-        console.log("[CheckoutSlice] Order not found, calling startCheckout first");
-        try {
-          // Call startCheckout directly (not via dispatch since we're in a thunk)
-          const { data } = await startCheckout();
-          // Update state will be handled by initializeCheckout if called separately
-          // For now, we'll just ensure the order exists
-          if (!data.order) {
-            console.warn("[CheckoutSlice] startCheckout did not return order data");
-          }
-        } catch (error) {
-          console.error("[CheckoutSlice] Failed to start checkout:", error);
-          return rejectWithValue({
-            message: "Failed to create order. Please try again.",
-            status: error.response?.status,
-          });
-        }
+      // Note: Order should already exist from cart checkout flow
+      // updateOrderCheckout will place the order in the backend
+      // If order doesn't exist, it will be created by the backend when updateOrderCheckout is called
+      const currentOrder = state.checkout.order;
+      if (!currentOrder) {
+        console.log("[CheckoutSlice] No order in state, but updateOrderCheckout will create/place the order");
+      } else {
+        console.log("[CheckoutSlice] Order exists in state:", {
+          order_code: currentOrder.order_code,
+          order_status: currentOrder.order_status,
+        });
       }
       
       // Use the backend ID (drop_location_id) for the API call
@@ -269,59 +347,46 @@ export const confirmOrderThunk = createAsyncThunk(
       });
       
       if (!order || (!order.order_code && !order.id && !order.orderCode)) {
-        console.log("[CheckoutSlice] confirmOrderThunk() - No valid order in state, calling startCheckout first...");
-        try {
-          const { data: checkoutData } = await startCheckout();
-          console.log("[CheckoutSlice] confirmOrderThunk() - startCheckout response:", {
-            has_order: !!checkoutData.order,
-            checkout_data: checkoutData,
-          });
-          
-          order = checkoutData.order;
-          
-          // If startCheckout didn't return order, try fetching current order directly with retries
-          if (!order) {
-            console.log("[CheckoutSlice] confirmOrderThunk() - startCheckout didn't return order, fetching current order with retries...");
-            const { getCurrentOrder } = await import("../../api/CheckoutService");
+        console.log("[CheckoutSlice] confirmOrderThunk() - No valid order in state, fetching current order...");
+        // Note: Order should be created/placed by updateOrderCheckout before this is called
+        // Try fetching current order with retries
+        let retries = 3;
+        let retryDelay = 500; // Start with 500ms delay
+        
+        while (!order && retries > 0) {
+          try {
+            console.log(`[CheckoutSlice] confirmOrderThunk() - Attempting to fetch current order (${4 - retries}/3)...`);
+            const currentOrderResponse = await getCurrentOrder();
+            order = currentOrderResponse.data;
             
-            // Retry up to 3 times with delays (order might not be immediately available)
-            let retries = 3;
-            let retryDelay = 500; // Start with 500ms delay
-            
-            while (!order && retries > 0) {
-              try {
-                console.log(`[CheckoutSlice] confirmOrderThunk() - Attempting to fetch current order (${4 - retries}/3)...`);
-                const currentOrderResponse = await getCurrentOrder();
-                order = currentOrderResponse.data;
-                
-                if (order) {
-                  console.log("[CheckoutSlice] confirmOrderThunk() - Fetched current order:", {
-                    order_code: order.order_code || order.id,
-                    order_status: order.order_status,
-                  });
-                  break; // Found order, exit retry loop
-                } else {
-                  console.warn(`[CheckoutSlice] confirmOrderThunk() - No current order found, retrying in ${retryDelay}ms...`);
-                  retries--;
-                  if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    retryDelay *= 2; // Exponential backoff
-                  }
-                }
-              } catch (fetchError) {
-                console.error(`[CheckoutSlice] confirmOrderThunk() - Failed to fetch current order (attempt ${4 - retries}/3):`, fetchError);
-                retries--;
-                if (retries > 0) {
-                  await new Promise(resolve => setTimeout(resolve, retryDelay));
-                  retryDelay *= 2;
-                }
+            if (order) {
+              console.log("[CheckoutSlice] confirmOrderThunk() - Fetched current order:", {
+                order_code: order.order_code || order.id,
+                order_status: order.order_status,
+              });
+              break; // Found order, exit retry loop
+            } else {
+              console.warn(`[CheckoutSlice] confirmOrderThunk() - No current order found, retrying in ${retryDelay}ms...`);
+              retries--;
+              if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                retryDelay *= 2; // Exponential backoff
               }
             }
-            
-            if (!order) {
-              console.error("[CheckoutSlice] confirmOrderThunk() - CRITICAL: Could not fetch order after all retries");
+          } catch (fetchError) {
+            console.error(`[CheckoutSlice] confirmOrderThunk() - Failed to fetch current order (attempt ${4 - retries}/3):`, fetchError);
+            retries--;
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              retryDelay *= 2;
             }
           }
+        }
+        
+        if (!order) {
+          console.error("[CheckoutSlice] confirmOrderThunk() - CRITICAL: Could not fetch order after all retries");
+          console.error("[CheckoutSlice] confirmOrderThunk() - Order should be created by updateOrderCheckout before payment");
+        }
           
           if (order) {
             orderCode = order.order_code || order.id || order.orderCode;
@@ -336,21 +401,9 @@ export const confirmOrderThunk = createAsyncThunk(
               console.error("[CheckoutSlice] confirmOrderThunk() - Order object:", JSON.stringify(order, null, 2));
             }
           } else {
-            console.error("[CheckoutSlice] confirmOrderThunk() - CRITICAL: startCheckout did not return order and current order fetch failed");
-            console.error("[CheckoutSlice] confirmOrderThunk() - Checkout data:", JSON.stringify(checkoutData, null, 2));
+            console.error("[CheckoutSlice] confirmOrderThunk() - CRITICAL: Could not fetch order from backend");
+            console.error("[CheckoutSlice] confirmOrderThunk() - Order should be created by updateOrderCheckout before payment");
           }
-        } catch (error) {
-          console.error("[CheckoutSlice] confirmOrderThunk() - Failed to start checkout:", error);
-          console.error("[CheckoutSlice] confirmOrderThunk() - Error details:", {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-          });
-          return rejectWithValue({
-            message: "Failed to create order. Please try again.",
-            status: error.response?.status,
-          });
-        }
       } else {
         orderCode = order.order_code || order.id || order.orderCode;
         console.log("[CheckoutSlice] confirmOrderThunk() - Using existing order from state:", {
@@ -606,24 +659,6 @@ const slice = createSlice({
      })
      .addCase(fetchAddresses.rejected, (s, a) => { s.status = "failed"; s.error = a.error?.message; })
 
-     .addCase(initializeCheckout.pending, (s) => {
-        s.isLoadingCheckout = true;
-        s.error = null;
-     })
-     .addCase(initializeCheckout.fulfilled, (s, a) => {
-        s.isLoadingCheckout = false;
-        s.coupons = a.payload.coupons || [];
-        s.rewards = a.payload.rewards || 0;
-        s.order = a.payload.order || null; // Store order data
-     })
-     .addCase(initializeCheckout.rejected, (s, a) => {
-        s.isLoadingCheckout = false;
-        // If checkout initialization fails, set empty coupons/rewards
-        s.coupons = [];
-        s.rewards = 0;
-        s.order = null;
-        s.error = a.payload?.message || a.error?.message || "Failed to start checkout";
-     })
 
      .addCase(updateOrderCheckoutThunk.pending, (s) => {
         s.isUpdatingCheckout = true;

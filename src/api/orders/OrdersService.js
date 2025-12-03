@@ -2,50 +2,6 @@ import API from "../../axios";
 
 const delay = (ms = 500) => new Promise((res) => setTimeout(res, ms));
 
-// Fallback mock orders if API fails
-const mockOrders = [
-  {
-    id: "order_2025_001",
-    placedAt: "2025-02-12T09:15:00.000Z",
-    total: 189.99,
-    status: "Delivered",
-    paymentMethod: "card",
-    addressId: "addr_1",
-    items: [
-      {
-        sku: "noise-cancelling-earbuds",
-        title: "Noise Cancelling Earbuds (Black)",
-        qty: 1,
-        price: 129.99,
-        image: "/images/products/tshirt_black_480x400.webp",
-      },
-      {
-        sku: "charger-pro",
-        title: "USB-C Fast Charger Pro",
-        qty: 1,
-        price: 60,
-        image: "/images/products/tshirt_green_480x400.webp",
-      },
-    ],
-    fulfillment: {
-      lastUpdate: "Delivered Feb 15",
-      trackingId: "HYDNX123456789",
-      expectedBy: "2025-02-15T10:00:00.000Z",
-    },
-    actions: ["Buy it again", "Return or replace items", "Get invoice"],
-  },
-];
-
-const ordersStore = {
-  orders: [...mockOrders],
-};
-
-export const createOrderRecord = async (order) => {
-  await delay();
-  ordersStore.orders.unshift(order);
-  return { data: { order } };
-};
-
 /**
  * Fetch orders from API with pagination
  * @param {Object} params - Query parameters

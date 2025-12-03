@@ -2,7 +2,6 @@ import API from "../../axios";
 import { INDIAN_DISTRICTS, getCitiesForDistrict, INDIAN_CITIES } from "../../utils/indianLocations";
 
 export const getValidDistricts = async () => {
-  // First, try to get districts from existing addresses
   try {
     const response = await API.get("/v1/orders/shipping-address/");
     const addresses = Array.isArray(response.data) ? response.data : [];
