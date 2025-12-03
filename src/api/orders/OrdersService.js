@@ -96,7 +96,7 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
       console.log("[OrdersService] fetchOrders() - API request params:", params);
       
       try {
-        const response = await API.get("/v1/orders/order-history/", {
+    const response = await API.get("/v1/orders/order-history/", {
           params: params,
         });
         
@@ -105,7 +105,7 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
         console.log("[OrdersService] fetchOrders() - API response data:", JSON.stringify(response.data, null, 2));
         
         responseData = response.data;
-        
+
         // Handle API response format: { count, next, previous, results: [...] }
         if (responseData?.results) {
           if (Array.isArray(responseData.results)) {
@@ -114,12 +114,12 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
           } else if (responseData.results?.data && Array.isArray(responseData.results.data)) {
             rawOrders = responseData.results.data;
             console.log("[OrdersService] fetchOrders() - Found orders in response.results.data:", rawOrders.length);
-          }
+      }
         } else if (responseData?.data) {
           if (Array.isArray(responseData.data)) {
             rawOrders = responseData.data;
             console.log("[OrdersService] fetchOrders() - Found orders in response.data:", rawOrders.length);
-          }
+      }
         } else if (Array.isArray(responseData)) {
           rawOrders = responseData;
           console.log("[OrdersService] fetchOrders() - Response is direct array:", rawOrders.length);
@@ -281,7 +281,7 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
 
       return matchesQuery && inRange && matchesTab;
     });
-    
+
     console.log("[OrdersService] fetchOrders() - Filtered orders:", filtered.length, {
       query: query || "none",
       timeRange,
@@ -360,10 +360,10 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
     if (error.response?.status === 401) {
       console.warn("[OrdersService] fetchOrders() - Unauthorized (401) - User may not be authenticated");
       console.warn("[OrdersService] fetchOrders() - Returning empty orders array");
-      return {
-        data: {
+    return {
+      data: {
           orders: [],
-          summary: {
+        summary: {
             totalOrders: 0,
             delivered: 0,
             processing: 0,
@@ -373,9 +373,9 @@ export const fetchOrders = async ({ timeRange, query, tab = "orders", page = 1, 
             next: null,
             previous: null,
             currentPage: page,
-          },
         },
-      };
+      },
+    };
     }
     
     // For other errors, re-throw to be handled by the component

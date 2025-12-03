@@ -6,6 +6,7 @@ import {
   fetchAddresses,
   fetchShippingQuote,
   updateOrderCheckoutThunk,
+  // createStartCheckoutThunk,
   selectAddresses,
   selectSelectedAddressId,
   selectAddress as selectAddressAction,
@@ -19,7 +20,6 @@ import {
   selectCoupons,
   selectRewards,
   resetCheckout,
-  selectIsLoadingCheckout,
   selectIsUpdatingCheckout,
   selectCheckoutError,
   selectCheckoutUpdated,
@@ -48,7 +48,6 @@ export default function CheckoutPage() {
   const shippingType = useSelector(selectShippingTypeValue);
   const step = useSelector(selectCheckoutStep);
   const payment = useSelector(selectPaymentState);
-  const isLoadingCheckout = useSelector(selectIsLoadingCheckout);
   const isUpdatingCheckout = useSelector(selectIsUpdatingCheckout);
   const checkoutError = useSelector(selectCheckoutError);
   const checkoutUpdated = useSelector(selectCheckoutUpdated);
@@ -62,12 +61,24 @@ export default function CheckoutPage() {
   const selectedCountry = useSelector(selectCountry);
   const lastUpdateRef = useRef({ addressId: null, shippingType: null });
 
-  // Call startCheckout when component mounts and items are available (convert cart to order)
-  // This should be called when navigating from Cart to Checkout
-  useEffect(() => {
-    // Note: Order will be created/placed when updateOrderCheckout is called
-    // No need to initialize checkout separately
-  }, [dispatch, items.length, isLoadingCheckout]);
+  // STEP 1: Create order from cart when checkout page loads
+  // useEffect(() => {
+  //   const initializeOrder = async () => {
+  //     // Only create order if we have items and haven't created one yet
+  //     if (items.length > 0 && !isUpdatingCheckout) {
+  //       console.log("[CheckoutPage] STEP 1: Creating order from cart...");
+  //       try {
+  //         await dispatch(createStartCheckoutThunk()).unwrap();
+  //         console.log("[CheckoutPage] STEP 1: Order created successfully");
+  //       } catch (error) {
+  //         console.error("[CheckoutPage] STEP 1: Failed to create order:", error);
+  //         // Don't block the flow - order will be created when address is selected
+  //       }
+  //     }
+  //   };
+    
+  //   initializeOrder();
+  // }, [dispatch, items.length, isUpdatingCheckout]);
 
   // Load addresses when user is logged in
   useEffect(() => {
@@ -99,10 +110,23 @@ export default function CheckoutPage() {
     // Only redirect happens here if needed
   }, [payment.status, payment.orderId, dispatch]);
 
-  const orderTotal = useMemo(
-    () => itemsTotal + (shipping.shipping || 0) + (shipping.tax || 0) + (shipping.importCharges || 0),
-    [itemsTotal, shipping]
-  );
+  const orderTotal = useMemo(() => {
+    const items = parseFloat(itemsTotal) || 0;
+    const shippingCost = parseFloat(shipping.shipping) || 0;
+    const taxCost = parseFloat(shipping.tax) || 0;
+    const importChargesCost = parseFloat(shipping.importCharges) || 0;
+    const total = items + shippingCost + taxCost + importChargesCost;
+    
+    console.log("[CheckoutPage] Order Total Calculation:", {
+      items,
+      shippingCost,
+      taxCost,
+      importChargesCost,
+      total,
+    });
+    
+    return total;
+  }, [itemsTotal, shipping.shipping, shipping.tax, shipping.importCharges]);
 
   // Handle shipping type selection
   const handleShippingTypeChange = (type) => {
@@ -110,49 +134,16 @@ export default function CheckoutPage() {
     dispatch(selectShippingType(type));
   };
 
-  // Call updateOrderCheckout when both address and shipping type are selected
-  useEffect(() => {
-    const updateCheckout = async () => {
-      // Only update if both are set, not currently updating, and values have changed
-      const hasChanged = 
-        selectedAddressId !== lastUpdateRef.current.addressId ||
-        localShippingType !== lastUpdateRef.current.shippingType;
-      
-      // Check if address ID is a numeric backend ID (not a local storage ID)
-      const isNumericId = selectedAddressId && /^\d+$/.test(String(selectedAddressId));
-      
-      if (selectedAddressId && localShippingType && !isUpdatingCheckout && hasChanged) {
-        try {
-          console.log("[CheckoutPage] Updating order checkout with address and shipping type");
-          const result = await dispatch(updateOrderCheckoutThunk({
-            shipping_address_id: selectedAddressId,
-            shipping_type: localShippingType,
-          })).unwrap();
-          
-          // If update was skipped (local address), still mark as processed
-          if (result.skipped) {
-            console.log("[CheckoutPage] Update skipped for local address - will be included in order creation");
-          } else {
-            console.log("[CheckoutPage] Order checkout updated successfully");
-          }
-          
-          // Update ref to track last successful update (even if skipped)
-          lastUpdateRef.current = {
-            addressId: selectedAddressId,
-            shippingType: localShippingType,
-          };
-        } catch (error) {
-          console.error("[CheckoutPage] Failed to update order checkout:", error);
-          // Don't block the flow - address will be included in final order creation
-        }
-      }
-    };
-
-    updateCheckout();
-  }, [selectedAddressId, localShippingType, dispatch, isUpdatingCheckout]);
-
+  // STEP 2: Update order with address when user clicks "Deliver to this address"
+  // This happens BEFORE payment step
   const handleDeliverToThis = async () => {
     if (!selectedAddressId || items.length === 0) return;
+    
+    // Prevent multiple clicks while update is in progress
+    if (isUpdatingCheckout) {
+      console.log("[CheckoutPage] Update already in progress, please wait...");
+      return;
+    }
     
     // Ensure shipping type is selected
     if (!localShippingType) {
@@ -160,10 +151,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Ensure order is created and updated before proceeding
-    // Call updateOrderCheckout - this will also ensure startCheckout is called first
     try {
-      console.log("[CheckoutPage] Updating order checkout before proceeding to payment");
+      console.log("[CheckoutPage] STEP 2: Updating order with address ID:", selectedAddressId);
       const result = await dispatch(updateOrderCheckoutThunk({
         shipping_address_id: selectedAddressId,
         shipping_type: localShippingType,
@@ -171,26 +160,27 @@ export default function CheckoutPage() {
       
       // Check if update was skipped (for local storage addresses)
       if (result.skipped) {
-        console.log("[CheckoutPage] Update skipped for local address - address will be included in order creation");
-        // Still proceed - address data will be included in final order creation
-      } else {
-        // Verify we got a successful response (200/201) for backend addresses
-        if (result.status !== 200 && result.status !== 201) {
-          throw new Error(`Update checkout returned status ${result.status}`);
-        }
-        console.log("[CheckoutPage] Order checkout updated successfully with status:", result.status);
+        console.log("[CheckoutPage] Update skipped for local address");
+        alert("Please use a saved address from the backend");
+        return;
       }
       
-      // Now proceed to payment (works for both backend and local addresses)
+      // Verify we got a successful response (200/201)
+      if (result.status !== 200 && result.status !== 201) {
+        throw new Error(`Order update failed with status ${result.status}`);
+      }
+      
+      console.log("[CheckoutPage] STEP 2: Order updated successfully");
+      
+      // Now proceed to payment step
       await dispatch(startPayment({ addressId: selectedAddressId, items }));
       if (!payment.lastError) {
         dispatch(goToPayment());
       }
     } catch (error) {
-      console.error("[CheckoutPage] Failed to update order checkout:", error);
+      console.error("[CheckoutPage] STEP 2: Failed to update order:", error);
       const errorMessage = error.message || error.response?.data?.message || "Failed to update order. Please try again.";
       alert(errorMessage);
-      return;
     }
   };
 
@@ -219,19 +209,26 @@ export default function CheckoutPage() {
               <div className="co-card-title">{t("checkout.selectAddress")}</div>
               
               {/* Loading state for startCheckout */}
-              {isLoadingCheckout && (
+              {isUpdatingCheckout && (
                 <div className="co-loading">
                   <p>Starting checkout...</p>
                 </div>
               )}
 
               {/* Error state for startCheckout */}
-              {checkoutError && !isLoadingCheckout && (
+              {checkoutError && !isUpdatingCheckout && (
                 <div className="co-error">
                   <p>Error: {checkoutError}</p>
                 </div>
               )}
 
+              {/* Show loading state while fetching addresses */}
+              {addresses.length === 0 && user?.email && (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                  Loading addresses...
+                </div>
+              )}
+              
               <AddressBook
                 addresses={addresses}
                 selectedId={selectedAddressId}
@@ -284,7 +281,7 @@ export default function CheckoutPage() {
 
               <button
                 className="co-cta"
-                disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
+                disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isUpdatingCheckout}
                 onClick={handleDeliverToThis}
               >
                 {isUpdatingCheckout ? "Updating..." : t("checkout.deliverCta")}
@@ -300,6 +297,7 @@ export default function CheckoutPage() {
                   clientSecret={payment.clientSecret}
                   orderTotal={orderTotal}
                   addressId={selectedAddressId}
+                  shippingType={localShippingType}
                   items={items}
                 />
               )}
@@ -371,9 +369,31 @@ export default function CheckoutPage() {
           </div>
 
           <aside className="co-summary">
+            {/* Delivery Address Display */}
+            {selectedAddressId && (() => {
+              const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+              return selectedAddress ? (
+                <div className="co-delivery-address">
+                  <div className="co-delivery-address-title">Delivery Address</div>
+                  <div className="co-delivery-address-content">
+                    <div className="co-delivery-address-name">{selectedAddress.fullName}</div>
+                    <div className="co-delivery-address-line">{selectedAddress.address1}</div>
+                    {selectedAddress.address2 && (
+                      <div className="co-delivery-address-line">{selectedAddress.address2}</div>
+                    )}
+                    <div className="co-delivery-address-line">
+                      {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zip}
+                    </div>
+                    <div className="co-delivery-address-line">{selectedAddress.country}</div>
+                    <div className="co-delivery-address-phone">Phone: {selectedAddress.phone}</div>
+                  </div>
+                </div>
+              ) : null;
+            })()}
+            
             <button
               className="co-summary-cta"
-              disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isLoadingCheckout}
+              disabled={!selectedAddressId || !localShippingType || items.length === 0 || isUpdatingCheckout || isUpdatingCheckout}
               onClick={handleDeliverToThis}
             >
               {isUpdatingCheckout ? "Updating..." : step === "payment" ? t("checkout.usePaymentMethod") : t("checkout.deliverCta")}

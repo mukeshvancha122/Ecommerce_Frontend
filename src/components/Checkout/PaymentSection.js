@@ -21,6 +21,7 @@ import { selectCountry } from "../../features/country/countrySlice";
 import { selectShipping, selectShippingTypeValue } from "../../features/checkout/CheckoutSlice";
 import { formatCurrency } from "../../utils/currency";
 import { processOrderPayment } from "../../api/payment/PaymentService";
+import { getStartCheckout } from "../../api/CheckoutService";
 
 const paymentOptionsConfig = (t) => [
   {
@@ -59,14 +60,14 @@ const DUMMY_PAYMENT_MODE = getEnvVar('REACT_APP_DUMMY_PAYMENT', 'true') === "tru
 
 const defaultPayPalClientId = getEnvVar('REACT_APP_PAYPAL_CLIENT_ID', 'test');
 
-export default function PaymentSection({ clientSecret, orderTotal, addressId, items }) {
+export default function PaymentSection({ clientSecret, orderTotal, addressId, shippingType, items }) {
   const stripe = useStripe();
   const elements = useElements();
   const dispatch = useDispatch();
   const history = useHistory();
   const { t } = useTranslation();
   const selectedCountry = useSelector(selectCountry);
-  const shippingType = useSelector(selectShippingTypeValue);
+  // shippingType is passed as prop from CheckoutPage
 
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [cards, setCards] = useState([]);
@@ -170,6 +171,27 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     return () => paymentRequest.off("paymentmethod", handler);
   }, [paymentRequest, stripe, clientSecret, finalizeOrder]);
 
+  // Helper function to get order details (Step 3)
+  // Step 1 and Step 2 should already be completed before payment
+  const getOrderDetailsForPayment = async () => {
+    // STEP 3: Get order details from start-checkout endpoint
+    console.log("[PaymentSection] STEP 3: Fetching order details from start-checkout endpoint...");
+    const orderDetailsResponse = await getStartCheckout();
+    const orderDetails = orderDetailsResponse.data;
+    
+    if (!orderDetails || !orderDetails.order_code) {
+      throw new Error("Failed to fetch order details from backend. Please ensure order was created.");
+    }
+    
+    console.log("[PaymentSection] STEP 3: Order details received:", {
+      order_code: orderDetails.order_code,
+      order_price: orderDetails.order_price,
+      delivery_charge: orderDetails.delivery_charge,
+    });
+
+    return orderDetails;
+  };
+
   const handleConfirmCard = useCallback(async () => {
     // Dummy mode: skip validation and payment processing
     if (DUMMY_PAYMENT_MODE) {
@@ -180,22 +202,25 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         // Simulate payment delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Create order (bypass actual payment)
-        const orderId = await finalizeOrder("dummy_payment_intent_" + Date.now(), "card");
-        
-        if (!orderId) {
-          throw new Error("Failed to create order");
-        }
+        // STEP 3: Get order details (Step 1 and Step 2 already completed)
+        const orderDetails = await getOrderDetailsForPayment();
 
-        // Dummy payment processing - call order-payment endpoint with dummy card data
-        console.log("[PaymentSection] Dummy mode: Processing card payment via order-payment endpoint with dummy card data");
+        // STEP 4: Process payment - use order_price + delivery_charge for amount
+        const paymentAmount = (parseFloat(orderDetails.order_price) || 0) + (parseFloat(orderDetails.delivery_charge) || 0);
+        console.log("[PaymentSection] STEP 4: Payment amount calculation:", {
+          order_price: orderDetails.order_price,
+          delivery_charge: orderDetails.delivery_charge,
+          total_amount: paymentAmount,
+        });
+        
+        console.log("[PaymentSection] Dummy mode: Processing card payment via order-payment endpoint");
         try {
-          await processOrderPayment({
+          const paymentResponse = await processOrderPayment({
             payment_method: "card", // Use "card" as payment method
-            amount: String(orderTotal), // Total amount as string
-            order_code: orderId, // Order code from order creation
+            amount: String(paymentAmount.toFixed(2)), // Use order_price + delivery_charge
+            order_code: String(orderDetails.order_code), // Use order_code from backend
             ref_code: `dummy_card_${Date.now()}`, // Dummy reference code
-            pidx: "", // Optional payment ID (empty for dummy)
+            pidx: `dummy_card_pidx_${Date.now()}`, // Dummy payment ID
             // Include dummy card details for backend storage
             card_details: {
               number: cardForm.number || "4242424242424242", // Dummy card number
@@ -206,23 +231,30 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
             },
           });
           console.log("[PaymentSection] Dummy card payment processed successfully with card details stored");
+          console.log("[PaymentSection] Payment response from backend:", paymentResponse);
+          
+          // Only proceed if payment is successful
+          if (!paymentResponse) {
+            throw new Error("Payment processing failed - no response received");
+          }
         } catch (paymentErr) {
           console.warn("[PaymentSection] Dummy payment processing failed (non-blocking):", paymentErr);
           // Continue even if payment processing fails in dummy mode
         }
         
-        console.log("[PaymentSection] Order created successfully with ID:", orderId);
+        console.log("[PaymentSection] Payment processed successfully for order:", orderDetails.order_code);
         console.log("[PaymentSection] Cart will be cleared on order confirmation page");
         
         // Redirect to success page with order data in state
+        // Use order_code from backend response
         // Cart will be cleared on the order confirmation page after order is confirmed
         history.push({
           pathname: "/order-confirmation",
-          search: `?orderId=${orderId}`,
+          search: `?orderId=${orderDetails.order_code}`,
           state: {
-            orderId,
+            orderId: orderDetails.order_code,
             items: [...items], // Copy items array
-            orderTotal,
+            orderTotal: orderDetails.order_price, // Use order_price from backend
             shipping: { ...shipping }, // Copy shipping object
             addressId,
             shippingType, // Include shipping type for update-checkout call
@@ -245,19 +277,22 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     setError("");
 
     try {
-      // First create order to get order_code
-      const orderId = await finalizeOrder(null, "card");
-      
-      if (!orderId) {
-        throw new Error("Failed to create order");
-      }
+      // STEP 3: Get order details (Step 1 and Step 2 already completed)
+      const orderDetails = await getOrderDetailsForPayment();
 
-      // Process payment using order-payment endpoint with card details
-      console.log("[PaymentSection] Processing card payment via order-payment endpoint with card details...");
-      await processOrderPayment({
+      // STEP 4: Process payment - use order_price + delivery_charge for amount
+      const paymentAmount = (parseFloat(orderDetails.order_price) || 0) + (parseFloat(orderDetails.delivery_charge) || 0);
+      console.log("[PaymentSection] STEP 4: Payment amount calculation:", {
+        order_price: orderDetails.order_price,
+        delivery_charge: orderDetails.delivery_charge,
+        total_amount: paymentAmount,
+      });
+      
+      console.log("[PaymentSection] Processing card payment via order-payment endpoint...");
+      const paymentResponse = await processOrderPayment({
         payment_method: "card", // Use "card" as payment method
-        amount: String(orderTotal), // Total amount as string
-        order_code: orderId, // Order code from order creation
+        amount: String(paymentAmount.toFixed(2)), // Use order_price + delivery_charge
+        order_code: String(orderDetails.order_code), // Use order_code from backend
         ref_code: `card_${Date.now()}`, // Reference code for card payment
         pidx: "", // Optional payment ID (empty for card)
         // Include card details for backend storage (last 4 digits only for security)
@@ -271,19 +306,26 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
       });
 
       console.log("[PaymentSection] Card payment processed successfully with card details stored in backend");
+      console.log("[PaymentSection] Payment response:", paymentResponse);
+      
+      // Only proceed if payment is successful
+      if (!paymentResponse) {
+        throw new Error("Payment processing failed - no response received");
+      }
 
-      // Redirect to success page with order data in state
-      history.push({
-        pathname: "/order-confirmation",
-        search: `?orderId=${orderId}`,
-        state: {
-          orderId,
-          items,
-          orderTotal,
-          shipping,
-          addressId,
-        }
-      });
+        // Redirect to success page with order data in state
+        // Use order_code from backend response
+        history.push({
+          pathname: "/order-confirmation",
+          search: `?orderId=${orderDetails.order_code}`,
+          state: {
+            orderId: orderDetails.order_code,
+            items,
+            orderTotal: orderDetails.order_price, // Use order_price from backend
+            shipping,
+            addressId,
+          }
+        });
     } catch (err) {
       setError(err.message || "Payment failed. Please try again.");
       setProcessing(false);
@@ -302,37 +344,47 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
         // Simulate payment delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Create order (bypass actual payment)
-        const orderId = await finalizeOrder("dummy_upi_payment_" + Date.now(), "upi");
-        
-        if (!orderId) {
-          throw new Error("Failed to create order");
-        }
+        // STEP 3: Get order details (Step 1 and Step 2 already completed)
+        const orderDetails = await getOrderDetailsForPayment();
 
-        // Dummy payment processing - store payment in backend even in dummy mode
-        console.log("[PaymentSection] Dummy mode: Processing UPI payment via order-payment endpoint with dummy data");
+        // STEP 4: Process payment - use order_price + delivery_charge for amount
+        const paymentAmount = (parseFloat(orderDetails.order_price) || 0) + (parseFloat(orderDetails.delivery_charge) || 0);
+        console.log("[PaymentSection] STEP 4: Payment amount calculation:", {
+          order_price: orderDetails.order_price,
+          delivery_charge: orderDetails.delivery_charge,
+          total_amount: paymentAmount,
+        });
+        
+        console.log("[PaymentSection] Dummy mode: Processing UPI payment via order-payment endpoint");
         try {
-          await processOrderPayment({
+          const paymentResponse = await processOrderPayment({
             payment_method: "cod", // Map UPI to COD method
-            amount: String(orderTotal),
-            order_code: orderId,
+            amount: String(paymentAmount.toFixed(2)), // Use order_price + delivery_charge
+            order_code: String(orderDetails.order_code), // Use order_code from backend
             ref_code: `dummy_upi_${Date.now()}`,
             pidx: phonePeVpa || "dummy_upi_id", // Store UPI ID
           });
           console.log("[PaymentSection] Dummy UPI payment processed successfully");
+          console.log("[PaymentSection] Payment response:", paymentResponse);
+          
+          // Only proceed if payment is successful
+          if (!paymentResponse) {
+            throw new Error("Payment processing failed - no response received");
+          }
         } catch (paymentErr) {
           console.warn("[PaymentSection] Dummy UPI payment processing failed (non-blocking):", paymentErr);
           // Continue even if payment processing fails in dummy mode
         }
         
         // Redirect to success page with order data in state
+        // Use order_code from backend response
         history.push({
           pathname: "/order-confirmation",
-          search: `?orderId=${orderId}`,
+          search: `?orderId=${orderDetails.order_code}`,
           state: {
-            orderId,
+            orderId: orderDetails.order_code,
             items: [...items], // Copy items array
-            orderTotal,
+            orderTotal: orderDetails.order_price, // Use order_price from backend
             shipping: { ...shipping }, // Copy shipping object
             addressId,
             shippingType, // Include shipping type for update-checkout call
@@ -354,31 +406,49 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     setProcessing(true);
     setError("");
     try {
-      // First create order to get order_code
+      // Step 1: Create/confirm order to get order_code
       const orderId = await finalizeOrder(null, "upi");
       
       if (!orderId) {
         throw new Error("Failed to create order");
       }
 
+      // STEP 3: Get order details (Step 1 and Step 2 already completed)
+      const orderDetails = await getOrderDetailsForPayment();
+
+      // STEP 4: Process payment - use order_price + delivery_charge for amount
+      const paymentAmount = (parseFloat(orderDetails.order_price) || 0) + (parseFloat(orderDetails.delivery_charge) || 0);
+      console.log("[PaymentSection] STEP 4: Payment amount calculation:", {
+        order_price: orderDetails.order_price,
+        delivery_charge: orderDetails.delivery_charge,
+        total_amount: paymentAmount,
+      });
+
       const { data } = await simulatePhonePeCharge({
-        amount: Math.round(orderTotal * 100),
+        amount: Math.round(paymentAmount * 100), // Use order_price + delivery_charge
         vpa: phonePeVpa,
       });
       
-      // Process UPI payment - store in backend
+      // STEP 4: Process UPI payment - use order_price + delivery_charge
       // Map UPI to "cod" method if backend doesn't support "upi", or use "upi" if supported
       // Store UPI ID (VPA) in pidx field for reference
+
       console.log("[PaymentSection] Processing UPI payment via order-payment endpoint...");
       try {
-        await processOrderPayment({
+        const paymentResponse = await processOrderPayment({
           payment_method: "cod", // Map UPI to COD method (backend may not have "upi" method)
-          amount: String(orderTotal),
-          order_code: String(orderId),
+          amount: String(paymentAmount.toFixed(2)), // Use order_price + delivery_charge
+          order_code: String(orderDetails.order_code), // Use order_code from backend
           ref_code: DUMMY_PAYMENT_MODE ? `dummy_upi_${Date.now()}` : `upi_${Date.now()}`,
           pidx: phonePeVpa, // Store UPI ID (VPA) in pidx field
         });
         console.log("[PaymentSection] UPI payment processed successfully");
+        console.log("[PaymentSection] Payment response:", paymentResponse);
+        
+        // Only proceed if payment is successful
+        if (!paymentResponse) {
+          throw new Error("Payment processing failed - no response received");
+        }
       } catch (paymentErr) {
         // In dummy mode, log warning but continue (non-blocking)
         if (DUMMY_PAYMENT_MODE) {
@@ -539,47 +609,57 @@ export default function PaymentSection({ clientSecret, orderTotal, addressId, it
     setProcessing(true);
     setError("");
 
-    try {
-      // First create order to get order_code
-      const orderId = await finalizeOrder(null, "cod");
-      
-      if (!orderId) {
-        throw new Error("Failed to create order");
-      }
-
-      // Process COD payment - always store in backend (even in dummy mode)
-      // This ensures payment details are recorded for order tracking
-      console.log("[PaymentSection] Processing COD payment via order-payment endpoint...");
       try {
-        await processOrderPayment({
-          payment_method: "cod",
-          amount: String(orderTotal),
-          order_code: String(orderId),
-          ref_code: DUMMY_PAYMENT_MODE ? `dummy_cod_${Date.now()}` : `cod_${Date.now()}`,
-        });
-        console.log("[PaymentSection] COD payment processed successfully");
-      } catch (paymentErr) {
-        // In dummy mode, log warning but continue (non-blocking)
-        if (DUMMY_PAYMENT_MODE) {
-          console.warn("[PaymentSection] Dummy COD payment processing failed (non-blocking):", paymentErr);
-        } else {
-          throw paymentErr; // In real mode, throw error
-        }
-      }
+      // STEP 3: Get order details (Step 1 and Step 2 already completed)
+      const orderDetails = await getOrderDetailsForPayment();
 
-      // Redirect to success page with order data in state
-      history.push({
-        pathname: "/order-confirmation",
-        search: `?orderId=${orderId}`,
-        state: {
-          orderId,
-          items,
-          orderTotal,
-          shipping,
-          addressId,
-          shippingType, // Include shipping type for update-checkout call
+      // STEP 4: Process payment - use order_price + delivery_charge for amount
+        const paymentAmount = (parseFloat(orderDetails.order_price) || 0) + (parseFloat(orderDetails.delivery_charge) || 0);
+        console.log("[PaymentSection] STEP 4: Payment amount calculation:", {
+          order_price: orderDetails.order_price,
+          delivery_charge: orderDetails.delivery_charge,
+          total_amount: paymentAmount,
+        });
+        
+        console.log("[PaymentSection] Processing COD payment via order-payment endpoint...");
+        try {
+          const paymentResponse = await processOrderPayment({
+            payment_method: "cod",
+            amount: String(paymentAmount.toFixed(2)), // Use order_price + delivery_charge
+            order_code: String(orderDetails.order_code), // Use order_code from backend
+            ref_code: DUMMY_PAYMENT_MODE ? `dummy_cod_${Date.now()}` : `cod_${Date.now()}`,
+            pidx: DUMMY_PAYMENT_MODE ? `dummy_cod_pidx_${Date.now()}` : "", // Include pidx for dummy, empty for real
+          });
+          console.log("[PaymentSection] COD payment processed successfully");
+          console.log("[PaymentSection] Payment response:", paymentResponse);
+          
+          // Only proceed if payment is successful
+          if (!paymentResponse) {
+            throw new Error("Payment processing failed - no response received");
+          }
+        } catch (paymentErr) {
+          // In dummy mode, log warning but continue (non-blocking)
+          if (DUMMY_PAYMENT_MODE) {
+            console.warn("[PaymentSection] Dummy COD payment processing failed (non-blocking):", paymentErr);
+          } else {
+            throw paymentErr; // In real mode, throw error
+          }
         }
-      });
+
+        // Redirect to success page with order data in state
+        // Use order_code from backend response
+        history.push({
+          pathname: "/order-confirmation",
+          search: `?orderId=${orderDetails.order_code}`,
+          state: {
+            orderId: orderDetails.order_code,
+            items,
+            orderTotal: orderDetails.order_price, // Use order_price from backend
+            shipping,
+            addressId,
+            shippingType, // Include shipping type for update-checkout call
+          }
+        });
     } catch (err) {
       setError(err.message || "Failed to place COD order. Please try again.");
       setProcessing(false);

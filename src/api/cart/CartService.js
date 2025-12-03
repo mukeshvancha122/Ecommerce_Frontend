@@ -382,22 +382,15 @@ export const removeCartItem = async (variationId) => {
 
 /**
  * Clear entire cart on backend
- * DELETE /api/v1/orders/cart/remove/
+ * NOTE: This endpoint is not being used. Cart clearing is handled by the backend automatically.
+ * This function is kept for compatibility but does not make any API calls.
  * @returns {Promise<void>}
  */
 export const clearCartBackend = async () => {
-  console.log("[CartService] clearCartBackend() - Called to clear entire cart");
-  try {
-    console.log("[CartService] clearCartBackend() - Sending DELETE request to /v1/orders/cart/remove/");
-    const response = await API.delete("/v1/orders/cart/remove/");
-    console.log("[CartService] clearCartBackend() - DELETE response:", response);
-    console.log("[CartService] clearCartBackend() - Cart cleared successfully");
-  } catch (error) {
-    console.error("[CartService] clearCartBackend() - ERROR clearing cart on backend:", error);
-    console.error("[CartService] clearCartBackend() - Error response:", error.response);
-    console.error("[CartService] clearCartBackend() - Error status:", error.response?.status);
-    throw error;
-  }
+  console.log("[CartService] clearCartBackend() - Called but endpoint is not used");
+  console.log("[CartService] clearCartBackend() - Cart will be cleared automatically by backend after order placement");
+  // No API call - endpoint is not used
+  return Promise.resolve();
 };
 
 /**

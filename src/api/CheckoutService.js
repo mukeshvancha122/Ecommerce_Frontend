@@ -6,6 +6,106 @@ const calculateItemsTotal = (items = []) =>
   items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0);
 
 /**
+ * STEP 1: Create order from cart
+ * POST /v1/orders/start-checkout/
+ * Creates an order from the current cart items
+ * @returns {Promise<Object>} Created order response
+ */
+export const createStartCheckout = async () => {
+  try {
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] STEP 1: createStartCheckout() - Creating order from cart");
+    console.log("[CheckoutService] POST /v1/orders/start-checkout/");
+    console.log("[CheckoutService] Request body: {} (empty)");
+    console.log("[CheckoutService] Timestamp:", new Date().toISOString());
+    
+    // POST with empty request body as per API specification
+    const response = await API.post("/v1/orders/start-checkout/", {});
+    
+    console.log("[CheckoutService] createStartCheckout() - Response status:", response.status);
+    console.log("[CheckoutService] createStartCheckout() - Response data:", JSON.stringify(response.data, null, 2));
+    
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(`Failed to create order: ${response.status}`);
+    }
+    
+    console.log("[CheckoutService] STEP 1: Order created successfully");
+    console.log("=".repeat(80));
+    
+    return {
+      data: response.data,
+      status: response.status,
+    };
+  } catch (error) {
+    console.error("[CheckoutService] createStartCheckout() - Error creating order:", error);
+    console.error("[CheckoutService] createStartCheckout() - Error response:", error.response?.data);
+    console.error("[CheckoutService] createStartCheckout() - Error status:", error.response?.status);
+    throw error;
+  }
+};
+
+/**
+ * STEP 3: Get order details from start-checkout endpoint
+ * GET /api/v1/orders/start-checkout/
+ * This retrieves the order details including order_price, order_code, delivery_charge
+ * Called after order is updated with address (Step 2)
+ * @returns {Promise<Object>} Order data with order_price, order_code, delivery_charge
+ */
+export const getStartCheckout = async () => {
+  try {
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] STEP 3: getStartCheckout() - Fetching order details");
+    console.log("[CheckoutService] GET /v1/orders/start-checkout/");
+    console.log("[CheckoutService] Timestamp:", new Date().toISOString());
+    
+    const response = await API.get("/v1/orders/start-checkout/");
+    
+    console.log("[CheckoutService] getStartCheckout() - Response status:", response.status);
+    console.log("[CheckoutService] getStartCheckout() - Response data:", JSON.stringify(response.data, null, 2));
+    
+    // Response format: { data: [{ order_price, order_code, delivery_charge, ... }] }
+    // If cart is empty or no order exists, data might be empty array
+    const orders = response.data?.data || [];
+    const order = orders.length > 0 ? orders[0] : null;
+    
+    if (!order) {
+      // If no order found, it might mean cart is empty or order creation failed
+      console.warn("[CheckoutService] getStartCheckout() - No order found in response. Possible reasons:");
+      console.warn("  1. Cart is empty");
+      console.warn("  2. Order creation failed");
+      console.warn("  3. Backend hasn't created order yet");
+      throw new Error("No order found in start-checkout response. Please ensure cart has items.");
+    }
+    
+    // Extract required fields: order_price, order_code, delivery_charge
+    const orderDetails = {
+      order_price: order.order_price,
+      order_code: order.order_code,
+      delivery_charge: order.delivery_charge || 0,
+      order_date: order.order_date,
+      items: order.item || [],
+      delivered_by: order.delivered_by,
+    };
+    
+    console.log("[CheckoutService] STEP 3: Order details extracted:", {
+      order_code: orderDetails.order_code,
+      order_price: orderDetails.order_price,
+      delivery_charge: orderDetails.delivery_charge,
+    });
+    console.log("=".repeat(80));
+    
+    return {
+      data: orderDetails,
+    };
+  } catch (error) {
+    console.error("[CheckoutService] getStartCheckout() - Error fetching order details:", error);
+    console.error("[CheckoutService] getStartCheckout() - Error response:", error.response?.data);
+    console.error("[CheckoutService] getStartCheckout() - Error status:", error.response?.status);
+    throw error;
+  }
+};
+
+/**
  * Get current active order
  * GET /api/v1/orders/current-order/
  * This retrieves the order created by startCheckout
@@ -49,25 +149,26 @@ export const getCurrentOrder = async () => {
 };
 
 /**
- * Update order checkout with shipping address and shipping type
+ * STEP 2: Update order checkout with shipping address and shipping type
  * POST /api/v1/orders/update-checkout/
  * 
- * IMPORTANT: This API call PLACES THE ORDER in the backend.
+ * Updates the order created in Step 1 with address and shipping type
  * The shipping address ID MUST come from GET /v1/orders/shipping-address/ endpoint.
  * 
  * API expects: { "drop_location_id": "string", "shipping": "string" }
  * 
- * Note: drop_location_id must be a numeric backend database ID from the shipping-address endpoint
- * The ID is obtained by calling GET /v1/orders/shipping-address/ first
- * 
  * @param {Object} payload - Update checkout payload
  * @param {string|number} payload.shipping_address_id - Shipping address ID from GET /v1/orders/shipping-address/ (will be mapped to drop_location_id)
  * @param {string} payload.shipping_type - Shipping type: "Normal" or "Express" (will be mapped to shipping)
- * @returns {Promise<Object>} Updated order response (expects 200/201 status) - This places the order in the backend
+ * @returns {Promise<Object>} Updated order response (expects 200/201 status)
  */
 export const updateOrderCheckout = async (payload) => {
   try {
-    console.log("[CheckoutService] updateOrderCheckout() - Updating order checkout with:", payload);
+    console.log("=".repeat(80));
+    console.log("[CheckoutService] STEP 2: updateOrderCheckout() - Updating order with address");
+    console.log("[CheckoutService] POST /v1/orders/update-checkout/");
+    console.log("[CheckoutService] Timestamp:", new Date().toISOString());
+    console.log("[CheckoutService] Payload:", payload);
     
     const { shipping_address_id, shipping_type } = payload;
     
@@ -101,22 +202,27 @@ export const updateOrderCheckout = async (payload) => {
     
     // Map to API expected field names
     // API expects: drop_location_id (string) and shipping (string)
-    // For numeric IDs, convert to string as API expects
+    // 
+    // CRITICAL: The shipping_address_id parameter is the ID selected by the user
+    // from the address list fetched from GET /api/v1/orders/shipping-address/
+    // This ID (from the backend response) is used as drop_location_id in the request
+    // 
+    // Example: If user selects address with id: 5 from GET /api/v1/orders/shipping-address/
+    // Then drop_location_id in the request body will be "5"
     const dropLocationId = String(shipping_address_id);
     
     // Shipping type should be sent as a string
     const shippingValue = String(shipping_type);
     
+    // Request body for POST /api/v1/orders/update-checkout/
+    // drop_location_id: The ID from the selected address (from GET /api/v1/orders/shipping-address/)
+    // shipping: The shipping type selected by the user ("Normal" or "Express")
     const requestBody = {
-      drop_location_id: dropLocationId,
+      drop_location_id: dropLocationId, // ID from selected address (from GET /api/v1/orders/shipping-address/)
       shipping: shippingValue,
     };
     
-    console.log("=".repeat(80));
-    console.log("[CheckoutService] updateOrderCheckout() - ========== API REQUEST START ==========");
-    console.log("[CheckoutService] updateOrderCheckout() - API Endpoint: POST /v1/orders/update-checkout/");
-    console.log("[CheckoutService] updateOrderCheckout() - Request Body (what we're sending to backend):");
-    console.log(JSON.stringify(requestBody, null, 2));
+    console.log("[CheckoutService] STEP 2: Request body:", JSON.stringify(requestBody, null, 2));
     console.log("[CheckoutService] updateOrderCheckout() - Request Details:", {
       drop_location_id: dropLocationId,
       drop_location_id_type: typeof dropLocationId,
@@ -215,27 +321,61 @@ export const createShippingAddress = async (addressData) => {
   }
 };
 
+/**
+ * Get all shipping addresses from backend
+ * GET /api/v1/orders/shipping-address/
+ * 
+ * Backend returns an array of addresses with format:
+ * [
+ *   {
+ *     "id": 0,
+ *     "email": "user@example.com",
+ *     "name": "string",
+ *     "phone": 9223372036854776000,
+ *     "full_address": "string",
+ *     "district": "string",
+ *     "city": "string",
+ *     "label": "string"
+ *   }
+ * ]
+ * 
+ * @returns {Promise<Object>} Addresses data with transformed format
+ */
 export const getAddresses = async () => {
   try {
-    console.log("[CheckoutService] getAddresses() - Fetching shipping addresses from backend API");
-    console.log("[CheckoutService] getAddresses() - API Endpoint: GET /v1/orders/shipping-address/");
-    
     // Fetch shipping addresses from backend API
+    // Note: The /api prefix is added by axios baseURL, so this becomes /api/v1/orders/shipping-address/
     const response = await API.get("/v1/orders/shipping-address/");
     
-    console.log("[CheckoutService] getAddresses() - API Response Status:", response.status);
-    console.log("[CheckoutService] getAddresses() - API Response Data:", JSON.stringify(response.data, null, 2));
+    // Log response for debugging
+    console.log("[CheckoutService] getAddresses() - API Response:", {
+      status: response.status,
+      dataType: typeof response.data,
+      isArray: Array.isArray(response.data),
+      hasResults: !!response.data?.results,
+      dataKeys: response.data && typeof response.data === 'object' ? Object.keys(response.data) : [],
+      rawData: response.data,
+    });
     
     // Backend returns an array of addresses with format:
     // [{ id, email, name, phone, full_address, district, city, label }]
-    const backendAddresses = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+    // Handle both direct array response and paginated response format
+    const backendAddresses = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data?.results || response.data?.data || []);
     
-    console.log("[CheckoutService] getAddresses() - Found addresses:", backendAddresses.length);
+    console.log("[CheckoutService] getAddresses() - Extracted addresses:", {
+      count: backendAddresses.length,
+      firstAddress: backendAddresses[0] || null,
+    });
     
     // Transform backend format to frontend format
+    // CRITICAL: The addr.id from the backend response is stored as both:
+    // - id: Used for frontend address selection
+    // - backendId: Used as drop_location_id when calling updateOrderCheckout
     const addresses = backendAddresses.map((addr) => {
       const transformed = {
-        id: String(addr.id), // Use backend ID as string (this will be used as drop_location_id)
+        id: String(addr.id), // Frontend ID (same as backend ID, but as string)
         fullName: addr.name || "",
         phone: String(addr.phone || ""),
         address1: addr.full_address || "",
@@ -257,21 +397,19 @@ export const getAddresses = async () => {
           email: addr.email,
           label: addr.label,
         },
-        // Store the backend ID for use in update-checkout
-        backendId: addr.id,
+        // CRITICAL: Store the backend ID from GET /api/v1/orders/shipping-address/
+        // This ID will be used as drop_location_id in POST /api/v1/orders/update-checkout/
+        // When user selects this address, this backendId is used in the update request
+        backendId: addr.id, // The 'id' field from the backend response
       };
-      
-      console.log("[CheckoutService] getAddresses() - Transformed address:", {
-        id: transformed.id,
-        backendId: transformed.backendId,
-        name: transformed.fullName,
-        city: transformed.city,
-      });
       
       return transformed;
     });
     
-    console.log("[CheckoutService] getAddresses() - Successfully fetched and transformed addresses:", addresses.length);
+    console.log("[CheckoutService] getAddresses() - Successfully transformed addresses:", {
+      count: addresses.length,
+      addresses: addresses.map(a => ({ id: a.id, name: a.fullName, city: a.city })),
+    });
     
     return {
       data: {
@@ -280,32 +418,46 @@ export const getAddresses = async () => {
     };
   } catch (error) {
     console.error("[CheckoutService] getAddresses() - Error fetching addresses from backend:", error);
-    console.error("[CheckoutService] getAddresses() - Error response:", error.response?.data);
-    console.error("[CheckoutService] getAddresses() - Error status:", error.response?.status);
+    console.error("[CheckoutService] getAddresses() - Error details:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+    });
+    
+    // If it's a 401 (unauthorized), return empty array (user not logged in)
+    if (error.response?.status === 401) {
+      console.warn("[CheckoutService] getAddresses() - User not authenticated (401), returning empty addresses");
+      return {
+        data: {
+          addresses: [],
+        },
+      };
+    }
     
     // Fallback to localStorage if API fails (for backward compatibility)
     console.warn("[CheckoutService] getAddresses() - Falling back to localStorage addresses");
-  const savedAddresses = loadSavedAddresses();
-  
-  return {
-    data: {
-      addresses: savedAddresses.map(addr => ({
-        id: addr.id,
-        fullName: addr.fullName || addr.name || "",
-        phone: String(addr.phone || ""),
-        address1: addr.address1 || addr.full_address || "",
-        address2: addr.address2 || "",
-        city: addr.city || "",
-        state: addr.state || addr.district || "",
-        district: addr.district || addr.state || "",
-        zip: addr.zip || "",
-        country: addr.country || "India",
-        email: addr.email || "",
-        label: addr.label || addr.fullName || "",
-        backendFormat: addr.backendFormat,
-      })),
-    },
-  };
+    const savedAddresses = loadSavedAddresses();
+    
+    return {
+      data: {
+        addresses: savedAddresses.map(addr => ({
+          id: addr.id,
+          fullName: addr.fullName || addr.name || "",
+          phone: String(addr.phone || ""),
+          address1: addr.address1 || addr.full_address || "",
+          address2: addr.address2 || "",
+          city: addr.city || "",
+          state: addr.state || addr.district || "",
+          district: addr.district || addr.state || "",
+          zip: addr.zip || "",
+          country: addr.country || "India",
+          email: addr.email || "",
+          label: addr.label || addr.fullName || "",
+          backendFormat: addr.backendFormat,
+        })),
+      },
+    };
   }
 };
 

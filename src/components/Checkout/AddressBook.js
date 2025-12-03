@@ -31,6 +31,23 @@ export default function AddressBook({ addresses, selectedId, onSelect, onAddNew,
     onSelect(address.id);
   };
 
+  // Show message if no addresses are available
+  if (!addresses || addresses.length === 0) {
+    return (
+      <div className="ab">
+        <div className="ab-empty">
+          <p>No delivery addresses found.</p>
+          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '8px' }}>
+            Please add a new delivery address to continue.
+          </p>
+        </div>
+        <div className="ab-addRow">
+          <button type="button" className="ab-link" onClick={onAddNew}>Add a new delivery address</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ab">
       {addresses.map((a) => {

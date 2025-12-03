@@ -51,25 +51,52 @@ export const processOrderPayment = async (payload) => {
     // For now, we'll send "card" and let the backend handle it
     const backendPaymentMethod = normalizedMethod === "card" ? "card" : normalizedMethod;
     
-    // Format amount to 2 decimal places (API requirement)
+    // CRITICAL: Format amount to 2 decimal places (API requirement)
+    // The amount should be the cart total (items + shipping + tax + import charges)
+    // This is passed as orderTotal from CheckoutPage/OrderConfirmationPage
     const amountValue = parseFloat(payload.amount) || 0;
+    if (isNaN(amountValue) || amountValue < 0) {
+      throw new Error(`Invalid amount: ${payload.amount}. Amount must be a valid positive number.`);
+    }
     const formattedAmount = amountValue.toFixed(2);
+    
+    console.log("[PaymentService] processOrderPayment() - Amount validation:", {
+      originalAmount: payload.amount,
+      parsedAmount: amountValue,
+      formattedAmount: formattedAmount,
+      note: "Amount should be cart total (items + shipping + tax + import charges)",
+    });
     
     // Build request body according to API schema
     // All fields must be strings according to schema
+    // Required fields: payment_method, amount, order_code
+    // Optional fields: ref_code, pidx
     const requestBody = {
       payment_method: String(backendPaymentMethod),
       amount: formattedAmount, // Must have max 2 decimal places
       order_code: String(payload.order_code),
     };
     
-    // Only include optional fields if they have actual values (not empty strings)
-    // API validation requires these fields to not be blank if included
+    // Include ref_code if provided (required for tracking)
+    // Use dummy value if not provided and in dummy mode
     if (payload.ref_code && String(payload.ref_code).trim() !== "") {
       requestBody.ref_code = String(payload.ref_code).trim();
+    } else if (!payload.ref_code) {
+      // Generate a default ref_code if not provided
+      requestBody.ref_code = `${backendPaymentMethod}_${Date.now()}`;
     }
+    
+    // Include pidx if provided (payment ID, UPI ID, etc.)
+    // For dummy payments, use a dummy pidx value
     if (payload.pidx && String(payload.pidx).trim() !== "") {
       requestBody.pidx = String(payload.pidx).trim();
+    } else if (payload.ref_code && payload.ref_code.includes("dummy")) {
+      // For dummy payments, provide a dummy pidx if not provided
+      requestBody.pidx = `dummy_pidx_${Date.now()}`;
+    } else {
+      // For real payments without pidx, use empty string or omit
+      // Some payment methods may not have a pidx
+      requestBody.pidx = "";
     }
     
     // Include card details for card payments (store in backend)
@@ -118,10 +145,22 @@ export const processOrderPayment = async (payload) => {
       card_cvv: requestBody.card_cvv ? "***" : undefined, // Don't log CVV
     });
     
+    console.log("[PaymentService] processOrderPayment() - Making API call to POST /v1/payments/order-payment/");
     const response = await API.post("/v1/payments/order-payment/", requestBody);
     
-    console.log("[PaymentService] processOrderPayment() - Response:", response.data);
+    console.log("[PaymentService] processOrderPayment() - ========== PAYMENT RESPONSE ==========");
     console.log("[PaymentService] processOrderPayment() - Response status:", response.status);
+    console.log("[PaymentService] processOrderPayment() - Response data:", JSON.stringify(response.data, null, 2));
+    console.log("[PaymentService] processOrderPayment() - Payment details received:", {
+      payment_method: response.data?.payment_method,
+      amount: response.data?.amount,
+      order_code: response.data?.order_code,
+      ref_code: response.data?.ref_code,
+      pidx: response.data?.pidx,
+    });
+    console.log("[PaymentService] processOrderPayment() - ======================================");
+    
+    // Return the response data (should include: payment_method, amount, order_code, ref_code, pidx)
     return response.data;
   } catch (error) {
     console.error("[PaymentService] processOrderPayment() - ERROR:", error);

@@ -184,6 +184,39 @@
   top:24px;
   height:fit-content;
 }
+.co-delivery-address{
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:18px;
+}
+.co-delivery-address-title{
+  font-weight:700;
+  font-size:15px;
+  color:#111827;
+  margin-bottom:12px;
+  border-bottom:1px solid #e5e7eb;
+  padding-bottom:8px;
+}
+.co-delivery-address-content{
+  font-size:14px;
+  color:#374151;
+  line-height:1.6;
+}
+.co-delivery-address-name{
+  font-weight:600;
+  color:#111827;
+  margin-bottom:6px;
+}
+.co-delivery-address-line{
+  margin-bottom:4px;
+}
+.co-delivery-address-phone{
+  margin-top:8px;
+  color:#6b7280;
+  font-size:13px;
+}
 .co-summary-cta{
   width:100%;
   background:#22c55e;
