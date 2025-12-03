@@ -7,9 +7,32 @@ import API from "../../axios";
 
 // Rasa chatbot endpoint - use proxy path to avoid CORS issues
 // The proxy forwards to the production endpoint: http://54.145.239.205:5005/webhooks/rest/webhook/
-// Using relative path '/api/chatbot' so it goes through the proxy (no CORS)
-// Can be overridden via environment variable
-const CHATBOT_API_URL = process.env.REACT_APP_CHATBOT_API_URL || '/api/chatbot';
+// Using relative path '/api/chatbot' so it goes through Netlify/CRA proxy (no CORS or mixed content)
+// Can be overridden via environment variable, but HTTPS pages will always prefer the proxy path to avoid
+// browsers blocking insecure (HTTP) requests.
+const DEFAULT_CHATBOT_PROXY_PATH = "/api/chatbot";
+
+const resolveChatbotApiUrl = () => {
+  const envUrl = (process.env.REACT_APP_CHATBOT_API_URL || "").trim();
+  let resolved = envUrl || DEFAULT_CHATBOT_PROXY_PATH;
+
+  // Browsers block insecure HTTP requests from HTTPS pages. If we detect that scenario,
+  // fall back to the proxied relative path so the request stays on HTTPS from the client's perspective.
+  if (typeof window !== "undefined") {
+    const isHttpsPage = window.location?.protocol === "https:";
+    if (isHttpsPage && resolved.startsWith("http://")) {
+      console.warn(
+        "[ChatbotService] HTTPS page detected but chatbot URL is insecure. Falling back to proxy path.",
+        { insecureUrl: resolved, fallback: DEFAULT_CHATBOT_PROXY_PATH }
+      );
+      resolved = DEFAULT_CHATBOT_PROXY_PATH;
+    }
+  }
+
+  return resolved;
+};
+
+const CHATBOT_API_URL = resolveChatbotApiUrl();
 
 // Contact information for support
 const SUPPORT_EMAIL = "support@hydernexa.com";
@@ -235,4 +258,3 @@ export const clearConversationHistory = () => {
 export const getConversationHistory = () => {
   return conversationHistory;
 };
-
