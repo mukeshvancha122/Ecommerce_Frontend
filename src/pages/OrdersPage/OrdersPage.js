@@ -1,54 +1,31 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import "./OrdersPage.css";
-import OrdersBreadcrumb from "../../components/Orders/OrdersBreadcrumb";
-import OrdersHeaderBar from "../../components/Orders/OrdersHeaderBar";
-import OrdersTabsBar from "../../components/Orders/OrdersTabsBar";
-import OrdersFilterRow from "../../components/Orders/OrdersFilterRow";
 import OrdersContent from "../../components/Orders/OrdersContent";
-import RecentlyViewedCarousel from "../../components/RecentlyViewedCarousel/RecentlyViewedCarousel";
 import { fetchOrders } from "../../api/orders/OrdersService";
-import { useTranslation } from "../../i18n/TranslationProvider";
-
-const tabOptions = [
-  { id: "orders", label: "Orders" },
-  { id: "buyAgain", label: "Buy again" },
-  { id: "notShipped", label: "Not yet shipped" },
-];
 
 export default function OrdersPage() {
-  const location = useLocation();
   const [orders, setOrders] = useState([]);
-  const [timeRange, setTimeRange] = useState("past 3 months");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [tab, setTab] = useState("orders");
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
   const [summary, setSummary] = useState({ totalOrders: 0, delivered: 0, processing: 0 });
-  const { t } = useTranslation();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
 
-  // Function to load orders
-  const loadOrders = useCallback(() => {
+  useEffect(() => {
     let mounted = true;
     setLoading(true);
-    console.log("[OrdersPage] loadOrders() - Starting to load orders...");
-    console.log("[OrdersPage] loadOrders() - Request params:", { timeRange, query: searchQuery, tab, page, fetchAll: true });
-    
-    // Use fetchAll=true to get all orders from all pages
-    fetchOrders({ timeRange, query: searchQuery, tab, page, fetchAll: true })
+    console.log(`[OrdersPage] loadOrders() - Fetching orders for page ${page}...`);
+
+    fetchOrders({ page })
       .then(({ data }) => {
         if (!mounted) return;
         console.log("[OrdersPage] loadOrders() - Orders loaded successfully:", {
           orders_count: data.orders?.length || 0,
           summary: data.summary,
-          pagination: data.pagination,
         });
-        
-        // Ensure we have an array
+
         const ordersArray = Array.isArray(data.orders) ? data.orders : [];
         console.log("[OrdersPage] loadOrders() - Setting orders in state:", ordersArray.length);
-        
+
         if (ordersArray.length > 0) {
           console.log("[OrdersPage] loadOrders() - Sample order:", {
             id: ordersArray[0].id,
@@ -57,13 +34,24 @@ export default function OrdersPage() {
             items_count: ordersArray[0].items?.length || 0,
           });
         }
-        
+
         setOrders(ordersArray);
         setSummary({
           totalOrders: data.summary?.totalOrders || ordersArray.length || 0,
           delivered: data.summary?.delivered || 0,
           processing: data.summary?.processing || 0,
-          pagination: data.pagination,
+        });
+
+        const paginationData = data.pagination || {
+          count: ordersArray.length,
+          next: null,
+          previous: null,
+          currentPage: page,
+        };
+
+        setPagination({
+          ...paginationData,
+          currentPage: paginationData.currentPage || page,
         });
       })
       .catch((err) => {
@@ -79,6 +67,7 @@ export default function OrdersPage() {
         if (mounted) {
           setOrders([]);
           setSummary({ totalOrders: 0, delivered: 0, processing: 0 });
+          setPagination(null);
         }
       })
       .finally(() => {
@@ -87,26 +76,18 @@ export default function OrdersPage() {
           console.log("[OrdersPage] loadOrders() - Loading completed");
         }
       });
+
     return () => {
       mounted = false;
     };
-  }, [timeRange, searchQuery, tab, page]);
+  }, [page]);
 
-  // Load orders when filters change or page mounts
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
-
-  // Refresh orders when navigating from order confirmation
-  useEffect(() => {
-    if (location.state?.refreshOrders) {
-      console.log("[OrdersPage] Refreshing orders after order confirmation");
-      setRefreshKey(prev => prev + 1);
-      loadOrders();
-      // Clear the refresh flag
-      window.history.replaceState({}, document.title);
+  const handlePageChange = (nextPage) => {
+    if (!nextPage || nextPage === page || nextPage < 1) {
+      return;
     }
-  }, [location.state, loadOrders]);
+    setPage(nextPage);
+  };
 
   const metrics = useMemo(
     () => [
@@ -120,38 +101,28 @@ export default function OrdersPage() {
   return (
     <main className="ordersPage">
       <div className="ordersPage-inner">
-        <OrdersBreadcrumb />
-
-        <OrdersHeaderBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          summary={metrics}
-        />
-
-        <OrdersTabsBar
-          activeTab={tab}
-          onTabChange={setTab}
-          options={tabOptions}
-        />
-
-        <OrdersFilterRow
-          totalOrders={orders.length}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
-        />
+        <section className="ordersPage-summary">
+          <h1 className="ordersPage-title">Your Orders</h1>
+          <div className="ordersPage-metrics">
+            {metrics.map((metric) => (
+              <div key={metric.label} className="ordersPage-metricCard">
+                <div className="ordersPage-metricValue">{metric.value}</div>
+                <div className="ordersPage-metricLabel">{metric.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <OrdersContent
-          tab={tab}
+          tab="orders"
           orders={orders}
           loading={loading}
-          emptyMessage={t("orders.empty")}
-          emptyLinkText={t("orders.viewYear")}
-          emptyLinkHref="#"
-          pagination={summary.pagination}
-          onPageChange={setPage}
+          emptyMessage="You have not placed any orders yet."
+          emptyLinkText="Start shopping"
+          emptyLinkHref="/"
+          pagination={pagination}
+          onPageChange={handlePageChange}
         />
-
-        <RecentlyViewedCarousel />
       </div>
     </main>
   );

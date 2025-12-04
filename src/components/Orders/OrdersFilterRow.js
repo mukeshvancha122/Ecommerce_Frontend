@@ -6,16 +6,19 @@ export default function OrdersFilterRow({
   timeRange,
   onTimeRangeChange,
 }) {
+  const isAllOrders = (timeRange || "").toLowerCase() === "all orders";
+  const descriptor = isAllOrders ? " total across " : " placed in ";
   return (
     <div className="ordersFilterRow">
       <div className="ordersFilterRow-left">
         <strong>{totalOrders} {totalOrders === 1 ? "order" : "orders"}</strong>
-        <span className="ordersFilterRow-text"> placed in </span>
+        <span className="ordersFilterRow-text">{descriptor}</span>
         <select
           className="ordersFilterRow-select"
           value={timeRange}
           onChange={(e) => onTimeRangeChange(e.target.value)}
         >
+          <option>All orders</option>
           <option>past 3 months</option>
           <option>past 6 months</option>
           <option>past year</option>
